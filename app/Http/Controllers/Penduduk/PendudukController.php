@@ -1,29 +1,22 @@
 <?php
-// app/Http/Controllers/Penduduk/PendudukController.php
 
 namespace App\Http\Controllers\Penduduk;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 
 class PendudukController extends Controller
 {
     public function index()
     {
-        return view('penduduk.index');
-    }
+        // Contoh data - nanti bisa diganti dengan data dari database
+        $data = [
+            'title' => 'Jumlah Penduduk',
+            'total_penduduk' => 5274875,
+            'tahun' => 2024,
+            'pertumbuhan' => 1.2,
+        ];
 
-    public function jumlah()
-    {
-        return view('penduduk.jumlah_penduduk');
-    }
-
-    public function kepadatan()
-    {
-        return view('penduduk.kepadatan');
-    }
-
-    public function pertumbuhan()
-    {
-        return view('penduduk.pertumbuhan');
+        return view('penduduk.jumlah_penduduk', compact('data'));
     }
 }

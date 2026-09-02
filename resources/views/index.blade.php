@@ -1,139 +1,387 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aceh Data Warehouse — Provinsi Aceh</title>
-  {{-- Simpan style.css di: public/assets/css/style.css --}}
-  <link rel="stylesheet" href="{{ asset('css/style.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aceh Data Warehouse</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
 </head>
-<body>
-  <div class="landing">
-    <aside class="sidebar">
-      <a href="{{ url('/') }}" class="brand">
-        <div class="brand-mark">A</div>
-        <div><div class="brand-title">Aceh Data<br>Warehouse</div><div class="brand-sub">Provinsi Aceh</div></div>
-      </a>
+<body style="background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
 
-      @php
-        // Definisikan menu + submenu di sini. Ganti 'url' dengan route() kalau
-        // route-nya sudah didefinisikan, mis. route('penduduk.index').
-        $menus = [
-          [
-            'label' => 'Penduduk',
-            'url'   => url('penduduk.index'),
-            'icon'  => 'penduduk',
-            'submenu' => [
-              ['label' => 'Jumlah Penduduk', 'url' => url('penduduk/jumlah')],
-              ['label' => 'Kepadatan Penduduk', 'url' => url('penduduk/kepadatan')],
-              ['label' => 'Pertumbuhan Penduduk', 'url' => url('penduduk/pertumbuhan')],
-            ],
-          ],
-          [
-            'label' => 'Sosial',
-            'url'   => '#sektor',
-            'icon'  => 'sosial',
-            'submenu' => [
-              ['label' => 'Kemiskinan', 'url' => url('sosial/kemiskinan')],
-              ['label' => 'Ketenagakerjaan', 'url' => url('sosial/ketenagakerjaan')],
-              ['label' => 'Bantuan Sosial', 'url' => url('sosial/bantuan-sosial')],
-            ],
-          ],
-          [
-            'label' => 'Kesehatan',
-            'url'   => '#sektor',
-            'icon'  => 'kesehatan',
-            'submenu' => [
-              ['label' => 'Fasilitas Kesehatan', 'url' => url('kesehatan/fasilitas')],
-              ['label' => 'Gizi Masyarakat', 'url' => url('kesehatan/gizi')],
-              ['label' => 'Angka Harapan Hidup', 'url' => url('kesehatan/harapan-hidup')],
-            ],
-          ],
-          [
-            'label' => 'Pendidikan',
-            'url'   => '#sektor',
-            'icon'  => 'pendidikan',
-            'submenu' => [
-              ['label' => 'Partisipasi Sekolah', 'url' => url('pendidikan/partisipasi')],
-              ['label' => 'Rasio Guru-Murid', 'url' => url('pendidikan/rasio-guru-murid')],
-              ['label' => 'Indeks Literasi', 'url' => url('pendidikan/literasi')],
-            ],
-          ],
-        ];
-      @endphp
+<div class="d-flex" style="min-height: 100vh;">
 
-      <nav class="nav" aria-label="Navigasi sektor">
-        @foreach ($menus as $i => $menu)
-          <div class="nav-group" data-nav-group>
-            <button type="button" class="nav-link" data-nav-toggle aria-expanded="false">
-              <span class="nav-icon">
-                @switch($menu['icon'])
-                  @case('penduduk')
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="2.5"/><circle cx="16.5" cy="9" r="2"/><path d="M4 17c.4-3 2.1-4.5 5-4.5S13.6 14 14 17M14.5 13c2.8 0 4.6 1.2 5 4"/></svg>
-                    @break
-                  @case('sosial')
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="2.5"/><circle cx="16" cy="8" r="2.5"/><path d="M3.5 17c.5-3 2-4.5 4.5-4.5S12 14 12.5 17M11.5 17c.5-3 2-4.5 4.5-4.5S20 14 20.5 17"/></svg>
-                    @break
-                  @case('kesehatan')
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="7" width="14" height="12" rx="1.5"/><path d="M9 7V4h6v3M9 13h6M12 10v6"/></svg>
-                    @break
-                  @case('pendidikan')
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="m6 11v5l6 3 6-3v-5"/></svg>
-                    @break
-                @endswitch
-              </span>
-              {{ $menu['label'] }}
-              <span class="nav-chevron">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg>
-              </span>
-            </button>
+    <!-- ==================== SIDEBAR ==================== -->
+    <div class="d-flex flex-column" style="width: 260px; background-color: #ffffff; border-right: 1px solid #e0e0e0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 1000;">
 
-            <ul class="submenu">
-              @foreach ($menu['submenu'] as $sub)
-                <li><a href="{{ $sub['url'] }}">{{ $sub['label'] }}</a></li>
-              @endforeach
-            </ul>
-          </div>
-        @endforeach
-      </nav>
-    </aside>
-
-    <main class="main">
-      <header class="topbar">
-        <h1>Sistem Informasi Data Nasional</h1>
-        <nav class="topnav"><a href="{{ url('/') }}">Dashboard</a><a href="#">Laporan</a><a href="#">Arsip</a></nav>
-        <div class="actions"><span class="action">♧</span><span class="action">⚙</span><span class="action">◎</span></div>
-        <nav class="mobile-nav"><a href="{{ url('/') }}">Dashboard</a><a href="{{ url('penduduk') }}">Penduduk</a></nav>
-      </header>
-
-      <section class="hero">
-        <div>
-          <span class="eyebrow"><i></i>Pusat Data Terintegrasi</span>
-          <h2>Membangun Aceh<br>Berbasis <span>Data Presisi</span></h2>
-          <p>Platform analitik terpusat yang menyajikan data komprehensif terkait kependudukan, sosial, kesehatan, dan pendidikan di Provinsi Aceh guna mendukung perumusan kebijakan yang akurat dan transparan.</p>
-          <div class="hero-buttons">
-            <a class="btn btn-primary" href="{{ url('penduduk') }}">Jelajahi Data <span>→</span></a>
-            <a class="btn btn-secondary" href="#">⇩ &nbsp; Unduh Laporan Tahunan</a>
-          </div>
+        <!-- Logo Section -->
+        <div class="d-flex align-items-center p-3" style="border-bottom: 1px solid #e8e8e8;">
+            <div class="d-flex align-items-center justify-content-center rounded-circle" style="width: 45px; height: 45px; background-color: #f0f0f0; border: 2px solid #d0d0d0; margin-right: 12px; flex-shrink: 0;">
+                <span style="font-weight: 800; font-size: 18px; color: #1a1a2e;">A</span>
+            </div>
+            <div>
+                <div style="font-weight: 800; font-size: 16px; color: #1a1a2e; line-height: 1.2;">Aceh Data<br>Warehouse</div>
+                <div style="font-size: 12px; color: #888;">Provinsi Aceh</div>
+            </div>
         </div>
-        <div class="hero-visual" aria-label="Ilustrasi jaringan data Aceh"><div class="network"></div></div>
-      </section>
 
-      <section id="sektor">
-        <div class="section-title"><h3>Sektor Utama</h3></div>
-        <div class="sector-grid">
-          <article class="sector-card"><div class="sector-icon">♟</div><h4>Penduduk</h4><p>Data demografi, sebaran penduduk, angka kelahiran, dan kematian per kabupaten/kota.</p><a class="sector-link" href="{{ url('penduduk') }}">Akses Modul <b>→</b></a></article>
-          <article class="sector-card"><div class="sector-icon">♟</div><h4>Sosial</h4><p>Indikator kesejahteraan, tingkat kemiskinan, ketenagakerjaan, dan program bantuan sosial.</p><a class="sector-link" href="#">Akses Modul <b>→</b></a></article>
-          <article class="sector-card"><div class="sector-icon">✚</div><h4>Kesehatan</h4><p>Fasilitas pelayanan, gizi masyarakat, angka harapan hidup, dan pengendalian penyakit menular.</p><a class="sector-link" href="#">Akses Modul <b>→</b></a></article>
-          <article class="sector-card"><div class="sector-icon">◇</div><h4>Pendidikan</h4><p>Angka partisipasi sekolah, rasio guru-murid, fasilitas pendidikan, dan indeks literasi.</p><a class="sector-link" href="#">Akses Modul <b>→</b></a></article>
+        <!-- Navigation Menu -->
+        <div class="flex-grow-1 p-3" style="overflow-y: auto;">
+
+            <!-- Penduduk (Active/Expanded) -->
+            <div class="mb-1">
+                <a href="#" class="d-flex align-items-center justify-content-between text-decoration-none p-2 rounded" style="background-color: #e8f5f0; color: #0d9488;">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-people-fill me-2" style="font-size: 18px;"></i>
+                        <span style="font-weight: 600; font-size: 14px;">Penduduk</span>
+                    </div>
+                    <i class="bi bi-chevron-down" style="font-size: 14px;"></i>
+                </a>
+                <!-- Sub Menu -->
+                <div class="ms-4 mt-1">
+                    <a href="{{ route('penduduk.jumlah_penduduk') }}" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Jumlah Penduduk</a>
+                    <a href="#" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Kepadatan Penduduk</a>
+                    <a href="#" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Pertumbuhan Penduduk</a>
+                </div>
+            </div>
+
+            <!-- Sosial -->
+            <div class="mb-1">
+                <a href="#" class="d-flex align-items-center justify-content-between text-decoration-none p-2 rounded" style="color: #333;">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-people me-2" style="font-size: 18px; color: #555;"></i>
+                        <span style="font-weight: 500; font-size: 14px;">Sosial</span>
+                    </div>
+                    <i class="bi bi-chevron-right" style="font-size: 14px; color: #999;"></i>
+                </a>
+            </div>
+
+            <!-- Kesehatan -->
+            <div class="mb-1">
+                <a href="#" class="d-flex align-items-center justify-content-between text-decoration-none p-2 rounded" style="color: #333;">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-hospital me-2" style="font-size: 18px; color: #555;"></i>
+                        <span style="font-weight: 500; font-size: 14px;">Kesehatan</span>
+                    </div>
+                    <i class="bi bi-chevron-right" style="font-size: 14px; color: #999;"></i>
+                </a>
+            </div>
+
+            <!-- Pendidikan -->
+            <div class="mb-1">
+                <a href="#" class="d-flex align-items-center justify-content-between text-decoration-none p-2 rounded" style="color: #333;">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-mortarboard me-2" style="font-size: 18px; color: #555;"></i>
+                        <span style="font-weight: 500; font-size: 14px;">Pendidikan</span>
+                    </div>
+                    <i class="bi bi-chevron-right" style="font-size: 14px; color: #999;"></i>
+                </a>
+            </div>
+
         </div>
-      </section>
+    </div>
 
-      <footer class="footer"><span>Portal Data Warehouse Provinsi Aceh</span><span>Diskominfo Aceh — Data Terintegrasi</span></footer>
-    </main>
-  </div>
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="flex-grow-1" style="margin-left: 260px;">
 
-  {{-- Simpan landing.js di: public/assets/js/landing.js --}}
-  <script src="{{ asset('js/landing.js') }}"></script>
+        <!-- Top Navbar -->
+        <div class="d-flex align-items-center justify-content-between px-4 py-3" style="background-color: #ffffff; border-bottom: 1px solid #e0e0e0;">
+            <h4 class="mb-0" style="font-weight: 800; color: #1a1a2e; font-size: 22px;">Sistem Informasi Data Nasional</h4>
+            <div class="d-flex align-items-center gap-4">
+                <a href="#" class="text-decoration-none" style="font-weight: 700; color: #1a1a2e; font-size: 14px; border-bottom: 2px solid #1a1a2e; padding-bottom: 2px;">Dashboard</a>
+                <a href="#" class="text-decoration-none" style="font-weight: 500; color: #666; font-size: 14px;">Laporan</a>
+                <a href="#" class="text-decoration-none" style="font-weight: 500; color: #666; font-size: 14px;">Arsip</a>
+                <div class="d-flex align-items-center gap-3 ms-3">
+                    <i class="bi bi-cloud-upload" style="font-size: 18px; color: #555; cursor: pointer;"></i>
+                    <i class="bi bi-gear" style="font-size: 18px; color: #555; cursor: pointer;"></i>
+                    <i class="bi bi-record-circle" style="font-size: 18px; color: #555; cursor: pointer;"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="p-4">
+
+            <!-- Hero Section -->
+            <div class="rounded-3 p-5 mb-4" style="background: linear-gradient(135deg, #f0f4ff 0%, #f8f9ff 50%, #ffffff 100%); border: 1px solid #e0e4f0;">
+                <div class="row align-items-center">
+                    <div class="col-lg-7">
+
+                        <!-- Badge -->
+                        <div class="d-inline-flex align-items-center rounded-pill px-3 py-1 mb-4" style="background-color: #e6f7f0; border: 1px solid #b2dfdb;">
+                            <span class="rounded-circle d-inline-block me-2" style="width: 10px; height: 10px; background-color: #0d9488;"></span>
+                            <span style="font-size: 13px; font-weight: 600; color: #0d9488;">Pusat Data Terintegrasi</span>
+                        </div>
+
+                        <!-- Heading -->
+                        <h1 class="mb-3" style="font-weight: 800; font-size: 42px; color: #1a1a2e; line-height: 1.2;">
+                            Membangun Aceh<br>
+                            Berbasis <span style="color: #0d9488;">Data Presisi</span>
+                        </h1>
+
+                        <!-- Description -->
+                        <p class="mb-4" style="font-size: 15px; color: #555; line-height: 1.7; max-width: 580px;">
+                            Platform analitik terpusat yang menyajikan data komprehensif terkait kependudukan, sosial, kesehatan, dan pendidikan di Provinsi Aceh guna mendukung perumusan kebijakan yang akurat dan transparan.
+                        </p>
+
+                        <!-- Buttons -->
+                        <div class="d-flex gap-3">
+                            <a href="#" class="btn text-decoration-none px-4 py-2" style="background-color: #1a1a2e; color: #ffffff; font-weight: 600; font-size: 14px; border-radius: 6px;">
+                                Jelajahi Data <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
+                            <a href="#" class="btn text-decoration-none px-4 py-2" style="background-color: #ffffff; color: #1a1a2e; font-weight: 600; font-size: 14px; border: 1px solid #d0d0d0; border-radius: 6px;">
+                                <i class="bi bi-download me-1"></i> Unduh Laporan Tahunan
+                            </a>
+                        </div>
+
+                    </div>
+
+                    <!-- Decorative Graphic -->
+                    <div class="col-lg-5 d-flex justify-content-center">
+                        <div class="position-relative" style="width: 280px; height: 280px;">
+                            <!-- Background square -->
+                            <div class="rounded-3" style="width: 280px; height: 280px; background-color: #e8f0f5; border: 1px solid #d0dce5; position: relative; overflow: hidden;">
+                                <!-- Circle -->
+                                <div class="rounded-circle" style="width: 200px; height: 200px; border: 1px solid #c8d8e0; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);"></div>
+                                <!-- Diagonal lines -->
+                                <div style="position: absolute; top: 30%; left: 10%; width: 80%; height: 1px; background-color: #b0c4d0; transform: rotate(15deg);"></div>
+                                <div style="position: absolute; top: 60%; left: 10%; width: 80%; height: 1px; background-color: #0d9488; transform: rotate(-20deg); opacity: 0.5;"></div>
+                                <!-- Dots -->
+                                <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #0d9488; position: absolute; top: 15%; left: 20%; opacity: 0.6;"></div>
+                                <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #0d9488; position: absolute; top: 15%; left: 50%; opacity: 0.6;"></div>
+                                <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #0d9488; position: absolute; top: 15%; left: 80%; opacity: 0.6;"></div>
+                                <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #0d9488; position: absolute; top: 40%; left: 15%; opacity: 0.6;"></div>
+                                <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #0d9488; position: absolute; top: 40%; left: 45%; opacity: 0.6;"></div>
+                                <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #0d9488; position: absolute; top: 40%; left: 75%; opacity: 0.6;"></div>
+                                <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #0d9488; position: absolute; top: 70%; left: 25%; opacity: 0.6;"></div>
+                                <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #0d9488; position: absolute; top: 70%; left: 55%; opacity: 0.6;"></div>
+                                <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #0d9488; position: absolute; top: 70%; left: 85%; opacity: 0.6;"></div>
+                                <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #0d9488; position: absolute; top: 85%; left: 35%; opacity: 0.6;"></div>
+                                <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #0d9488; position: absolute; top: 85%; left: 65%; opacity: 0.6;"></div>
+                                <div class="rounded-circle" style="width: 6px; height: 6px; background-color: #0d9488; position: absolute; top: 85%; left: 90%; opacity: 0.6;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sektor Utama Section -->
+            <!-- ==================== SEKTOR UTAMA ==================== -->
+            <div class="mb-4">
+                <h3 class="mb-3" style="font-weight: 800; color: #1a1a2e; font-size: 24px;">Sektor Utama</h3>
+                <hr style="border-color: #e0e0e0; margin: 0 0 20px 0;">
+
+                <div class="row g-4">
+
+                    <!-- Card: Penduduk -->
+                    <div class="col-lg-3 col-md-6 sektor-card">
+                        <div class="card h-100" style="border: 1px solid #d8dde8; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
+                            <div class="card-body p-4 d-flex flex-column">
+
+                                <!-- Icon Box -->
+                                <div class="d-flex align-items-center justify-content-center rounded-3 mb-4" style="width: 52px; height: 52px; background-color: #0f1b2d; border-radius: 8px;">
+                                    <i class="bi bi-person-fill" style="color: #ffffff; font-size: 22px;"></i>
+                                </div>
+
+                                <!-- Title -->
+                                <h5 class="mb-2" style="font-weight: 800; color: #1a1a2e; font-size: 20px;">Penduduk</h5>
+
+                                <!-- Description -->
+                                <p class="mb-3 flex-grow-1" style="font-size: 14px; color: #5a6577; line-height: 1.6;">
+                                    Data demografi, sebaran penduduk, angka kelahiran, dan kematian per kabupaten/kota.
+                                </p>
+
+                                <!-- Divider -->
+                                <hr style="border-color: #e0e4f0; margin: 0 0 16px 0;">
+
+                                <!-- Link Akses Modul -->
+                                <a href="#" class="d-flex align-items-center justify-content-between text-decoration-none" style="color: #0d9488; font-weight: 700; font-size: 14px;">
+                                    <span>Akses Modul</span>
+                                    <i class="bi bi-arrow-right" style="font-size: 18px;"></i>
+                                </a>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card: Sosial -->
+                    <div class="col-lg-3 col-md-6 sektor-card">
+                        <div class="card h-100" style="border: 1px solid #d8dde8; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
+                            <div class="card-body p-4 d-flex flex-column">
+
+                                <!-- Icon Box -->
+                                <div class="d-flex align-items-center justify-content-center rounded-3 mb-4" style="width: 52px; height: 52px; background-color: #0f1b2d; border-radius: 8px;">
+                                    <i class="bi bi-people-fill" style="color: #ffffff; font-size: 22px;"></i>
+                                </div>
+
+                                <!-- Title -->
+                                <h5 class="mb-2" style="font-weight: 800; color: #1a1a2e; font-size: 20px;">Sosial</h5>
+
+                                <!-- Description -->
+                                <p class="mb-3 flex-grow-1" style="font-size: 14px; color: #5a6577; line-height: 1.6;">
+                                    Indikator kesejahteraan, tingkat kemiskinan, ketenagakerjaan, dan program bantuan sosial.
+                                </p>
+
+                                <!-- Divider -->
+                                <hr style="border-color: #e0e4f0; margin: 0 0 16px 0;">
+
+                                <!-- Link Akses Modul -->
+                                <a href="#" class="d-flex align-items-center justify-content-between text-decoration-none" style="color: #0d9488; font-weight: 700; font-size: 14px;">
+                                    <span>Akses Modul</span>
+                                    <i class="bi bi-arrow-right" style="font-size: 18px;"></i>
+                                </a>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card: Kesehatan -->
+                    <div class="col-lg-3 col-md-6 sektor-card">
+                        <div class="card h-100" style="border: 1px solid #d8dde8; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
+                            <div class="card-body p-4 d-flex flex-column">
+
+                                <!-- Icon Box -->
+                                <div class="d-flex align-items-center justify-content-center rounded-3 mb-4" style="width: 52px; height: 52px; background-color: #0f1b2d; border-radius: 8px;">
+                                    <i class="bi bi-plus-lg" style="color: #ffffff; font-size: 22px;"></i>
+                                </div>
+
+                                <!-- Title -->
+                                <h5 class="mb-2" style="font-weight: 800; color: #1a1a2e; font-size: 20px;">Kesehatan</h5>
+
+                                <!-- Description -->
+                                <p class="mb-3 flex-grow-1" style="font-size: 14px; color: #5a6577; line-height: 1.6;">
+                                    Fasilitas pelayanan, gizi masyarakat, angka harapan hidup, dan pengendalian penyakit menular.
+                                </p>
+
+                                <!-- Divider -->
+                                <hr style="border-color: #e0e4f0; margin: 0 0 16px 0;">
+
+                                <!-- Link Akses Modul -->
+                                <a href="#" class="d-flex align-items-center justify-content-between text-decoration-none" style="color: #0d9488; font-weight: 700; font-size: 14px;">
+                                    <span>Akses Modul</span>
+                                    <i class="bi bi-arrow-right" style="font-size: 18px;"></i>
+                                </a>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card: Pendidikan -->
+                    <div class="col-lg-3 col-md-6 sektor-card">
+                        <div class="card h-100" style="border: 1px solid #d8dde8; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
+                            <div class="card-body p-4 d-flex flex-column">
+
+                                <!-- Icon Box -->
+                                <div class="d-flex align-items-center justify-content-center rounded-3 mb-4" style="width: 52px; height: 52px; background-color: #0f1b2d; border-radius: 8px;">
+                                    <i class="bi bi-diamond" style="color: #ffffff; font-size: 22px;"></i>
+                                </div>
+
+                                <!-- Title -->
+                                <h5 class="mb-2" style="font-weight: 800; color: #1a1a2e; font-size: 20px;">Pendidikan</h5>
+
+                                <!-- Description -->
+                                <p class="mb-3 flex-grow-1" style="font-size: 14px; color: #5a6577; line-height: 1.6;">
+                                    Angka partisipasi sekolah, rasio guru-murid, fasilitas pendidikan, dan indeks literasi.
+                                </p>
+
+                                <!-- Divider -->
+                                <hr style="border-color: #e0e4f0; margin: 0 0 16px 0;">
+
+                                <!-- Link Akses Modul -->
+                                <a href="#" class="d-flex align-items-center justify-content-between text-decoration-none" style="color: #0d9488; font-weight: 700; font-size: 14px;">
+                                    <span>Akses Modul</span>
+                                    <i class="bi bi-arrow-right" style="font-size: 18px;"></i>
+                                </a>
+
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ==================== FOOTER ==================== -->
+            <footer class="mt-4 pb-4">
+                <div class="d-flex align-items-center justify-content-between" style="border-top: 1px solid #e0e4f0; padding-top: 20px;">
+                    <div style="font-size: 13px; color: #8892a4;">
+                        Portal Data Warehouse Provinsi Aceh
+                    </div>
+                    <div style="font-size: 13px; color: #8892a4;">
+                        Diskominfo Aceh — Data Terintegrasi
+                    </div>
+                </div>
+            </footer>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Tambahkan class & ID yang dibutuhkan JS -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // Sektor cards - selector lebih spesifik
+        document.querySelectorAll('.sektor-card').forEach(function(card) {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        });
+
+        // Hero section
+        const hero = document.querySelector('.rounded-3.p-5.mb-4');
+        if (hero) hero.classList.add('hero-section');
+
+        // Sidebar
+        const sidebar = document.querySelector('.d-flex.flex-column[style*="width: 260px"]');
+        if (sidebar) sidebar.classList.add('sidebar');
+
+        // Main content
+        const main = document.querySelector('.flex-grow-1[style*="margin-left: 260px"]');
+        if (main) main.classList.add('main-content');
+
+        // Menu items
+        document.querySelectorAll('.mb-1').forEach(function(item) {
+            item.classList.add('sidebar-menu-item');
+        });
+
+        // Submenu
+        document.querySelectorAll('.ms-4.mt-1').forEach(function(sub) {
+            sub.classList.add('submenu');
+            sub.style.maxHeight = '0px';
+            sub.style.opacity = '0';
+            sub.style.overflow = 'hidden';
+            sub.style.transition = 'max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease';
+        });
+
+        // Chevron icons
+        document.querySelectorAll('.bi-chevron-down, .bi-chevron-right').forEach(function(icon) {
+            icon.classList.add('chevron-icon');
+        });
+
+        // Top nav links
+        document.querySelectorAll('a[style*="Dashboard"], a[style*="Laporan"], a[style*="Arsip"]').forEach(function(link) {
+            link.classList.add('top-nav-link');
+        });
+
+        // CTA Buttons
+        document.querySelectorAll('.btn').forEach(function(btn) {
+            btn.classList.add('btn-cta');
+        });
+
+        // Nav icons
+        document.querySelectorAll('.bi-cloud-upload, .bi-gear, .bi-record-circle').forEach(function(icon) {
+            icon.classList.add('nav-icon');
+        });
+
+        // Graphic dots
+        document.querySelectorAll('.rounded-circle[style*="background-color: #0d9488"]').forEach(function(dot) {
+            dot.classList.add('graphic-dot');
+        });
+
+    });
+</script>
+
+<script src="{{ asset('js/landing.js') }}"></script>
 </body>
 </html>
