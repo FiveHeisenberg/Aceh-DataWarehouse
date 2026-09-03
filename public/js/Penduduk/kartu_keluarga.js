@@ -41,7 +41,6 @@
         elements.statKKTerbanyakBadge = document.getElementById('stat-kk-terbanyak-badge');
         elements.statKKTerbanyakNama = document.getElementById('stat-kk-terbanyak-nama');
         elements.statKKTerbanyakJumlah = document.getElementById('stat-kk-terbanyak-jumlah');
-        elements.statKKTerbanyakPersen = document.getElementById('stat-kk-terbanyak-persen');
         
         elements.tableBody = document.getElementById('kk-table-body');
         elements.tableNote = document.getElementById('kk-table-note');
@@ -191,10 +190,6 @@
         }
         if (elements.statKKTerbanyakJumlah) {
             elements.statKKTerbanyakJumlah.textContent = `${formatNumber(data.jumlah)} KK`;
-        }
-        if (elements.statKKTerbanyakPersen) {
-            const persenFormatted = data.persentase.toFixed(1).replace('.', ',');
-            elements.statKKTerbanyakPersen.textContent = `${persenFormatted}% dari total Aceh`;
         }
 
         console.log('Card KK Terbanyak rendered:', data);

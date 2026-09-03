@@ -9,6 +9,30 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        @media (max-width: 1199.98px) {
+            .sidebar-fixed {
+                position: relative !important;
+                width: 100% !important;
+                min-height: auto !important;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .table-responsive {
+                font-size: 13px;
+            }
+
+            #stat-total-kk {
+                font-size: 30px !important;
+            }
+
+            .card-body {
+                padding: 1.25rem !important;
+            }
+        }
+    </style>
 </head>
 <body style="background-color: #f8f9fc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
 
@@ -121,81 +145,60 @@
         <!-- Content -->
         <div class="p-4">
 
-            <!-- ==================== SUMMARY CARDS ==================== -->
-            <div class="row g-4 mb-4">
+            <!-- ==================== DASHBOARD GRID ==================== -->
+            <div class="row g-4 mb-4 align-items-stretch">
 
-                <!-- Card 1: Total Kartu Keluarga -->
-                <div class="col-md-4">
-                    <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <span class="text-uppercase" style="font-size: 12px; font-weight: 700; color: #5a6577; letter-spacing: 1px;">Total Kartu Keluarga</span>
-                                <span id="stat-kk-year-badge" class="badge rounded-pill" style="background-color: #e8f0ff; color: #1a1a2e; font-size: 11px; font-weight: 600; padding: 4px 10px;">Aceh —</span>
-                            </div>
-                            <div class="mb-3">
-                                <strong id="stat-total-kk" style="font-size: 38px; font-weight: 800; color: #1a1a2e; letter-spacing: -1px;">—</strong>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between pt-3" style="border-top: 1px solid #e8e8e8;">
-                                <span id="stat-kk-growth" class="badge rounded-pill" style="background-color: #e8f5f0; color: #0d9488; font-size: 13px; font-weight: 700; padding: 6px 12px;">
-                                    <i id="stat-kk-growth-icon" class="bi bi-arrow-up-short me-1" style="font-size: 16px;"></i> <span id="stat-kk-growth-value">—</span>
-                                </span>
+                <!-- ==================== KOLOM KIRI ==================== -->
+                <div class="col-xl-7">
+
+                    <!-- Summary Cards -->
+                    <div class="row g-4 mb-4">
+
+                        <!-- Card 1: Total Kartu Keluarga -->
+                        <div class="col-md-6">
+                            <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                        <span class="text-uppercase" style="font-size: 12px; font-weight: 700; color: #5a6577; letter-spacing: 1px;">Total Kartu Keluarga</span>
+                                        <span id="stat-kk-year-badge" class="badge rounded-pill" style="background-color: #e8f0ff; color: #1a1a2e; font-size: 11px; font-weight: 600; padding: 4px 10px;">—</span>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong id="stat-total-kk" style="font-size: 38px; font-weight: 800; color: #1a1a2e; letter-spacing: -1px;">—</strong>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between pt-3" style="border-top: 1px solid #e8e8e8;">
+                                        <span id="stat-kk-growth" class="badge rounded-pill" style="background-color: #e8f5f0; color: #0d9488; font-size: 13px; font-weight: 700; padding: 6px 12px;">
+                                            <i id="stat-kk-growth-icon" class="bi bi-arrow-up-short me-1" style="font-size: 16px;"></i>
+                                            <span id="stat-kk-growth-value">—</span>
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Card 2: KK Tertinggi -->
-                <div class="col-md-4">
-                    <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <span class="text-uppercase" style="font-size: 12px; font-weight: 700; color: #5a6577; letter-spacing: 1px;">Jumlah KK Terbanyak</span>
-                                <span id="stat-kk-terbanyak-badge" class="badge rounded-pill" style="background-color: #e8f0ff; color: #1a1a2e; font-size: 11px; font-weight: 600; padding: 4px 10px;">-</span>
-                            </div>
-                            <div class="mb-3">
-                                <strong id="stat-kk-terbanyak-nama" style="font-size: 24px; font-weight: 800; color: #1a1a2e;">-</strong>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between pt-3" style="border-top: 1px solid #e8e8e8;">
-                                <span id="stat-kk-terbanyak-jumlah" class="badge rounded-pill" style="background-color: #e8f5f0; color: #0d9488; font-size: 13px; font-weight: 700; padding: 6px 12px;">-</span>
-                                <span id="stat-kk-terbanyak-persen" style="font-size: 13px; color: #8892a4;">-% dari total Aceh</span>
+                        <!-- Card 2: KK Tertinggi -->
+                        <div class="col-md-6">
+                            <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
+                                <div class="card-body p-4">
+                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                        <span class="text-uppercase" style="font-size: 12px; font-weight: 700; color: #5a6577; letter-spacing: 1px;">Jumlah KK Terbanyak</span>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong id="stat-kk-terbanyak-nama" style="font-size: 22px; font-weight: 800; color: #1a1a2e;">-</strong>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between pt-3" style="border-top: 1px solid #e8e8e8;">
+                                        <span id="stat-kk-terbanyak-jumlah" class="badge rounded-pill" style="background-color: #e8f5f0; color: #0d9488; font-size: 13px; font-weight: 700; padding: 6px 12px;">-</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
                     </div>
-                </div>
 
-                <!-- Card 3: Pertumbuhan Tercepat
-                <div class="col-md-4">
-                    <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
-                        <div class="card-body p-4">
-                            <div class="d-flex align-items-center justify-content-between mb-3">
-                                <span class="text-uppercase" style="font-size: 12px; font-weight: 700; color: #5a6577; letter-spacing: 1px;">Pertumbuhan Tercepat</span>
-                                <span class="badge rounded-pill" style="background-color: #e8f0ff; color: #1a1a2e; font-size: 11px; font-weight: 600; padding: 4px 10px;">Kota</span>
-                            </div>
-                            <div class="mb-3">
-                                <strong style="font-size: 24px; font-weight: 800; color: #1a1a2e;">Kota Banda Aceh</strong>
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between pt-3" style="border-top: 1px solid #e8e8e8;">
-                                <span class="badge rounded-pill" style="background-color: #e8f5f0; color: #0d9488; font-size: 13px; font-weight: 700; padding: 6px 12px;">+5,5% Tren</span>
-                                <span style="font-size: 13px; color: #8892a4;">Total: 69.850 KK</span>
-                            </div>
-                        </div>
-                    </div>
-                </div> -->
-            </div>
-
-            <!-- ==================== CHARTS SECTION ==================== -->
-            <div class="row g-4 mb-4">
-
-                <!-- Chart 1: Tren Pertumbuhan KK -->
-                <div class="col-lg-7">
+                    <!-- Chart: Tren Pertumbuhan KK -->
                     <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center justify-content-between mb-1">
                                 <h2 class="mb-0" style="font-weight: 800; color: #1a1a2e; font-size: 20px;">Tren Pertumbuhan KK Provinsi Aceh</h2>
-                                <span class="d-inline-flex align-items-center rounded-pill px-3 py-1" style="background-color: #e8f5f0; border: 1px solid #b2dfdb;">
-                                    <span class="rounded-circle d-inline-block me-2" style="width: 8px; height: 8px; background-color: #0d9488;"></span>
-                                    <span style="font-size: 12px; font-weight: 700; color: #0d9488;">Tren Positif</span>
-                                </span>
                             </div>
                             <p class="mb-4" style="font-size: 13px; color: #8892a4;">Evolusi akumulasi jumlah Kepala Keluarga periode 2020 – 2024</p>
 
@@ -213,24 +216,26 @@
                             </div>
                         </div>
                     </div>
+
                 </div>
 
-                <!-- Chart 2: Distribusi Wilayah -->
-                <div class="col-lg-5">
+                <!-- ==================== KOLOM KANAN ==================== -->
+                <div class="col-xl-5">
+
+                    <!-- Chart: Distribusi Wilayah -->
                     <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center justify-content-between mb-1">
                                 <h2 class="mb-0" style="font-weight: 800; color: #1a1a2e; font-size: 20px;">Distribusi Wilayah 2024</h2>
-                                <span class="badge rounded-pill" style="background-color: #e8f0ff; color: #1a1a2e; font-size: 11px; font-weight: 600; padding: 4px 10px;">Top Daerah</span>
                             </div>
                             <p class="mb-4" style="font-size: 13px; color: #8892a4;">Perbandingan jumlah KK di daerah berpopulasi terbesar</p>
 
-                            <!-- Horizontal Bar Chart -->
                             <div class="mb-4">
+
                                 <!-- Item 1 -->
                                 <div class="mb-3">
                                     <div class="d-flex justify-content-between mb-1">
-                                        <span style="font-size: 13px; font-weight: 600; color: #1a1a2e;">Kab. Aceh Utara</span>
+                                        <span style="font-size: 13px; font-weight: 600; color: #1a1a2e;">Kabupaten Aceh Utara</span>
                                         <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">164.200 KK</span>
                                     </div>
                                     <div class="progress" style="height: 10px; background-color: #e8f0ff; border-radius: 5px;">
@@ -241,7 +246,7 @@
                                 <!-- Item 2 -->
                                 <div class="mb-3">
                                     <div class="d-flex justify-content-between mb-1">
-                                        <span style="font-size: 13px; font-weight: 600; color: #1a1a2e;">Kab. Pidie</span>
+                                        <span style="font-size: 13px; font-weight: 600; color: #1a1a2e;">Kabupaten Pidie</span>
                                         <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">129.800 KK</span>
                                     </div>
                                     <div class="progress" style="height: 10px; background-color: #e8f0ff; border-radius: 5px;">
@@ -252,7 +257,7 @@
                                 <!-- Item 3 -->
                                 <div class="mb-3">
                                     <div class="d-flex justify-content-between mb-1">
-                                        <span style="font-size: 13px; font-weight: 600; color: #1a1a2e;">Kab. Bireuen</span>
+                                        <span style="font-size: 13px; font-weight: 600; color: #1a1a2e;">Kabupaten Bireuen</span>
                                         <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">116.450 KK</span>
                                     </div>
                                     <div class="progress" style="height: 10px; background-color: #e8f0ff; border-radius: 5px;">
@@ -263,7 +268,7 @@
                                 <!-- Item 4 -->
                                 <div class="mb-3">
                                     <div class="d-flex justify-content-between mb-1">
-                                        <span style="font-size: 13px; font-weight: 600; color: #1a1a2e;">Kab. Aceh Timur</span>
+                                        <span style="font-size: 13px; font-weight: 600; color: #1a1a2e;">Kabupaten Aceh Timur</span>
                                         <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">111.300 KK</span>
                                     </div>
                                     <div class="progress" style="height: 10px; background-color: #e8f0ff; border-radius: 5px;">
@@ -274,38 +279,18 @@
                                 <!-- Item 5 -->
                                 <div class="mb-3">
                                     <div class="d-flex justify-content-between mb-1">
-                                        <span style="font-size: 13px; font-weight: 600; color: #1a1a2e;">Kab. Aceh Besar</span>
+                                        <span style="font-size: 13px; font-weight: 600; color: #1a1a2e;">Kabupaten Aceh Besar</span>
                                         <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">105.600 KK</span>
                                     </div>
                                     <div class="progress" style="height: 10px; background-color: #e8f0ff; border-radius: 5px;">
                                         <div class="progress-bar" style="width: 64%; background: linear-gradient(90deg, #0d9488 0%, #14b8a6 100%); border-radius: 5px;"></div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Proporsi Kabupaten vs Perkotaan -->
-                            <div class="pt-3" style="border-top: 1px solid #e8e8e8;">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">Proporsi: Kabupaten vs Perkotaan</span>
-                                    <span style="font-size: 13px; color: #8892a4;">Total 23 Daerah</span>
-                                </div>
-                                <div class="progress mb-3" style="height: 12px; border-radius: 6px; overflow: hidden;">
-                                    <div class="progress-bar" style="width: 78%; background-color: #0d9488;"></div>
-                                    <div class="progress-bar" style="width: 22%; background-color: #14b8a6;"></div>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <div class="d-flex align-items-center">
-                                        <span class="rounded-circle d-inline-block me-2" style="width: 10px; height: 10px; background-color: #0d9488;"></span>
-                                        <span style="font-size: 12px; color: #5a6577;">18 Kabupaten (78%)</span>
-                                    </div>
-                                    <div class="d-flex align-items-center">
-                                        <span class="rounded-circle d-inline-block me-2" style="width: 10px; height: 10px; background-color: #14b8a6;"></span>
-                                        <span style="font-size: 12px; color: #5a6577;">5 Kota (22%)</span>
-                                    </div>
-                                </div>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
 
