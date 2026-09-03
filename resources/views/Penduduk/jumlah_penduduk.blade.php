@@ -42,7 +42,7 @@
                 </a>
                 <div class="ms-4 mt-1">
                     <a href="{{ route('penduduk.jumlah_penduduk') }}" class="d-block text-decoration-none py-1 px-2 rounded" style="background-color: #e8f5f0; color: #0d9488; font-weight: 600; font-size: 13px;">Jumlah Penduduk</a>
-                    <a href="#" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Kepadatan Penduduk</a>
+                    <a href="{{ route('penduduk.kartu_keluarga') }}" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Kartu keluarga</a>
                     <a href="#" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Pertumbuhan Penduduk</a>
                 </div>
             </div>
@@ -197,7 +197,7 @@
                                     <th class="px-4 py-3" style="font-weight: 700; color: #1a1a2e; border-bottom: 1px solid #d8dde8;">Kabupaten/Kota</th>
                                     <th class="px-4 py-3 text-end" style="font-weight: 700; color: #1a1a2e; border-bottom: 1px solid #d8dde8;">
                                         <button class="btn btn-sm p-0" style="color: #1a1a2e; font-weight: 700;">
-                                            Tahun <i class="bi bi-arrow-down-up ms-1"></i>
+                                            Tahun
                                         </button>
                                     </th>
                                     <th class="px-4 py-3 text-end" style="font-weight: 700; color: #1a1a2e; border-bottom: 1px solid #d8dde8;">Jumlah</th>

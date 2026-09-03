@@ -33,7 +33,7 @@
         currentTahun: null
     };
 
-    // ==================== DOM ELEMENTS ====================
+    // ==================== DOC ELEMENTS ====================
     const elements = {};
 
     function cacheElements() {
