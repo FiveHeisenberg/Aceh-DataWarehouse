@@ -40,7 +40,7 @@
                 <!-- Sub Menu -->
                 <div class="ms-4 mt-1">
                     <a href="{{ route('penduduk.jumlah_penduduk') }}" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Jumlah Penduduk</a>
-                    <a href="#" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Kepadatan Penduduk</a>
+                    <a href="{{ route('penduduk.kartu_keluarga') }}" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Kartu Keluarga</a>
                     <a href="#" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Pertumbuhan Penduduk</a>
                 </div>
             </div>
@@ -89,12 +89,21 @@
             <h4 class="mb-0" style="font-weight: 800; color: #1a1a2e; font-size: 22px;">Sistem Informasi Data Nasional</h4>
             <div class="d-flex align-items-center gap-4">
                 <a href="#" class="text-decoration-none" style="font-weight: 700; color: #1a1a2e; font-size: 14px; border-bottom: 2px solid #1a1a2e; padding-bottom: 2px;">Dashboard</a>
+<<<<<<< HEAD
                 <a href="#" class="text-decoration-none" style="font-weight: 500; color: #666; font-size: 14px;">Laporan</a>
                 <a href="#" class="text-decoration-none" style="font-weight: 500; color: #666; font-size: 14px;">Arsip</a>
                 <div class="d-flex align-items-center gap-3 ms-3">
                     <i class="bi bi-cloud-upload" style="font-size: 18px; color: #555; cursor: pointer;"></i>
                     <i class="bi bi-gear" style="font-size: 18px; color: #555; cursor: pointer;"></i>
                     <i class="bi bi-record-circle" style="font-size: 18px; color: #555; cursor: pointer;"></i>
+=======
+                <!-- <a href="#" class="text-decoration-none" style="font-weight: 500; color: #666; font-size: 14px;">Laporan</a>
+                <a href="#" class="text-decoration-none" style="font-weight: 500; color: #666; font-size: 14px;">Arsip</a> -->
+                <div class="d-flex align-items-center gap-3 ms-3">
+                    <!-- <i class="bi bi-cloud-upload" style="font-size: 18px; color: #555; cursor: pointer;"></i> -->
+                    <i class="bi bi-gear" style="font-size: 18px; color: #555; cursor: pointer;"></i>
+                    <!-- <i class="bi bi-record-circle" style="font-size: 18px; color: #555; cursor: pointer;"></i> -->
+>>>>>>> fitur/penduduk
                 </div>
             </div>
         </div>
