@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         const otherLink = otherItem.querySelector('a');
 
                         if (otherSubmenu) {
-                            otherSubmenu.style.maxHeight = null;
+                            otherSubmenu.style.maxHeight = '0px';
                             otherSubmenu.style.opacity = '0';
                             otherSubmenu.style.padding = '0';
                             otherSubmenu.style.margin = '0';
