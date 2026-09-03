@@ -112,11 +112,8 @@
                 </div>
                 <div>
                     <select id="filter-tahun" class="form-select" style="width: 150px; border: 1px solid #d0d8e0; border-radius: 6px; font-size: 14px;">
-                        <option value="2024" selected>2024</option>
-                        <option value="2023">2023</option>
-                        <option value="2022">2022</option>
-                        <option value="2021">2021</option>
-                        <option value="2020">2020</option>                    </select>
+                        <option value="">Memuat...</option>                   
+                    </select>
                 </div>
             </div>
         </header>
@@ -133,14 +130,14 @@
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center justify-content-between mb-3">
                                 <span class="text-uppercase" style="font-size: 12px; font-weight: 700; color: #5a6577; letter-spacing: 1px;">Total Kartu Keluarga</span>
-                                <span class="badge rounded-pill" style="background-color: #e8f0ff; color: #1a1a2e; font-size: 11px; font-weight: 600; padding: 4px 10px;">Aceh 2024</span>
+                                <span id="stat-kk-year-badge" class="badge rounded-pill" style="background-color: #e8f0ff; color: #1a1a2e; font-size: 11px; font-weight: 600; padding: 4px 10px;">Aceh —</span>
                             </div>
                             <div class="mb-3">
-                                <strong id="stat-total-kk" style="font-size: 38px; font-weight: 800; color: #1a1a2e; letter-spacing: -1px;">1.412.850</strong>
+                                <strong id="stat-total-kk" style="font-size: 38px; font-weight: 800; color: #1a1a2e; letter-spacing: -1px;">—</strong>
                             </div>
                             <div class="d-flex align-items-center justify-content-between pt-3" style="border-top: 1px solid #e8e8e8;">
-                                <span class="badge rounded-pill" style="background-color: #e8f5f0; color: #0d9488; font-size: 13px; font-weight: 700; padding: 6px 12px;">
-                                    <i class="bi bi-arrow-up-short me-1" style="font-size: 16px;"></i> +3,8%
+                                <span id="stat-kk-growth" class="badge rounded-pill" style="background-color: #e8f5f0; color: #0d9488; font-size: 13px; font-weight: 700; padding: 6px 12px;">
+                                    <i id="stat-kk-growth-icon" class="bi bi-arrow-up-short me-1" style="font-size: 16px;"></i> <span id="stat-kk-growth-value">—</span>
                                 </span>
                             </div>
                         </div>
@@ -321,7 +318,7 @@
                     </div>
                     <div class="position-relative" style="width: 280px;">
                         <i class="bi bi-search position-absolute" style="left: 12px; top: 50%; transform: translateY(-50%); color: #8892a4;"></i>
-                        <input type="search" class="form-control ps-5" placeholder="Cari nama Kab/Kota..." style="border-radius: 6px; border: 1px solid #d0d8e0; font-size: 14px;">
+                        <input id="kk-search" type="search" class="form-control ps-5" placeholder="Cari nama Kab/Kota..." style="border-radius: 6px; border: 1px solid #d0d8e0; font-size: 14px;">
                     </div>
                 </div>
                 <div class="card-body p-0">

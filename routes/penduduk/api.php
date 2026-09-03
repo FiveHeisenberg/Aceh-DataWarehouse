@@ -49,4 +49,13 @@ Route::prefix('penduduk')->group(function () {
     Route::get('/map', [PendudukApiController::class, 'getMapData'])
     ->name('penduduk.api.map');
 
+    // Group untuk Kartu Keluarga
+    Route::prefix('kk')->group(function () {
+        Route::get('/years', [PendudukApiController::class, 'getKKYears'])
+            ->name('kk.api.years');
+        
+        Route::get('/index', [PendudukApiController::class, 'getKKIndex'])
+            ->name('kk.api.index');
+    });
+
 });
