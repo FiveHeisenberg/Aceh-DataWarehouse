@@ -149,21 +149,21 @@
                     <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
                         <div class="card-body p-4">
                             <div class="d-flex align-items-center justify-content-between mb-3">
-                                <span class="text-uppercase" style="font-size: 12px; font-weight: 700; color: #5a6577; letter-spacing: 1px;">KK Tertinggi</span>
-                                <span class="badge rounded-pill" style="background-color: #e8f0ff; color: #1a1a2e; font-size: 11px; font-weight: 600; padding: 4px 10px;">Kabupaten</span>
+                                <span class="text-uppercase" style="font-size: 12px; font-weight: 700; color: #5a6577; letter-spacing: 1px;">Jumlah KK Terbanyak</span>
+                                <span id="stat-kk-terbanyak-badge" class="badge rounded-pill" style="background-color: #e8f0ff; color: #1a1a2e; font-size: 11px; font-weight: 600; padding: 4px 10px;">-</span>
                             </div>
                             <div class="mb-3">
-                                <strong style="font-size: 24px; font-weight: 800; color: #1a1a2e;">Kab. Aceh Utara</strong>
+                                <strong id="stat-kk-terbanyak-nama" style="font-size: 24px; font-weight: 800; color: #1a1a2e;">-</strong>
                             </div>
                             <div class="d-flex align-items-center justify-content-between pt-3" style="border-top: 1px solid #e8e8e8;">
-                                <span class="badge rounded-pill" style="background-color: #e8f5f0; color: #0d9488; font-size: 13px; font-weight: 700; padding: 6px 12px;">164.200 KK</span>
-                                <span style="font-size: 13px; color: #8892a4;">11,6% dari total Aceh</span>
+                                <span id="stat-kk-terbanyak-jumlah" class="badge rounded-pill" style="background-color: #e8f5f0; color: #0d9488; font-size: 13px; font-weight: 700; padding: 6px 12px;">-</span>
+                                <span id="stat-kk-terbanyak-persen" style="font-size: 13px; color: #8892a4;">-% dari total Aceh</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Card 3: Pertumbuhan Tercepat -->
+                <!-- Card 3: Pertumbuhan Tercepat
                 <div class="col-md-4">
                     <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
                         <div class="card-body p-4">
@@ -180,7 +180,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> -->
             </div>
 
             <!-- ==================== CHARTS SECTION ==================== -->

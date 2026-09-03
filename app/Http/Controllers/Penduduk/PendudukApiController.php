@@ -389,6 +389,34 @@ public function getKKIndex(Request $request): JsonResponse
             $persentaseTertinggi = round(($kabTertinggi->jumlah_kartu_keluarga / $totalKK) * 100, 1);
         }
 
+        return response()->json([
+            'success' => true,
+            'message' => 'Data KK berhasil diambil',
+            'data' => [
+                'tahun_aktif' => (int) $tahun,
+                'summary' => [
+                    'total_kk' => (int) $totalKK,
+                    'pertumbuhan_persen' => round($pertumbuhan, 1),
+                    'total_tahun_lalu' => (int) $totalTahunLalu,
+                ],
+                'kab_tertinggi' => $kabTertinggi ? [
+                    'nama' => $kabTertinggi->nama_kabupaten_kota,
+                    'jumlah' => (int) $kabTertinggi->jumlah_kartu_keluarga,
+                    'persentase' => $persentaseTertinggi,
+                ] : null,
+                'details' => [
+                    'data' => $details->items(),
+                    'current_page' => $details->currentPage(),
+                    'last_page' => $details->lastPage(),
+                    'total' => $details->total(),
+                ],
+                'tren' => $trenData->map(fn($item) => [
+                    'tahun' => (int) $item->tahun,
+                    'total' => (int) $item->total,
+                ]),
+            ]
+        ], 200);
+
         // --- E. KOTA PERTUMBUHAN TERCEPAT ---
         // Ambil semua data tahun ini dan tahun sebelumnya
         $dataTahunIni = KartuKeluarga::tahun($tahun)->get()->keyBy('kode_kabupaten_kota');
