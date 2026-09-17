@@ -16,7 +16,6 @@ return Application::configure(basePath: dirname(__DIR__))
             // __DIR__.'/../routes/pendidikan/web.php'
         ],
         api: [
-            __DIR__.'/../routes/api.php',
             __DIR__.'/../routes/penduduk/api.php',
 
             // 📌 NANTI TAMBAHKAN MODUL LAIN DI SINI (API)

@@ -19,18 +19,11 @@
     let state = {
         currentYear: null,
         years: [],
+        kabupaten: [],
         details: [],
         summary: null,
         trendData: [],
         searchKeyword: ''
-    };
-
-    // State khusus untuk Peta
-    let mapState = {
-        geoLayer: null,
-        popByKode: new Map(),
-        popByName: new Map(),
-        currentTahun: null
     };
 
     // ==================== DOC ELEMENTS ====================
@@ -45,8 +38,7 @@
         elements.tableNote = document.getElementById('table-note');
         elements.searchInput = document.getElementById('table-search');
         elements.trendChart = document.getElementById('trendChart');
-        elements.filterKabupaten = document.getElementById('filter-kabupaten');
-        elements.acehMap = document.getElementById('aceh-map'); // Elemen Peta
+        elements.filterTrend = document.getElementById('filter-trend');
     }
 
     // ==================== UTILITY FUNCTIONS ====================
@@ -70,13 +62,13 @@
 
     function showLoading(element, message = 'Memuat data...') {
         if (element) {
-            element.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">${message}</td></tr>`;
+            element.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">${message}</td></tr>`;
         }
     }
 
     function showError(element, message = 'Gagal memuat data') {
         if (element) {
-            element.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-danger">${message}</td></tr>`;
+            element.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-danger">${message}</td></tr>`;
         }
     }
 
@@ -84,7 +76,7 @@
 
     async function fetchYears() {
         try {
-            const response = await fetch(`${CONFIG.API_BASE_URL}/years`);
+            const response = await fetch(`${CONFIG.API_BASE_URL}/tahun`);
             const result = await response.json();
             if (result.success) {
                 state.years = result.data;
@@ -99,149 +91,82 @@
 
     async function fetchIndexData(tahun, search = '') {
         try {
-            let url = `${CONFIG.API_BASE_URL}/index?tahun=${tahun}&per_page=${CONFIG.DEFAULT_PER_PAGE}`;
-            if (search) url += `&search=${encodeURIComponent(search)}`;
-
-            const response = await fetch(url);
+            const response = await fetch(`${CONFIG.API_BASE_URL}/jumlah-penduduk`);
             const result = await response.json();
 
             if (result.success) {
-                state.currentYear = result.data.tahun_aktif;
-                state.summary = result.data.summary;
-                state.details = result.data.details.data;
-                state.trendData = result.data.tren;
+                const rows = result.data;
+                const current = rows.find(r => Number(r.tahun) === Number(tahun));
+                const prev = rows.find(r => Number(r.tahun) === Number(tahun) - 1);
+
+                state.currentYear = tahun;
+                state.summary = {
+                    total_penduduk: current ? Number(current.jumlah) : 0,
+                    total_tahun_lalu: prev ? Number(prev.jumlah) : 0,
+                    pertumbuhan_persen: (current && prev && prev.jumlah > 0)
+                        ? ((current.jumlah - prev.jumlah) / prev.jumlah) * 100
+                        : 0,
+                };
+                state.details = [];
+                state.trendData = rows.map(r => ({ tahun: Number(r.tahun), total: Number(r.jumlah) }));
                 return true;
             }
             return false;
         } catch (error) {
-            console.error('Error fetch index:', error);
+            console.error('Error fetch data:', error);
             return false;
         }
     }
 
-    // ==================== MAP FUNCTIONS ====================
-
-    // Normalisasi untuk pencocokan nama/kode yang toleran
-    const normKode = (k) => String(k || '').replace(/\D/g, '');
-    const normName = (n) => String(n || '')
-        .toUpperCase()
-        .replace(/^KABUPATEN\s+/, '')
-        .replace(/^KAB.?\s+/, '')
-        .replace(/^KOTA\s+/, '')
-        .replace(/[^A-Z]/g, '');
-
-    function lookupMapData(props) {
-        return mapState.popByName.get(normName(props.nama)) || mapState.popByKode.get(normKode(props.kode)) || null;
-    }
-
-    function getColor(pop) {
-        return pop > 500000 ? '#7f0000' :
-               pop > 400000 ? '#b30000' :
-               pop > 300000 ? '#d7301f' :
-               pop > 200000 ? '#ef6548' :
-               pop > 0       ? '#fcbba1' : '#e3e7ee';
-    }
-
-    function styleFeature(feature) {
-        const d = lookupMapData(feature.properties);
-        return {
-            color: '#ffffff',
-            weight: 1,
-            fillColor: getColor(d ? d.jumlah_penduduk : 0),
-            fillOpacity: 0.8,
-        };
-    }
-
-    function tooltipHtml(props) {
-        const d = lookupMapData(props);
-        if (!d) {
-            return `<strong>${props.nama}</strong><br>Tidak ada data untuk tahun ${mapState.currentTahun ?? '-'}`;
-        }
-        const growth = (d.pertumbuhan_persen === null || d.pertumbuhan_persen === undefined)
-            ? ''
-            : `<br>Pertumbuhan: ${d.pertumbuhan_persen > 0 ? '+' : ''}${d.pertumbuhan_persen}%`;
-            
-        return `<strong>${d.nama}</strong><br>
-                Tahun ${mapState.currentTahun}: ${formatNumber(d.jumlah_penduduk)} ${(d.satuan || 'jiwa').toLowerCase()}<br>
-                Peringkat ${d.peringkat} dari ${mapState.popByKode.size}${growth}`;
-    }
-
-    function onEachFeature(feature, layer) {
-        layer.bindTooltip('', { sticky: true, className: 'map-tip' });
-        layer.on({
-            mouseover: (e) => {
-                e.target.setStyle({ weight: 3, fillOpacity: 0.95 });
-                e.target.bringToFront();
-                e.target.setTooltipContent(tooltipHtml(feature.properties));
-            },
-            mouseout: (e) => {
-                if (mapState.geoLayer) mapState.geoLayer.resetStyle(e.target);
-            },
-            click: () => {
-                const d = lookupMapData(feature.properties);
-                if (elements.filterKabupaten && d) {
-                    elements.filterKabupaten.value = d.kode;
-                    elements.filterKabupaten.dispatchEvent(new Event('change'));
-                }
-            },
-        });
-    }
-
-    async function loadPopulationForYearMap(tahun) {
+    async function fetchKabupatenOptions() {
         try {
-            const url = `${CONFIG.API_BASE_URL}/map${tahun ? '?tahun=' + tahun : ''}`;
-            const res = await fetch(url);
-            const body = await res.json();
-            
-            if (!body.success) throw new Error(body.message || 'Gagal memuat data peta');
-            
-            mapState.currentTahun = body.data.tahun;
-            mapState.popByKode = new Map();
-            mapState.popByName = new Map();
-            
-            body.data.kabupaten.forEach((row) => {
-                mapState.popByKode.set(normKode(row.kode), row);
-                mapState.popByName.set(normName(row.nama), row);
-            });
-            
-            if (mapState.geoLayer) {
-                mapState.geoLayer.setStyle(styleFeature);
+            const response = await fetch(`${CONFIG.API_BASE_URL}/trend-pertumbuhan`);
+            const result = await response.json();
+            if (result.success) {
+                state.kabupaten = result.data.kabupaten;
+                return true;
             }
-        } catch (err) {
-            console.error('Gagal memuat data peta:', err);
+            return false;
+        } catch (error) {
+            console.error('Error fetch kabupaten:', error);
+            return false;
         }
     }
 
-    async function initMap() {
-        if (!elements.acehMap) return;
-        if (typeof L === 'undefined') {
-            console.warn('Leaflet belum termuat. Peta tidak dapat diinisialisasi.');
-            return;
-        }
-
-        const map = L.map(elements.acehMap, { scrollWheelZoom: false }).setView([4.7, 96.8], 8);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap',
-            maxZoom: 20,
-        }).addTo(map);
-
+    async function fetchTrendPerKabupaten(nama) {
         try {
-            // Ambil URL dari meta tag atau fallback ke path default
-            const geojsonUrl = document.querySelector('meta[name="geojson-url"]')?.content || '/assets/data/aceh-kabupaten.geojson';
-            const geojson = await fetch(geojsonUrl).then((r) => r.json());
-            
-            // Load data tahun terbaru saat inisialisasi
-            await loadPopulationForYearMap(null); 
-            
-            mapState.geoLayer = L.geoJSON(geojson, { 
-                style: styleFeature, 
-                onEachFeature 
-            }).addTo(map);
-            
-            map.fitBounds(mapState.geoLayer.getBounds(), { padding: [12, 12] });
-            
-        } catch (err) {
-            console.error('Gagal memuat peta GeoJSON:', err);
+            const response = await fetch(`${CONFIG.API_BASE_URL}/trend-pertumbuhan?wilayah=${encodeURIComponent(nama)}`);
+            const result = await response.json();
+            if (result.success) {
+                state.trendData = result.data.tren.map(r => ({ tahun: r.tahun, total: r.jumlah }));
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error fetch tren kabupaten:', error);
+            return false;
+        }
+    }
+
+    async function fetchTableData(tahun, search = '') {
+        try {
+            let url = `${CONFIG.API_BASE_URL}/detail-penduduk`;
+            const params = new URLSearchParams();
+            if (tahun) params.set('tahun', tahun);
+            if (search) params.set('search', search);
+            const qs = params.toString();
+            if (qs) url += `?${qs}`;
+
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.details = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error fetch detail:', error);
+            return false;
         }
     }
 
@@ -263,6 +188,18 @@
         });
     }
 
+    function renderTrendSelect() {
+        if (!elements.filterTrend || !state.kabupaten || state.kabupaten.length === 0) return;
+        elements.filterTrend.innerHTML = '<option value="">Seluruh Aceh (total)</option>';
+
+        state.kabupaten.forEach((kab) => {
+            const option = document.createElement('option');
+            option.value = kab.nama;
+            option.textContent = kab.nama;
+            elements.filterTrend.appendChild(option);
+        });
+    }
+
     function renderSummary() {
         if (!state.summary) return;
         if (elements.statTotal) elements.statTotal.textContent = formatNumber(state.summary.total_penduduk);
@@ -277,7 +214,7 @@
     function renderTable() {
         if (!elements.tableBody) return;
         if (!state.details || state.details.length === 0) {
-            elements.tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">Tidak ada data ditemukan</td></tr>`;
+            elements.tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">Tidak ada data ditemukan</td></tr>`;
             return;
         }
         elements.tableBody.innerHTML = '';
@@ -287,7 +224,6 @@
                 <td class="px-4 py-3">${item.nama_kabupaten_kota}</td>
                 <td class="px-4 py-3 text-end">${item.tahun}</td>
                 <td class="px-4 py-3 text-end fw-semibold">${formatNumber(item.jumlah_penduduk)}</td>
-                <td class="px-4 py-3 text-end text-muted">${item.satuan || 'jiwa'}</td>
             `;
             elements.tableBody.appendChild(row);
         });
@@ -305,6 +241,20 @@
 
         const labels = state.trendData.map(item => item.tahun);
         const data = state.trendData.map(item => item.total);
+
+        const nilaiMax = Math.max(...data, 0);
+
+        let skala = 1, awalan = '';
+        if (nilaiMax >= 1e9)      { skala = 1e9; awalan = 'B'; }
+        else if (nilaiMax >= 1e6) { skala = 1e6; awalan = 'M'; }
+        else if (nilaiMax >= 1e3) { skala = 1e3; awalan = 'K'; }
+
+        function formatTick(v) {
+            const hasil = v / skala;
+            if (skala === 1) return v.toLocaleString('id-ID');
+            return (hasil >= 100 ? Math.round(hasil).toString()
+                : hasil.toFixed(hasil % 1 === 0 ? 0 : 1)) + awalan;
+        }
 
         window.trendChartInstance = new Chart(ctx, {
             type: 'line',
@@ -345,9 +295,10 @@
                 },
                 scales: {
                     y: {
-                        beginAtZero: false,
+                        beginAtZero: true,
+                        suggestedMax: Math.ceil((nilaiMax * 1.2) / skala) * skala,
                         ticks: {
-                            callback: function(value) { return (value / 1000000).toFixed(2) + 'M'; },
+                            callback: formatTick,
                             font: { size: 11 },
                             color: '#8892a4'
                         },
@@ -372,6 +323,8 @@
         }
         renderYearDropdown();
         await loadData(state.currentYear);
+        await fetchKabupatenOptions();
+        renderTrendSelect();
     }
 
     async function loadData(tahun, search = '') {
@@ -379,10 +332,17 @@
         const success = await fetchIndexData(tahun, search);
         if (success) {
             renderSummary();
-            renderTable();
             renderTrendChart();
         } else {
             showError(elements.tableBody, 'Gagal memuat data dari server');
+            return;
+        }
+
+        const tableOk = await fetchTableData(tahun, search);
+        if (tableOk) {
+            renderTable();
+        } else {
+            showError(elements.tableBody, 'Gagal memuat tabel');
         }
     }
 
@@ -391,8 +351,24 @@
         if (selectedYear) {
             state.currentYear = selectedYear;
             loadData(selectedYear, state.searchKeyword);
-            loadPopulationForYearMap(selectedYear); // Update peta secara sinkron
         }
+    }
+
+    function handleTrendFilterChange(event) {
+        const nama = event.target.value;
+
+        if (!nama) {
+            loadData(state.currentYear, state.searchKeyword);
+            return;
+        }
+
+        fetchTrendPerKabupaten(nama).then((ok) => {
+            if (ok) {
+                renderTrendChart();
+            } else {
+                console.error('Gagal memuat tren untuk:', nama);
+            }
+        });
     }
 
     const handleSearch = debounce(function(event) {
@@ -411,6 +387,9 @@
         if (elements.searchInput) {
             elements.searchInput.addEventListener('input', handleSearch);
         }
+        if (elements.filterTrend) {
+            elements.filterTrend.addEventListener('change', handleTrendFilterChange);
+        }
     }
 
     // ==================== INITIALIZATION ====================
@@ -419,9 +398,6 @@
         console.log('%c Aceh Data Warehouse - Jumlah Penduduk ', 'background: #0d9488; color: #fff; font-size: 12px; padding: 4px 8px; border-radius: 4px;');
         cacheElements();
         attachEventListeners();
-        
-        // Inisialisasi Peta
-        initMap();
         
         // Load data awal (Tabel, Chart, Summary)
         loadInitialData();

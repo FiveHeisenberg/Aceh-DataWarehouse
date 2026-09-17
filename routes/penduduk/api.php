@@ -13,49 +13,35 @@ use App\Http\Controllers\Penduduk\PendudukApiController;
 */
 
 Route::prefix('penduduk')->group(function () {
-    
-    /**
-     * GET /api/penduduk/years
-     * Ambil daftar tahun yang tersedia di database
-     */
-    Route::get('/years', [PendudukApiController::class, 'getYears'])
-        ->name('penduduk.api.years');
 
     /**
-     * GET /api/penduduk/index
-     * Ambil summary + detail data penduduk
-     * Query params: ?tahun=2023&search=banda&per_page=25
+     * GET /api/penduduk/tahun
+     * Daftar tahun yang tersedia (untuk filter tahun)
      */
-    Route::get('/index', [PendudukApiController::class, 'getIndex'])
-        ->name('penduduk.api.index');
+    Route::get('/tahun', [PendudukApiController::class, 'getTahun'])
+        ->name('penduduk.api.tahun');
 
     /**
-     * GET /api/penduduk/detail/{kode_kabupaten}
-     * Ambil detail data per kabupaten/kota
+     * GET /api/penduduk/jumlah-penduduk
+     * Jumlah penduduk (COUNT) per tahun
      */
-    Route::get('/detail/{kode_kabupaten}', [PendudukApiController::class, 'getDetail'])
-        ->name('penduduk.api.detail');
+    Route::get('/jumlah-penduduk', [PendudukApiController::class, 'getJumlahPenduduk'])
+        ->name('penduduk.api.jumlah-penduduk');
 
     /**
-     * GET /api/penduduk/tren
-     * Ambil data tren untuk chart
-     * Query params: ?kode_kab=1101&tahun_mulai=2020&tahun_akhir=2023
+     * GET /api/penduduk/map-jumlah-penduduk
+     * Data per kabupaten untuk peta choropleth
      */
-    Route::get('/tren', [PendudukApiController::class, 'getTren'])
-        ->name('penduduk.api.tren');
+    Route::get('/map-jumlah-penduduk', [PendudukApiController::class, 'getMapData'])
+        ->name('penduduk.api.map-jumlah-penduduk');
 
-    // Tambahkan ini di dalam group Route::prefix('penduduk')
-    // MAP MAP MAP
-    Route::get('/map', [PendudukApiController::class, 'getMapData'])
-    ->name('penduduk.api.map');
+    /**
+     * GET /api/penduduk/trend-pertumbuhan
+     * List kabupaten (tanpa param) atau tren per tahun (dengan ?wilayah=)
+     */
+    Route::get('/trend-pertumbuhan', [PendudukApiController::class, 'getTrendPertumbuhan'])
+        ->name('penduduk.api.trend-pertumbuhan');
 
-    // Group untuk Kartu Keluarga
-    Route::prefix('kk')->group(function () {
-        Route::get('/years', [PendudukApiController::class, 'getKKYears'])
-            ->name('kk.api.years');
-        
-        Route::get('/index', [PendudukApiController::class, 'getKKIndex'])
-            ->name('kk.api.index');
-    });
-
+    Route::get('/detail-penduduk', [PendudukApiController::class, 'getDetailPenduduk'])
+        ->name('penduduk.api.detail-penduduk');
 });

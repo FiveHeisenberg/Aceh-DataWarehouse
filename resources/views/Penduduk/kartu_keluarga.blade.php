@@ -451,8 +451,5 @@
 <!-- CHART JS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<!-- Custom JS untuk Kartu Keluarga -->
-<script src="{{ asset('js/penduduk/kartu_keluarga.js') }}"></script>
-
 </body>
 </html>
