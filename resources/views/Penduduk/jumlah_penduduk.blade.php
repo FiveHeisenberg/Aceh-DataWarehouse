@@ -240,26 +240,21 @@
 
                         <!-- Detail Table -->
                         <div class="card" style="border: 1px solid #e0e4f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                            <div class="card-header border-0 p-3" style="background-color: #ffffff; border-radius: 12px 12px 0 0;">
+                            <div class="card-header border-0 pt-3" style="background-color: #ffffff; border-radius: 12px 12px 0 0;">
                                 <h2 class="mb-1" style="font-weight: 700; color: #1a1a2e; font-size: 18px;">Detail Kabupaten/Kota</h2>
-                                <small id="table-note" style="color: #8892a4; font-size: 13px;">-</small>
-                                <div class="position-relative mt-2">
-                                    <i class="bi bi-search position-absolute" style="left: 12px; top: 50%; transform: translateY(-50%); color: #8892a4;"></i>
-                                    <input id="table-search" type="search" class="form-control ps-5" placeholder="Cari wilayah..." style="border-radius: 6px; border: 1px solid #d0d8e0; font-size: 14px;">
-                                </div>
                             </div>
                             <div class="card-body p-0">
-                                <div class="table-responsive" style="max-height: 520px; overflow-y: auto;">
+                                <div class="table-responsive" style="max-height: calc(34px * 6 + 32px); overflow-y: auto;">
                                     <table class="table table-hover mb-0" style="font-size: 14px;">
-                                        <thead style="background-color: #eef2f9;">
+                                        <thead style="background-color: #eef2f9;" position: sticky; top: 0; z-index: 1;>
                                             <tr>
-                                                <th class="px-3 py-3" style="font-weight: 700; color: #1a1a2e; border-bottom: 1px solid #d8dde8;">Kota/Kabupaten</th>
-                                                <th class="px-3 py-3 text-end" style="font-weight: 700; color: #1a1a2e; border-bottom: 1px solid #d8dde8;">
+                                                <th class="px-3 py-1" style="font-weight: 700; color: #1a1a2e; border-bottom: 1px solid #d8dde8;">Kota/Kabupaten</th>
+                                                <th class="px-3 py-1 text-end" style="font-weight: 700; color: #1a1a2e; border-bottom: 1px solid #d8dde8;">
                                                     <button class="btn btn-sm p-0" style="color: #1a1a2e; font-weight: 700;">
                                                         Tahun
                                                     </button>
                                                 </th>
-                                                <th class="px-3 py-3 text-end" style="font-weight: 700; color: #1a1a2e; border-bottom: 1px solid #d8dde8;">Jumlah</th>
+                                                <th class="px-3 py-1 text-end" style="font-weight: 700; color: #1a1a2e; border-bottom: 1px solid #d8dde8;">Jumlah</th>
                                             </tr>
                                         </thead>
                                         <tbody id="table-body">
@@ -273,6 +268,146 @@
                         </div>
 
                     </div>
+                </div>
+
+                <!-- ==================== ROW TAMBAHAN: Demografi Detail (Dummy Data) ==================== -->
+                <div class="row g-4 mt-1">
+
+                    <!-- Struktur Kelompok Umur -->
+                    <div class="col-lg-6">
+                        <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                            <div class="card-header border-0 p-3" style="background-color: #ffffff; border-radius: 12px 12px 0 0;">
+                                <h2 class="mb-0" style="font-weight: 700; color: #1a1a2e; font-size: 18px;">Struktur Kelompok Umur</h2>
+                            </div>
+                            <div class="card-body p-3 pt-0" id="struktur-umur-container">
+                                <div class="text-center py-4 text-muted">Memuat data...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Kategori Kelompok Umur (Piramida Penduduk) -->
+                    <div class="col-lg-6">
+                        <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                            <div class="card-header border-0 d-flex align-items-center justify-content-between p-3" style="background-color: #ffffff; border-radius: 12px 12px 0 0;">
+                                <h2 class="mb-0" style="font-weight: 700; color: #1a1a2e; font-size: 18px;">Kategori Umur Berdasarkan Jenis Kelamin</h2>
+                                <div class="d-flex align-items-center" style="gap: 14px; font-size: 12px; color: #5a6577;">
+                                    <span><span style="display:inline-block;width:10px;height:10px;background-color:#2563a8;border-radius:2px;margin-right:5px;"></span>Laki-laki (389.400)</span>
+                                    <span><span style="display:inline-block;width:10px;height:10px;background-color:#0d9488;border-radius:2px;margin-right:5px;"></span>Perempuan (381.500)</span>
+                                </div>
+                            </div>
+                            <div class="card-body p-3">
+                                <canvas id="pyramidChart" style="width: 100%; height: 260px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Status Perkawinan -->
+                    <div class="col-lg-6">
+                        <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                            <div class="card-header border-0 p-3" style="background-color: #ffffff; border-radius: 12px 12px 0 0;">
+                                <h2 class="mb-0" style="font-weight: 700; color: #1a1a2e; font-size: 18px;">Status Perkawinan</h2>
+                            </div>
+                            <div class="card-body p-3 pt-0">
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <div class="p-3 h-100" style="background-color: #f4f6fb; border-radius: 10px;">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <span class="text-uppercase" style="font-size: 11px; font-weight: 700; color: #5a6577; letter-spacing: 0.4px;">Sudah Kawin</span>
+                                            </div>
+                                            <div style="font-weight: 800; color: #1a1a2e; font-size: 22px;">3.015.375</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-3 h-100" style="background-color: #f4f6fb; border-radius: 10px;">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <span class="text-uppercase" style="font-size: 11px; font-weight: 700; color: #5a6577; letter-spacing: 0.4px;">Belum Kawin</span>
+                                            </div>
+                                            <div style="font-weight: 800; color: #1a1a2e; font-size: 22px;">2.138.175</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-3 h-100" style="background-color: #f4f6fb; border-radius: 10px;">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <span class="text-uppercase" style="font-size: 11px; font-weight: 700; color: #5a6577; letter-spacing: 0.4px;">Cerai Mati</span>
+                                            </div>
+                                            <div style="font-weight: 800; color: #1a1a2e; font-size: 22px;">219.300</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="p-3 h-100" style="background-color: #f4f6fb; border-radius: 10px;">
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <span class="text-uppercase" style="font-size: 11px; font-weight: 700; color: #5a6577; letter-spacing: 0.4px;">Cerai Hidup</span>
+                                            </div>
+                                            <div style="font-weight: 800; color: #1a1a2e; font-size: 22px;">109.650</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Komposisi Agama -->
+                    <div class="col-lg-6">
+                        <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                            <div class="card-header border-0 p-3" style="background-color: #ffffff; border-radius: 12px 12px 0 0;">
+                                <h2 class="mb-0" style="font-weight: 700; color: #1a1a2e; font-size: 18px;">Komposisi Agama</h2>
+                            </div>
+                            <div class="card-body p-3 pt-0">
+
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span style="font-size: 13px; color: #1a1a2e;"><span style="display:inline-block;width:8px;height:8px;background-color:#0d9488;border-radius:50%;margin-right:6px;"></span>Islam</span>
+                                        <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">5.404.100 jiwa (98,57%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 5px; background-color: #eef0f5;">
+                                        <div class="progress-bar" style="width: 98.57%; background-color: #0d9488;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span style="font-size: 13px; color: #1a1a2e;"><span style="display:inline-block;width:8px;height:8px;background-color:#2563a8;border-radius:50%;margin-right:6px;"></span>Kristen Protestan</span>
+                                        <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">64.690 jiwa (1,18%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 5px; background-color: #eef0f5;">
+                                        <div class="progress-bar" style="width: 8%; background-color: #2563a8;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span style="font-size: 13px; color: #1a1a2e;"><span style="display:inline-block;width:8px;height:8px;background-color:#5eead4;border-radius:50%;margin-right:6px;"></span>Buddha</span>
+                                        <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">7.130 jiwa (0,13%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 5px; background-color: #eef0f5;">
+                                        <div class="progress-bar" style="width: 4%; background-color: #5eead4;"></div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span style="font-size: 13px; color: #1a1a2e;"><span style="display:inline-block;width:8px;height:8px;background-color:#8892a4;border-radius:50%;margin-right:6px;"></span>Katolik</span>
+                                        <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">6.030 jiwa (0,11%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 5px; background-color: #eef0f5;">
+                                        <div class="progress-bar" style="width: 3.5%; background-color: #8892a4;"></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span style="font-size: 13px; color: #1a1a2e;"><span style="display:inline-block;width:8px;height:8px;background-color:#c4c9d4;border-radius:50%;margin-right:6px;"></span>Hindu &amp; Kepercayaan Lain</span>
+                                        <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">550 jiwa (0,01%)</span>
+                                    </div>
+                                    <div class="progress" style="height: 5px; background-color: #eef0f5;">
+                                        <div class="progress-bar" style="width: 1%; background-color: #c4c9d4;"></div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 <!-- Footer -->
@@ -308,6 +443,72 @@
 
 <!-- 5. Custom JS Peta (Menangani Leaflet & Choropleth) -->
 <script src="{{ asset('js/penduduk/map-leaflet.js') }}"></script>
+
+<!-- 6. Piramida Penduduk (Dummy Data - ganti dengan data API saat integrasi) -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const ageGroups = ['0-4', '10-14', '20-24', '30-34', '40-44', '50-54', '60-64', '70-74', '75+'];
+    const lakiLaki   = [58500, 56200, 61900, 59400, 52300, 43800, 29200, 17100, 11000];  // jumlah jiwa
+    const perempuan  = [56200, 53900, 59800, 56100, 50800, 42700, 31600, 18300, 12200];  // jumlah jiwa
+
+    const ctx = document.getElementById('pyramidChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ageGroups,
+            datasets: [
+                {
+                    label: 'Laki-laki',
+                    data: lakiLaki.map(v => -v),
+                    backgroundColor: '#2563a8',
+                    borderRadius: 3,
+                    barThickness: 14
+                },
+                {
+                    label: 'Perempuan',
+                    data: perempuan,
+                    backgroundColor: '#0d9488',
+                    borderRadius: 3,
+                    barThickness: 14
+                }
+            ]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (item) {
+                            return item.dataset.label + ': ' + Math.abs(item.raw).toLocaleString('id-ID') + ' jiwa';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                    min: -70000,
+                    max: 70000,
+                    grid: { color: '#eef0f5' },
+                    ticks: {
+                        callback: function (value) { return Math.abs(value).toLocaleString('id-ID'); },
+                        color: '#8892a4',
+                        font: { size: 11 }
+                    }
+                },
+                y: {
+                    stacked: true,
+                    grid: { display: false },
+                    ticks: { color: '#5a6577', font: { size: 11 } }
+                }
+            }
+        }
+    });
+});
+</script>
 
 </body>
 </html>

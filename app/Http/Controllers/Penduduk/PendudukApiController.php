@@ -221,4 +221,57 @@ class PendudukApiController extends Controller
         }
     }
 
+    public function getStrukturUmur(Request $request): JsonResponse
+    {
+        try {
+            $tahun = $request->input('tahun');
+
+            $query = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
+                ->selectRaw("
+                    CASE
+                        WHEN fp.umur BETWEEN 0 AND 5 THEN '0-5'
+                        WHEN fp.umur BETWEEN 6 AND 9 THEN '6-9'
+                        WHEN fp.umur BETWEEN 10 AND 17 THEN '10-17'
+                        WHEN fp.umur BETWEEN 18 AND 59 THEN '18-59'
+                        WHEN fp.umur >= 60 THEN '60+'
+                        ELSE 'Tidak Diketahui'
+                    END AS range_umur,
+                    CASE
+                        WHEN fp.umur BETWEEN 0 AND 5 THEN 'Bayi dan Balita'
+                        WHEN fp.umur BETWEEN 6 AND 9 THEN 'Anak-anak'
+                        WHEN fp.umur BETWEEN 10 AND 17 THEN 'Remaja'
+                        WHEN fp.umur BETWEEN 18 AND 59 THEN 'Dewasa'
+                        WHEN fp.umur >= 60 THEN 'Lansia'
+                        ELSE 'Tidak Diketahui'
+                    END AS kategori,
+                    COUNT(*) AS jumlah
+                ")
+                ->groupByRaw("1, 2");
+
+            if ($tahun) {
+                $query->where('dw.tahun', $tahun);
+            }
+
+            $data = $query
+                ->orderByRaw("FIELD(range_umur, '0-5', '6-9', '10-17', '18-59', '60+', 'Tidak Diketahui')")
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data struktur kelompok umur berhasil diambil',
+                'data' => $data->map(fn($r) => [
+                    'range_umur' => $r->range_umur,
+                    'kategori' => $r->kategori,
+                    'jumlah' => (int) $r->jumlah,
+                ])->values(),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data struktur kelompok umur: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
 }

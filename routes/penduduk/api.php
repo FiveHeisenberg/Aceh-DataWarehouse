@@ -44,4 +44,11 @@ Route::prefix('penduduk')->group(function () {
 
     Route::get('/detail-penduduk', [PendudukApiController::class, 'getDetailPenduduk'])
         ->name('penduduk.api.detail-penduduk');
+
+    /**
+     * GET /api/penduduk/struktur-umur
+     * Struktur kelompok umur berdasarkan range umur
+     */
+    Route::get('/struktur-umur', [PendudukApiController::class, 'getStrukturUmur'])
+        ->name('penduduk.api.struktur-umur');
 });

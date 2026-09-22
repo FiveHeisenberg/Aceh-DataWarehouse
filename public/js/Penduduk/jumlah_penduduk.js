@@ -11,19 +11,18 @@
     // ==================== KONFIGURASI ====================
     const CONFIG = {
         API_BASE_URL: '/api/penduduk',
-        DEFAULT_PER_PAGE: 25,
-        DEBOUNCE_DELAY: 300
+        DEFAULT_PER_PAGE: 25
     };
 
     // ==================== STATE ====================
     let state = {
         currentYear: null,
         years: [],
+        strukturUmur: [],
         kabupaten: [],
         details: [],
         summary: null,
-        trendData: [],
-        searchKeyword: ''
+        trendData: []
     };
 
     // ==================== DOC ELEMENTS ====================
@@ -35,8 +34,6 @@
         elements.statTotalSatuan = document.getElementById('stat-total-satuan');
         elements.statPertumbuhan = document.getElementById('stat-pertumbuhan');
         elements.tableBody = document.getElementById('table-body');
-        elements.tableNote = document.getElementById('table-note');
-        elements.searchInput = document.getElementById('table-search');
         elements.trendChart = document.getElementById('trendChart');
         elements.filterTrend = document.getElementById('filter-trend');
     }
@@ -46,18 +43,6 @@
     function formatNumber(num) {
         if (!num && num !== 0) return '—';
         return num.toLocaleString('id-ID');
-    }
-
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func.apply(this, args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
     }
 
     function showLoading(element, message = 'Memuat data...') {
@@ -89,7 +74,7 @@
         }
     }
 
-    async function fetchIndexData(tahun, search = '') {
+    async function fetchIndexData(tahun) {
         try {
             const response = await fetch(`${CONFIG.API_BASE_URL}/jumlah-penduduk`);
             const result = await response.json();
@@ -148,12 +133,11 @@
         }
     }
 
-    async function fetchTableData(tahun, search = '') {
+    async function fetchTableData(tahun) {
         try {
             let url = `${CONFIG.API_BASE_URL}/detail-penduduk`;
             const params = new URLSearchParams();
             if (tahun) params.set('tahun', tahun);
-            if (search) params.set('search', search);
             const qs = params.toString();
             if (qs) url += `?${qs}`;
 
@@ -166,6 +150,27 @@
             return false;
         } catch (error) {
             console.error('Error fetch detail:', error);
+            return false;
+        }
+    }
+
+    async function fetchStrukturUmur(tahun) {
+        try {
+            let url = `${CONFIG.API_BASE_URL}/struktur-umur`;
+            const params = new URLSearchParams();
+            if (tahun) params.set('tahun', tahun);
+            const qs = params.toString();
+            if (qs) url += `?${qs}`;
+
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.strukturUmur = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error fetch struktur umur:', error);
             return false;
         }
     }
@@ -227,7 +232,44 @@
             `;
             elements.tableBody.appendChild(row);
         });
-        if (elements.tableNote) elements.tableNote.textContent = `${state.details.length} baris`;
+    }
+
+    function renderStrukturUmur() {
+        const container = document.getElementById('struktur-umur-container');
+        if (!container) return;
+
+        if (!state.strukturUmur || state.strukturUmur.length === 0) {
+            container.innerHTML = `<div class="text-center py-4 text-muted">Tidak ada data ditemukan</div>`;
+            return;
+        }
+
+        const colorMap = {
+            '0-5': { bg: '#f4f6fb', dot: '#93c5fd', color: '#1a1a2e' },
+            '6-9': { bg: '#f4f6fb', dot: '#5eead4', color: '#1a1a2e' },
+            '10-17': { bg: '#f4f6fb', dot: '#38bdf8', color: '#1a1a2e' },
+            '18-59': { bg: '#e8f5f0', dot: '#0d9488', color: '#0d9488' },
+            '60+': { bg: '#f4f6fb', dot: '#c4c9d4', color: '#1a1a2e' },
+            'Tidak Diketahui': { bg: '#f4f6fb', dot: '#8892a4', color: '#1a1a2e' },
+        };
+
+        container.innerHTML = state.strukturUmur
+            .map((item) => {
+                const c = colorMap[item.range_umur] || colorMap['Tidak Diketahui'];
+                return `
+                    <div class="d-flex align-items-center justify-content-between p-3 mb-2" style="background-color: ${c.bg}; border-radius: 10px;">
+                        <div class="d-flex align-items-center">
+                            <span class="rounded-circle me-3" style="width: 10px; height: 10px; background-color: ${c.dot}; display: inline-block; flex-shrink: 0;"></span>
+                            <div>
+                                <div style="font-weight: 700; color: ${c.color}; font-size: 14px;">${item.kategori} (${item.range_umur})</div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div style="font-weight: 800; color: ${c.color}; font-size: 18px;">${formatNumber(item.jumlah)}</div>
+                        </div>
+                    </div>
+                `;
+            })
+            .join('');
     }
 
     function renderTrendChart() {
@@ -325,11 +367,13 @@
         await loadData(state.currentYear);
         await fetchKabupatenOptions();
         renderTrendSelect();
+        await fetchStrukturUmur(state.currentYear);
+        renderStrukturUmur();
     }
 
-    async function loadData(tahun, search = '') {
+    async function loadData(tahun) {
         showLoading(elements.tableBody, 'Memuat data...');
-        const success = await fetchIndexData(tahun, search);
+        const success = await fetchIndexData(tahun);
         if (success) {
             renderSummary();
             renderTrendChart();
@@ -338,19 +382,22 @@
             return;
         }
 
-        const tableOk = await fetchTableData(tahun, search);
+        const tableOk = await fetchTableData(tahun);
         if (tableOk) {
             renderTable();
         } else {
             showError(elements.tableBody, 'Gagal memuat tabel');
         }
+
+        await fetchStrukturUmur(tahun);
+        renderStrukturUmur();
     }
 
     function handleYearChange(event) {
         const selectedYear = parseInt(event.target.value);
         if (selectedYear) {
             state.currentYear = selectedYear;
-            loadData(selectedYear, state.searchKeyword);
+            loadData(selectedYear);
         }
     }
 
@@ -358,7 +405,7 @@
         const nama = event.target.value;
 
         if (!nama) {
-            loadData(state.currentYear, state.searchKeyword);
+            loadData(state.currentYear);
             return;
         }
 
@@ -371,21 +418,11 @@
         });
     }
 
-    const handleSearch = debounce(function(event) {
-        state.searchKeyword = event.target.value.trim();
-        if (state.currentYear) {
-            loadData(state.currentYear, state.searchKeyword);
-        }
-    }, CONFIG.DEBOUNCE_DELAY);
-
     // ==================== EVENT LISTENERS ====================
 
     function attachEventListeners() {
         if (elements.yearSelect) {
             elements.yearSelect.addEventListener('change', handleYearChange);
-        }
-        if (elements.searchInput) {
-            elements.searchInput.addEventListener('input', handleSearch);
         }
         if (elements.filterTrend) {
             elements.filterTrend.addEventListener('change', handleTrendFilterChange);
