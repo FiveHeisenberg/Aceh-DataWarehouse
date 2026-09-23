@@ -51,4 +51,25 @@ Route::prefix('penduduk')->group(function () {
      */
     Route::get('/struktur-umur', [PendudukApiController::class, 'getStrukturUmur'])
         ->name('penduduk.api.struktur-umur');
+
+    /**
+     * GET /api/penduduk/kartu-keluarga/summary
+     * Ringkasan total KK per kabupaten, pertumbuhan, dan wilayah terbanyak (?tahun=)
+     */
+    Route::get('/kartu-keluarga/summary', [PendudukApiController::class, 'getKartuKeluargaSummary'])
+        ->name('penduduk.api.kartu-keluarga.summary');
+
+    /**
+     * GET /api/penduduk/kartu-keluarga/trend
+     * Tren jumlah KK per tahun
+     */
+    Route::get('/kartu-keluarga/trend', [PendudukApiController::class, 'getKartuKeluargaTrend'])
+        ->name('penduduk.api.kartu-keluarga.trend');
+
+    /**
+     * GET /api/penduduk/kartu-keluarga/detail
+     * Rincian jumlah KK per kabupaten/kota (?tahun=)
+     */
+    Route::get('/kartu-keluarga/detail', [PendudukApiController::class, 'getKartuKeluargaDetail'])
+        ->name('penduduk.api.kartu-keluarga.detail');
 });

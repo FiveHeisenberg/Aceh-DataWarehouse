@@ -221,6 +221,135 @@ class PendudukApiController extends Controller
         }
     }
 
+    public function getKartuKeluargaSummary(Request $request): JsonResponse
+    {
+        try {
+            $tahun = $request->input('tahun');
+
+            if (!$tahun) {
+                $tahun = DB::table('fact_penduduk as fp')
+                    ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                    ->max('wt.tahun');
+            }
+
+            $perWilayah = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                ->select('dw.nama_kabupaten_kota as nama', DB::raw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah'))
+                ->whereNotNull('fp.kartu_keluarga_key')
+                ->where('wt.tahun', $tahun)
+                ->groupBy('dw.nama_kabupaten_kota')
+                ->orderByDesc('jumlah')
+                ->get();
+
+            $total = (int) $perWilayah->sum('jumlah');
+
+            $prevTotal = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->whereNotNull('fp.kartu_keluarga_key')
+                ->where('wt.tahun', $tahun - 1)
+                ->distinct()
+                ->count('fp.kartu_keluarga_key');
+
+            $pertumbuhan = ($prevTotal > 0)
+                ? round((($total - $prevTotal) / $prevTotal) * 100, 2)
+                : null;
+
+            $terbanyak = $perWilayah->first();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data kartu keluarga berhasil diambil',
+                'data' => [
+                    'tahun' => (int) $tahun,
+                    'total_kk' => $total,
+                    'pertumbuhan_persen' => $pertumbuhan,
+                    'jumlah_kabupaten' => $perWilayah->count(),
+                    'kabupaten_terbanyak' => $terbanyak ? [
+                        'nama' => $terbanyak->nama,
+                        'jumlah' => (int) $terbanyak->jumlah,
+                    ] : null,
+                ],
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data kartu keluarga: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getKartuKeluargaTrend(): JsonResponse
+    {
+        try {
+            $data = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->select('wt.tahun', DB::raw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah'))
+                ->whereNotNull('fp.kartu_keluarga_key')
+                ->groupBy('wt.tahun')
+                ->orderBy('wt.tahun', 'asc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data tren kartu keluarga berhasil diambil',
+                'data' => $data->map(fn($r) => [
+                    'tahun' => (int) $r->tahun,
+                    'jumlah' => (int) $r->jumlah,
+                ])->values(),
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data tren kartu keluarga: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getKartuKeluargaDetail(Request $request): JsonResponse
+    {
+        try {
+            $tahun = $request->input('tahun');
+
+            if (!$tahun) {
+                $tahun = DB::table('fact_penduduk as fp')
+                    ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                    ->max('wt.tahun');
+            }
+
+            $data = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                ->select('dw.nama_kabupaten_kota as nama', DB::raw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah'))
+                ->whereNotNull('fp.kartu_keluarga_key')
+                ->where('wt.tahun', $tahun)
+                ->groupBy('dw.nama_kabupaten_kota')
+                ->orderByDesc('jumlah')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data detail kartu keluarga berhasil diambil',
+                'data' => [
+                    'tahun' => (int) $tahun,
+                    'detail' => $data->map(fn($r) => [
+                        'nama_kabupaten_kota' => $r->nama,
+                        'jumlah_kk' => (int) $r->jumlah,
+                        'satuan' => 'KK',
+                    ])->values(),
+                ],
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data detail kartu keluarga: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function getStrukturUmur(Request $request): JsonResponse
     {
         try {
