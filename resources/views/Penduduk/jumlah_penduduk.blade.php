@@ -444,7 +444,7 @@
 <!-- 5. Custom JS Peta (Menangani Leaflet & Choropleth) -->
 <script src="{{ asset('js/penduduk/map-leaflet.js') }}"></script>
 
-<!-- 6. Piramida Penduduk (Dummy Data - ganti dengan data API saat integrasi) -->
+<!-- 6. Piramida Penduduk -->
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const ageGroups = ['0-4', '10-14', '20-24', '30-34', '40-44', '50-54', '60-64', '70-74', '75+'];
