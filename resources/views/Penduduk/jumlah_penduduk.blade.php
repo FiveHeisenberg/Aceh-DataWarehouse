@@ -291,12 +291,14 @@
                             <div class="card-header border-0 d-flex align-items-center justify-content-between p-3" style="background-color: #ffffff; border-radius: 12px 12px 0 0;">
                                 <h2 class="mb-0" style="font-weight: 700; color: #1a1a2e; font-size: 18px;">Kategori Umur Berdasarkan Jenis Kelamin</h2>
                                 <div class="d-flex align-items-center" style="gap: 14px; font-size: 12px; color: #5a6577;">
-                                    <span><span style="display:inline-block;width:10px;height:10px;background-color:#2563a8;border-radius:2px;margin-right:5px;"></span>Laki-laki (389.400)</span>
-                                    <span><span style="display:inline-block;width:10px;height:10px;background-color:#0d9488;border-radius:2px;margin-right:5px;"></span>Perempuan (381.500)</span>
+                                    <span><span style="display:inline-block;width:10px;height:10px;background-color:#2563a8;border-radius:2px;margin-right:5px;"></span><span id="legend-total-l">Laki-Laki (-)</span></span>
+                                    <span><span style="display:inline-block;width:10px;height:10px;background-color:#0d9488;border-radius:2px;margin-right:5px;"></span><span id="legend-total-p">Perempuan (-)</span></span>
                                 </div>
                             </div>
                             <div class="card-body p-3">
-                                <canvas id="pyramidChart" style="width: 100%; height: 260px;"></canvas>
+                                <div style="height: 360px">
+                                    <canvas id='pyramidChart'></canvas>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -444,71 +446,7 @@
 <!-- 5. Custom JS Peta (Menangani Leaflet & Choropleth) -->
 <script src="{{ asset('js/penduduk/map-leaflet.js') }}"></script>
 
-<!-- 6. Piramida Penduduk -->
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const ageGroups = ['0-4', '10-14', '20-24', '30-34', '40-44', '50-54', '60-64', '70-74', '75+'];
-    const lakiLaki   = [58500, 56200, 61900, 59400, 52300, 43800, 29200, 17100, 11000];  // jumlah jiwa
-    const perempuan  = [56200, 53900, 59800, 56100, 50800, 42700, 31600, 18300, 12200];  // jumlah jiwa
 
-    const ctx = document.getElementById('pyramidChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ageGroups,
-            datasets: [
-                {
-                    label: 'Laki-laki',
-                    data: lakiLaki.map(v => -v),
-                    backgroundColor: '#2563a8',
-                    borderRadius: 3,
-                    barThickness: 14
-                },
-                {
-                    label: 'Perempuan',
-                    data: perempuan,
-                    backgroundColor: '#0d9488',
-                    borderRadius: 3,
-                    barThickness: 14
-                }
-            ]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function (item) {
-                            return item.dataset.label + ': ' + Math.abs(item.raw).toLocaleString('id-ID') + ' jiwa';
-                        }
-                    }
-                }
-            },
-            scales: {
-                x: {
-                    stacked: true,
-                    min: -70000,
-                    max: 70000,
-                    grid: { color: '#eef0f5' },
-                    ticks: {
-                        callback: function (value) { return Math.abs(value).toLocaleString('id-ID'); },
-                        color: '#8892a4',
-                        font: { size: 11 }
-                    }
-                },
-                y: {
-                    stacked: true,
-                    grid: { display: false },
-                    ticks: { color: '#5a6577', font: { size: 11 } }
-                }
-            }
-        }
-    });
-});
-</script>
 
 </body>
 </html>

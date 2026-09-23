@@ -403,4 +403,67 @@ class PendudukApiController extends Controller
         }
     }
 
+    public function getPiramidaUmur(Request $request): JsonResponse
+    {
+        try {
+            $tahun = $request->input('tahun');
+
+            $query = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
+                ->join('dim_penduduk as dp', 'fp.penduduk_key', '=', 'dp.penduduk_key')
+                ->whereNotNull('fp.umur')
+                ->selectRaw("
+                    FLOOR(fp.umur/5) * 5 AS bucket_start,
+                    dp.jenis_kelamin,
+                    SUM(fp.jumlah_penduduk) AS jumlah
+                ")
+                ->groupByRaw('FLOOR(fp.umur / 5) * 5, dp.jenis_kelamin');
+            
+            if ($tahun) {
+                $query->where('dw.tahun', $tahun);
+            }
+
+            $rows = $query->get();
+
+            $labels = [];
+            for ($b=0; $b <= 70 ; $b += 5) { 
+                $labels[] = $b . '-' . ($b + 4);
+            }
+            $labels[] = '75+';
+
+            $lakiLaki = array_fill(0, count($labels), 0);
+            $perempuan = array_fill(0, count($labels), 0);
+
+            foreach ($rows as $row) {
+                $bucket = (int) $row->bucket_start;
+                $idx = $bucket >= 75 ? count($labels) - 1: intdiv($bucket, 5);
+                if ($idx < 0 || $idx >= count($labels)) {
+                    continue;
+                }
+
+                if ($row->jenis_kelamin === 'P') {
+                    $perempuan[$idx] += (int) $row->jumlah;
+                } else {
+                    $lakiLaki[$idx] += (int) $row->jumlah;
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data Piramida Penduduk Berhasil diambil',
+                'data' => [
+                    'labels'    => $labels,
+                    'laki_laki' => $lakiLaki,
+                    'perempuan' => $perempuan,
+                    'total_laki_laki'   => array_sum($lakiLaki),
+                    'total_perempuan'   => array_sum($perempuan),
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            return response() -> json ([
+                'success' => false,
+                'message' => "Gagal Mengambil data piramida penduduk: " . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

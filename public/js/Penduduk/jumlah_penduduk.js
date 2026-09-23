@@ -19,6 +19,7 @@
         currentYear: null,
         years: [],
         strukturUmur: [],
+        pyramid: null,
         kabupaten: [],
         details: [],
         summary: null,
@@ -36,6 +37,11 @@
         elements.tableBody = document.getElementById('table-body');
         elements.trendChart = document.getElementById('trendChart');
         elements.filterTrend = document.getElementById('filter-trend');
+
+        // Untuk Diagram Piramida
+        elements.pyramidChart = document.getElementById('pyramidChart');
+        elements.legendTotalL = document.getElementById('legend-total-l');
+        elements.legendTotalP = document.getElementById('legend-total-p');
     }
 
     // ==================== UTILITY FUNCTIONS ====================
@@ -175,6 +181,27 @@
         }
     }
 
+    async function fetchPiramidaUmur(tahun) {
+        try {
+            let url = `${CONFIG.API_BASE_URL}/pyramid-umur`;
+            const params = new URLSearchParams();
+            if (tahun) params.set('tahun', tahun);
+            const qs = params.toString();
+            if (qs) url += `?${qs}`;
+
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.pyramid = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error fetch piramida umur:', error);
+            return false;
+        }
+    }
+
     // ==================== RENDER FUNCTIONS ====================
 
     function renderYearDropdown() {
@@ -270,6 +297,90 @@
                 `;
             })
             .join('');
+    }
+
+    function niceMax(value) {
+        if (value <= 0) {
+            return 1;
+        }
+        const exp = Math.pow(10, Math.floor(Math.log10(value)));
+        const f = value / exp;
+        const nice = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
+        return nice * exp;
+    }
+
+    function renderPiramidaChart() {
+        const d = state.pyramid;
+        if (!d || !elements.pyramidChart || typeof Chart === 'undefined') return;
+
+        const ctx = elements.pyramidChart.getContext('2d');
+        if (window.pyramidChartInstance) window.pyramidChartInstance.destroy();
+
+        const maxValue = Math.max(...d.laki_laki, ...d.perempuan, 1);
+        const scale = niceMax(maxValue * 1.1);
+
+        window.pyramidChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: d.labels,
+                datasets: [
+                    {
+                        label: 'Laki-laki',
+                        data: d.laki_laki.map(v => -v),
+                        backgroundColor: '#2563a8',
+                        borderRadius: 3,
+                        barThickness: 14
+                    },
+                    {
+                        label: 'Perempuan',
+                        data: d.perempuan,
+                        backgroundColor: '#0d9488',
+                        borderRadius: 3,
+                        barThickness: 14
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {display: false},
+                    tooltip: {
+                        callbacks: {
+                            label: function (item) {
+                                return item.dataset.label + ': ' + Math.abs(item.raw).toLocaleString('id-ID') + ' jiwa';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        min: -scale,
+                        max: scale,
+                        grid: {color: '#eef0f5'},
+                        ticks: {
+                            callback: function (value) {return Math.abs(value).toLocaleString('id-ID');},
+                            color: '#8892a4',
+                            font: {size: 11}
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: {display: false},
+                        ticks: {color: '#5a6577', font: {size: 11}}
+                    }
+                }
+            }
+        });
+
+        if (elements.legendTotalL) {
+            elements.legendTotalL.textContent = 'Laki-laki (' + d.total_laki_laki.toLocaleString('id-ID') + ')';
+        }
+        if (elements.legendTotalP) {
+            elements.legendTotalP.textContent = 'Perempuan (' + d.total_perempuan.toLocaleString('id-ID') + ')';
+        }
     }
 
     function renderTrendChart() {
@@ -369,6 +480,8 @@
         renderTrendSelect();
         await fetchStrukturUmur(state.currentYear);
         renderStrukturUmur();
+        await fetchPiramidaUmur(state.currentYear);
+        renderPiramidaChart();
     }
 
     async function loadData(tahun) {
@@ -391,6 +504,8 @@
 
         await fetchStrukturUmur(tahun);
         renderStrukturUmur();
+        await fetchPiramidaUmur(tahun);
+        renderPiramidaChart();
     }
 
     function handleYearChange(event) {

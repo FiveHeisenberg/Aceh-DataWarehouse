@@ -72,4 +72,11 @@ Route::prefix('penduduk')->group(function () {
      */
     Route::get('/kartu-keluarga/detail', [PendudukApiController::class, 'getKartuKeluargaDetail'])
         ->name('penduduk.api.kartu-keluarga.detail');
+    
+    /**
+     * GET /api/penduduk/pyramid-umur
+     * Data piramida penduduk: Kelompok umur (5-tahunan) x jenis kelamin (?tahun=)
+     */
+    Route::get('/pyramid-umur', [PendudukApiController::class, 'getPiramidaUmur'])
+        ->name('penduduk.api.pyramid-umur');
 });
