@@ -316,7 +316,7 @@
                                             <div class="d-flex align-items-center justify-content-between mb-2">
                                                 <span class="text-uppercase" style="font-size: 11px; font-weight: 700; color: #5a6577; letter-spacing: 0.4px;">Sudah Kawin</span>
                                             </div>
-                                            <div style="font-weight: 800; color: #1a1a2e; font-size: 22px;">3.015.375</div>
+                                            <div id="stat-sudah-kawin" style="font-weight: 800; color: #1a1a2e; font-size: 22px;">Memuat . . .</div>
                                         </div>
                                     </div>
                                     <div class="col-6">
@@ -324,7 +324,7 @@
                                             <div class="d-flex align-items-center justify-content-between mb-2">
                                                 <span class="text-uppercase" style="font-size: 11px; font-weight: 700; color: #5a6577; letter-spacing: 0.4px;">Belum Kawin</span>
                                             </div>
-                                            <div style="font-weight: 800; color: #1a1a2e; font-size: 22px;">2.138.175</div>
+                                            <div id="stat-belum-kawin" style="font-weight: 800; color: #1a1a2e; font-size: 22px;">Memuat . . .</div>
                                         </div>
                                     </div>
                                     <div class="col-6">
@@ -332,7 +332,7 @@
                                             <div class="d-flex align-items-center justify-content-between mb-2">
                                                 <span class="text-uppercase" style="font-size: 11px; font-weight: 700; color: #5a6577; letter-spacing: 0.4px;">Cerai Mati</span>
                                             </div>
-                                            <div style="font-weight: 800; color: #1a1a2e; font-size: 22px;">219.300</div>
+                                            <div id="stat-cerai-mati" style="font-weight: 800; color: #1a1a2e; font-size: 22px;">Memuat . . .</div>
                                         </div>
                                     </div>
                                     <div class="col-6">
@@ -340,7 +340,7 @@
                                             <div class="d-flex align-items-center justify-content-between mb-2">
                                                 <span class="text-uppercase" style="font-size: 11px; font-weight: 700; color: #5a6577; letter-spacing: 0.4px;">Cerai Hidup</span>
                                             </div>
-                                            <div style="font-weight: 800; color: #1a1a2e; font-size: 22px;">109.650</div>
+                                            <div id="stat-cerai-hidup" style="font-weight: 800; color: #1a1a2e; font-size: 22px;">Memuat . . .</div>
                                         </div>
                                     </div>
                                 </div>

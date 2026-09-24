@@ -79,4 +79,11 @@ Route::prefix('penduduk')->group(function () {
      */
     Route::get('/pyramid-umur', [PendudukApiController::class, 'getPiramidaUmur'])
         ->name('penduduk.api.pyramid-umur');
+
+    /**
+     * GET /api/penduduk/status-perkawinan
+     * Jumlah Penduduk berdasarkan status perkawinan (?tahun=)
+     */
+    Route::get('/status-perkawinan', [PendudukApiController::class,'getStatusPerkawinan'])
+    ->name('penduduk.api.status-perkawinan');
 });

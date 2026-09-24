@@ -23,7 +23,8 @@
         kabupaten: [],
         details: [],
         summary: null,
-        trendData: []
+        trendData: [],
+        statusPerkawinan: []
     };
 
     // ==================== DOC ELEMENTS ====================
@@ -42,6 +43,12 @@
         elements.pyramidChart = document.getElementById('pyramidChart');
         elements.legendTotalL = document.getElementById('legend-total-l');
         elements.legendTotalP = document.getElementById('legend-total-p');
+
+        // Untuk Analisi Status Perkawinan
+        elements.statSudahKawin = document.getElementById('stat-sudah-kawin');
+        elements.statBelumKawin = document.getElementById('stat-belum-kawin');
+        elements.statCeraiMati = document.getElementById('stat-cerai-mati');
+        elements.statCeraiHidup = document.getElementById('stat-cerai-hidup');
     }
 
     // ==================== UTILITY FUNCTIONS ====================
@@ -202,6 +209,27 @@
         }
     }
 
+    async function fetchStatusPerkawinan(tahun) {
+        try {
+            let url = `${CONFIG.API_BASE_URL}/status-perkawinan`;
+            const params = new URLSearchParams();
+            if (tahun) params.set('tahun', tahun);
+            const qs = params.toString();
+            if (qs) url += `?${qs}`
+
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.statusPerkawinan = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.log('Error fetch Status Perkawinan:', error);
+            return false;
+        }
+    }
+
     // ==================== RENDER FUNCTIONS ====================
 
     function renderYearDropdown() {
@@ -309,6 +337,7 @@
         return nice * exp;
     }
 
+    // NAMPILIN DIAGRAM PIRAMIDA
     function renderPiramidaChart() {
         const d = state.pyramid;
         if (!d || !elements.pyramidChart || typeof Chart === 'undefined') return;
@@ -466,6 +495,29 @@
         });
     }
 
+    // NAMPILIN ANALISI STATUS PERKAWINAN
+    function renderStatusPerkawinan() {
+        const mapping = {
+            'Sudah Kawin': elements.statSudahKawin,
+            'Belum Kawin': elements.statBelumKawin,
+            'Cerai Mati': elements.statCeraiMati,
+            'Cerai Hidup': elements.statCeraiHidup,
+        };
+
+        if (!state.statusPerkawinan || state.statusPerkawinan.length === 0) {
+            Object.values(mapping).forEach(el => { if (el) el.textContent = '-'; });
+            return;
+        }
+
+        Object.values(mapping).forEach(el => { if (el) el.innerHTML = "Memuat . . ."; });
+
+        state.statusPerkawinan.forEach((item) => {
+            const el = mapping[item.status];
+            if (el) el.textContent = formatNumber(item.jumlah);
+        });
+    }
+
+
     // ==================== MAIN FUNCTIONS ====================
 
     async function loadInitialData() {
@@ -482,6 +534,8 @@
         renderStrukturUmur();
         await fetchPiramidaUmur(state.currentYear);
         renderPiramidaChart();
+        await fetchStatusPerkawinan(state.currentYear);
+        renderStatusPerkawinan();
     }
 
     async function loadData(tahun) {
@@ -506,6 +560,8 @@
         renderStrukturUmur();
         await fetchPiramidaUmur(tahun);
         renderPiramidaChart();
+        await fetchStatusPerkawinan(tahun);
+        renderStatusPerkawinan();
     }
 
     function handleYearChange(event) {

@@ -466,4 +466,38 @@ class PendudukApiController extends Controller
             ], 500);
         }
     }
+
+    public function getStatusPerkawinan(Request $request): JsonResponse {
+        try {
+            $tahun = $request->input('tahun');
+
+            $query = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
+                ->join('dim_status_perkawinan as dsp', 'fp.status_perkawinan_key', '=', 'dsp.status_perkawinan_key')
+                ->select('dsp.status_perkawinan', DB::raw('count(fp.jumlah_penduduk) as jumlah'))
+                ->groupBy('dsp.status_perkawinan');
+
+                if ($tahun) {
+                    $query->where('dw.tahun', $tahun);
+                }
+
+                $data = $query->orderByDesc('jumlah')->get();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data Status Perkawinan Berhasil Diambil',
+                    'data' => $data->map(fn($r) => [
+                        'status' => $r->status_perkawinan,
+                        'jumlah' => (int) $r->jumlah,
+                    ])->values(),
+                ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data status perkawinan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    
 }
