@@ -86,4 +86,13 @@ Route::prefix('penduduk')->group(function () {
      */
     Route::get('/status-perkawinan', [PendudukApiController::class,'getStatusPerkawinan'])
     ->name('penduduk.api.status-perkawinan');
+
+    /**
+     * GET /api/penduduk/komposisi-agama
+     * Komposisi penduduk berdasarkan agama (?tahun=)
+     */
+    Route::get('/komposisi-agama', [PendudukApiController::class, 'getKomposisiAgama'])
+    ->name('penduduk.api.komposisi-agama');
+
+
 });

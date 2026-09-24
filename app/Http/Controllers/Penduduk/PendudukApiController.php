@@ -499,5 +499,37 @@ class PendudukApiController extends Controller
         }
     }
 
-    
+    public function getKomposisiAgama(Request $request): JsonResponse {
+        try {
+            $tahun = $request->input('tahun');
+
+            $query = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
+                ->join('dim_agama as da', 'fp.agama_key', '=', 'da.agama_key')
+                ->select('da.nama_agama', DB::raw('count(fp.jumlah_penduduk) as jumlah'))
+                ->groupBy('da.nama_agama');
+
+            if ($tahun) {
+                $query->where('dw.tahun', $tahun);
+            }
+
+            $data = $query->orderByDesc('jumlah')->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data komposisi agama berhasil diambil',
+                'data' => $data->map(fn($r) => [
+                    'agama' => $r->nama_agama,
+                    'jumlah' => (int) $r->jumlah,
+                ]) ->values(),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data komposisi agama: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
 }

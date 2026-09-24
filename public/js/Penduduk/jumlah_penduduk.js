@@ -24,7 +24,8 @@
         details: [],
         summary: null,
         trendData: [],
-        statusPerkawinan: []
+        statusPerkawinan: [],
+        komposisiAgama: []
     };
 
     // ==================== DOC ELEMENTS ====================
@@ -49,6 +50,9 @@
         elements.statBelumKawin = document.getElementById('stat-belum-kawin');
         elements.statCeraiMati = document.getElementById('stat-cerai-mati');
         elements.statCeraiHidup = document.getElementById('stat-cerai-hidup');
+
+        // Untuk Analisis Komposisi Agama
+        elements.agamaContainer = document.getElementById('agama-container')
     }
 
     // ==================== UTILITY FUNCTIONS ====================
@@ -226,6 +230,27 @@
             return false;
         } catch (error) {
             console.log('Error fetch Status Perkawinan:', error);
+            return false;
+        }
+    }
+
+    async function fetchKomposisiAgama(tahun) {
+        try {
+            let url = `${CONFIG.API_BASE_URL}/komposisi-agama`;
+            const params = new URLSearchParams();
+            if (tahun) params.set('tahun', tahun);
+            const qs = params.toString();
+            if (qs) url += `?${qs}`;
+
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.komposisiAgama = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.log('Error Fetch Komposisi Agama: ', error);
             return false;
         }
     }
@@ -517,6 +542,45 @@
         });
     }
 
+    // NAMPILIN ANALISIS KOMPOSISI AGAMA
+    function renderAgama() {
+        const container = elements.agamaContainer;
+        if (!container) return;
+
+        if (!state.komposisiAgama || state.komposisiAgama.length === 0) {
+            container.innerHTML = '<div class="text-center py-4 text-muted">Tidak ada data ditemukan</div>';
+            return;
+        }
+
+        const palette = {
+            'Islam': '#0d9488',
+            'Kristen': '#2563a8',
+            'Kristen Protestan': '#2563a8',
+            'Katolik': '#7c3aed',
+            'Buddha': '#5eead4',
+            'Hindu': '#f59e0b',
+            'Konghucu': '#c4c9d4',
+        };
+
+        const total = state.komposisiAgama.reduce((acc, item) => acc + item.jumlah, 0);
+
+        container.innerHTML = state.komposisiAgama.map((item) => {
+            const persen = total > 0 ? (item.jumlah / total) * 100 : 0;
+            const color = palette[item.agama] || '#c4c9d4';
+            return `
+                <div class="mb-3">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span style="font-size: 13px; color: #1a1a2e;"><span style="display:inline-block;width:8px;height:8px;background-color:${color};border-radius:50%;margin-right:6px;"></span>${item.agama}</span>
+                        <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">${formatNumber(item.jumlah)} jiwa (${persen.toFixed(2)}%)</span>
+                    </div>
+                    <div class="progress" style="height: 5px; background-color: #eef0f5;">
+                        <div class="progress-bar" style="width: ${Math.min(100, persen)}%; background-color: ${color};"></div>
+                    </div>
+                </div>
+            `;
+        })
+        .join('');
+    }
 
     // ==================== MAIN FUNCTIONS ====================
 
@@ -536,6 +600,8 @@
         renderPiramidaChart();
         await fetchStatusPerkawinan(state.currentYear);
         renderStatusPerkawinan();
+        await fetchKomposisiAgama(state.currentYear);
+        renderAgama();
     }
 
     async function loadData(tahun) {
@@ -562,6 +628,8 @@
         renderPiramidaChart();
         await fetchStatusPerkawinan(tahun);
         renderStatusPerkawinan();
+        await fetchKomposisiAgama(tahun);
+        renderAgama();
     }
 
     function handleYearChange(event) {

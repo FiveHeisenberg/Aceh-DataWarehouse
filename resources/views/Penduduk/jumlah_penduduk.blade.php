@@ -354,59 +354,13 @@
                             <div class="card-header border-0 p-3" style="background-color: #ffffff; border-radius: 12px 12px 0 0;">
                                 <h2 class="mb-0" style="font-weight: 700; color: #1a1a2e; font-size: 18px;">Komposisi Agama</h2>
                             </div>
+
                             <div class="card-body p-3 pt-0">
-
-                                <div class="mb-3">
-                                    <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <span style="font-size: 13px; color: #1a1a2e;"><span style="display:inline-block;width:8px;height:8px;background-color:#0d9488;border-radius:50%;margin-right:6px;"></span>Islam</span>
-                                        <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">5.404.100 jiwa (98,57%)</span>
-                                    </div>
-                                    <div class="progress" style="height: 5px; background-color: #eef0f5;">
-                                        <div class="progress-bar" style="width: 98.57%; background-color: #0d9488;"></div>
-                                    </div>
+                                <div class="p-3 pt-0" id="agama-container">
+                                    <div class="text-center py-4 text-muted">Memuat Data . . .</div>
                                 </div>
-
-                                <div class="mb-3">
-                                    <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <span style="font-size: 13px; color: #1a1a2e;"><span style="display:inline-block;width:8px;height:8px;background-color:#2563a8;border-radius:50%;margin-right:6px;"></span>Kristen Protestan</span>
-                                        <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">64.690 jiwa (1,18%)</span>
-                                    </div>
-                                    <div class="progress" style="height: 5px; background-color: #eef0f5;">
-                                        <div class="progress-bar" style="width: 8%; background-color: #2563a8;"></div>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <span style="font-size: 13px; color: #1a1a2e;"><span style="display:inline-block;width:8px;height:8px;background-color:#5eead4;border-radius:50%;margin-right:6px;"></span>Buddha</span>
-                                        <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">7.130 jiwa (0,13%)</span>
-                                    </div>
-                                    <div class="progress" style="height: 5px; background-color: #eef0f5;">
-                                        <div class="progress-bar" style="width: 4%; background-color: #5eead4;"></div>
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <span style="font-size: 13px; color: #1a1a2e;"><span style="display:inline-block;width:8px;height:8px;background-color:#8892a4;border-radius:50%;margin-right:6px;"></span>Katolik</span>
-                                        <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">6.030 jiwa (0,11%)</span>
-                                    </div>
-                                    <div class="progress" style="height: 5px; background-color: #eef0f5;">
-                                        <div class="progress-bar" style="width: 3.5%; background-color: #8892a4;"></div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <div class="d-flex align-items-center justify-content-between mb-1">
-                                        <span style="font-size: 13px; color: #1a1a2e;"><span style="display:inline-block;width:8px;height:8px;background-color:#c4c9d4;border-radius:50%;margin-right:6px;"></span>Hindu &amp; Kepercayaan Lain</span>
-                                        <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">550 jiwa (0,01%)</span>
-                                    </div>
-                                    <div class="progress" style="height: 5px; background-color: #eef0f5;">
-                                        <div class="progress-bar" style="width: 1%; background-color: #c4c9d4;"></div>
-                                    </div>
-                                </div>
-
                             </div>
+
                         </div>
                     </div>
 
