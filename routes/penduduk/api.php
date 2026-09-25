@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Penduduk\PendudukApiController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,7 +13,7 @@ use App\Http\Controllers\Penduduk\PendudukApiController;
 */
 
 Route::prefix('penduduk')->group(function () {
-    
+
     /**
      * GET /api/penduduk/years
      * Ambil daftar tahun yang tersedia di database
@@ -47,13 +47,13 @@ Route::prefix('penduduk')->group(function () {
     // Tambahkan ini di dalam group Route::prefix('penduduk')
     // MAP MAP MAP
     Route::get('/map', [PendudukApiController::class, 'getMapData'])
-    ->name('penduduk.api.map');
+        ->name('penduduk.api.map');
 
     // Group untuk Kartu Keluarga
     Route::prefix('kk')->group(function () {
         Route::get('/years', [PendudukApiController::class, 'getKKYears'])
             ->name('kk.api.years');
-        
+
         Route::get('/index', [PendudukApiController::class, 'getKKIndex'])
             ->name('kk.api.index');
     });

@@ -1,14 +1,18 @@
 <?php
 
-namespace App\Models\Penduduk;
+namespace App\Models\Dispenda;
 
 use Illuminate\Database\Eloquent\Model;
 
-class KartuKeluarga extends Model
+class DimWajibPajak extends Model
 {
-    protected $table = 'kartu_keluarga';
+    protected $table = 'dim_wajib_pajak';
 
     protected $primaryKey = 'id';
+
+    protected $keyType = 'int';
+
+    public $incrementing = true;
 
     public $timestamps = false;
 
@@ -18,7 +22,7 @@ class KartuKeluarga extends Model
         'kode_kabupaten_kota',
         'nama_kabupaten_kota',
         'tahun',
-        'jumlah_kartu_keluarga',
+        'jumlah_wajib_pajak',
         'satuan',
         'source',
         'loaded_at',
@@ -26,7 +30,7 @@ class KartuKeluarga extends Model
 
     protected $casts = [
         'tahun' => 'integer',
-        'jumlah_kartu_keluarga' => 'integer',
+        'jumlah_wajib_pajak' => 'integer',
         'loaded_at' => 'datetime',
     ];
 
@@ -35,13 +39,18 @@ class KartuKeluarga extends Model
         return $query->where('tahun', $tahun);
     }
 
+    public function scopeKodeKabupaten($query, $kode)
+    {
+        return $query->where('kode_kabupaten_kota', $kode);
+    }
+
     public function scopeCari($query, $keyword)
     {
         return $query->where('nama_kabupaten_kota', 'like', '%'.$keyword.'%');
     }
 
-    public function scopeKodeKabupaten($query, $kode)
+    public function pembayaranPajak()
     {
-        return $query->where('kode_kabupaten_kota', $kode);
+        return $this->hasMany(FactPembayaranPajak::class, 'wajib_pajak_id', 'id');
     }
 }

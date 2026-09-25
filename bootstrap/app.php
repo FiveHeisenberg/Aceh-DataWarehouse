@@ -9,6 +9,7 @@ return Application::configure(basePath: dirname(__DIR__))
         web: [
             __DIR__.'/../routes/web.php',
             __DIR__.'/../routes/penduduk/web.php',
+            __DIR__.'/../routes/dispenda/web.php',
 
             // 📌 NANTI TAMBAHKAN MODUL LAIN DI SINI (WEB)
             // __DIR__.'/../routes/sosial/web.php',
@@ -18,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
         api: [
             __DIR__.'/../routes/api.php',
             __DIR__.'/../routes/penduduk/api.php',
+            __DIR__.'/../routes/dispenda/api.php',
 
             // 📌 NANTI TAMBAHKAN MODUL LAIN DI SINI (API)
             // __DIR__.'/../routes/sosial/api.php',

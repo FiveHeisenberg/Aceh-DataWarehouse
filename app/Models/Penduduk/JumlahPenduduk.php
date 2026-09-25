@@ -14,6 +14,7 @@ class JumlahPenduduk extends Model
 
     // Tipe primary key
     protected $keyType = 'int';
+
     public $incrementing = true;
 
     // Nonaktifkan timestamps default (created_at, updated_at)
@@ -40,7 +41,7 @@ class JumlahPenduduk extends Model
     ];
 
     // ==================== SCOPES ====================
-    
+
     /**
      * Scope: Filter berdasarkan tahun
      */
@@ -62,7 +63,7 @@ class JumlahPenduduk extends Model
      */
     public function scopeCari($query, $keyword)
     {
-        return $query->where('nama_kabupaten_kota', 'like', '%' . $keyword . '%');
+        return $query->where('nama_kabupaten_kota', 'like', '%'.$keyword.'%');
     }
 
     // ==================== RELATIONSHIPS ====================
@@ -73,6 +74,6 @@ class JumlahPenduduk extends Model
     public function tahunSebelumnya()
     {
         return $this->hasOne(self::class, 'kode_kabupaten_kota', 'kode_kabupaten_kota')
-                    ->where('tahun', \DB::raw('tahun - 1'));
+            ->where('tahun', \DB::raw('tahun - 1'));
     }
 }

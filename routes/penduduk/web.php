@@ -1,7 +1,7 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Penduduk\PendudukController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------

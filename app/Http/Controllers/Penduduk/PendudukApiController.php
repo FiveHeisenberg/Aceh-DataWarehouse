@@ -5,9 +5,10 @@ namespace App\Http\Controllers\Penduduk;
 use App\Http\Controllers\Controller;
 use App\Models\Penduduk\JumlahPenduduk;
 use App\Models\Penduduk\KartuKeluarga;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PendudukApiController extends Controller
 {
@@ -26,14 +27,14 @@ class PendudukApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Daftar tahun berhasil diambil',
-                'data' => $years
+                'data' => $years,
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengambil daftar tahun',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -47,7 +48,7 @@ class PendudukApiController extends Controller
         try {
             // Validasi input
             $request->validate([
-                'tahun' => 'nullable|integer|min:2000|max:' . date('Y'),
+                'tahun' => 'nullable|integer|min:2000|max:'.date('Y'),
                 'search' => 'nullable|string|max:100',
                 'kode_kab' => 'nullable|string|max:10',
                 'page' => 'nullable|integer|min:1',
@@ -62,7 +63,7 @@ class PendudukApiController extends Controller
 
             // --- A. SUMMARY STATISTICS ---
             $totalPenduduk = JumlahPenduduk::tahun($tahun)->sum('jumlah_penduduk');
-            
+
             $tahunSebelumnya = $tahun - 1;
             $totalTahunLalu = JumlahPenduduk::tahun($tahunSebelumnya)->sum('jumlah_penduduk');
 
@@ -79,11 +80,11 @@ class PendudukApiController extends Controller
             // --- B. DETAIL DATA (PAGINATED) ---
             $query = JumlahPenduduk::tahun($tahun);
 
-            if (!empty($search)) {
+            if (! empty($search)) {
                 $query->cari($search);
             }
 
-            if (!empty($kodeKab)) {
+            if (! empty($kodeKab)) {
                 $query->kodeKabupaten($kodeKab);
             }
 
@@ -107,7 +108,7 @@ class PendudukApiController extends Controller
                         'total_penduduk' => (int) $totalPenduduk,
                         'pertumbuhan_persen' => round($pertumbuhan, 2),
                         'total_tahun_lalu' => (int) $totalTahunLalu,
-                        'jumlah_kabupaten_kota' => (int) $jumlahKabupaten
+                        'jumlah_kabupaten_kota' => (int) $jumlahKabupaten,
                     ],
                     'details' => [
                         'data' => $details->items(),
@@ -116,27 +117,27 @@ class PendudukApiController extends Controller
                         'per_page' => $details->perPage(),
                         'total' => $details->total(),
                     ],
-                    'tren' => $trenData->map(function($item) {
+                    'tren' => $trenData->map(function ($item) {
                         return [
                             'tahun' => (int) $item->tahun,
-                            'total' => (int) $item->total
+                            'total' => (int) $item->total,
                         ];
-                    })
-                ]
+                    }),
+                ],
             ], 200);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validasi gagal',
-                'errors' => $e->errors()
+                'errors' => $e->errors(),
             ], 422);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengambil data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -155,12 +156,12 @@ class PendudukApiController extends Controller
             if ($data->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Data tidak ditemukan untuk kode kabupaten: ' . $kodeKabupaten
+                    'message' => 'Data tidak ditemukan untuk kode kabupaten: '.$kodeKabupaten,
                 ], 404);
             }
 
             // Hitung pertumbuhan per tahun
-            $dataWithGrowth = $data->map(function($item, $index) use ($data) {
+            $dataWithGrowth = $data->map(function ($item, $index) use ($data) {
                 $pertumbuhan = 0;
                 if ($index < $data->count() - 1) {
                     $tahunLalu = $data[$index + 1]->jumlah_penduduk;
@@ -173,7 +174,7 @@ class PendudukApiController extends Controller
                     'tahun' => $item->tahun,
                     'jumlah_penduduk' => $item->jumlah_penduduk,
                     'pertumbuhan_persen' => round($pertumbuhan, 2),
-                    'satuan' => $item->satuan
+                    'satuan' => $item->satuan,
                 ];
             });
 
@@ -184,15 +185,15 @@ class PendudukApiController extends Controller
                     'kode_kabupaten' => $kodeKabupaten,
                     'nama_kabupaten' => $data->first()->nama_kabupaten_kota,
                     'provinsi' => $data->first()->nama_provinsi,
-                    'histori' => $dataWithGrowth
-                ]
+                    'histori' => $dataWithGrowth,
+                ],
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengambil detail data',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
@@ -207,7 +208,7 @@ class PendudukApiController extends Controller
             $request->validate([
                 'kode_kab' => 'nullable|string|max:10',
                 'tahun_mulai' => 'nullable|integer|min:2000',
-                'tahun_akhir' => 'nullable|integer|max:' . date('Y'),
+                'tahun_akhir' => 'nullable|integer|max:'.date('Y'),
             ]);
 
             $kodeKab = $request->input('kode_kab');
@@ -217,7 +218,7 @@ class PendudukApiController extends Controller
             $query = JumlahPenduduk::select('tahun', DB::raw('SUM(jumlah_penduduk) as total'))
                 ->whereBetween('tahun', [$tahunMulai, $tahunAkhir]);
 
-            if (!empty($kodeKab)) {
+            if (! empty($kodeKab)) {
                 $query->where('kode_kabupaten_kota', $kodeKab);
             }
 
@@ -228,25 +229,24 @@ class PendudukApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Data tren berhasil diambil',
-                'data' => $trenData->map(function($item) {
+                'data' => $trenData->map(function ($item) {
                     return [
                         'tahun' => (int) $item->tahun,
-                        'total' => (int) $item->total
+                        'total' => (int) $item->total,
                     ];
-                })
+                }),
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengambil data tren',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
 
-
-        /**
+    /**
      * GET /api/penduduk/map?tahun=2023
      * Endpoint khusus untuk data peta (choropleth)
      */
@@ -263,9 +263,9 @@ class PendudukApiController extends Controller
                 'jumlah_penduduk',
                 'satuan'
             )
-            ->where('tahun', $tahun)
-            ->orderBy('jumlah_penduduk', 'desc')
-            ->get();
+                ->where('tahun', $tahun)
+                ->orderBy('jumlah_penduduk', 'desc')
+                ->get();
 
             // 2. Ambil data tahun sebelumnya untuk hitung pertumbuhan
             $prevData = JumlahPenduduk::select('kode_kabupaten_kota as kode', 'jumlah_penduduk')
@@ -277,19 +277,19 @@ class PendudukApiController extends Controller
             $rank = 1;
 
             foreach ($currentData as $row) {
-                $jumlah = (int)$row->jumlah_penduduk;
+                $jumlah = (int) $row->jumlah_penduduk;
                 $prev = $prevData[$row->kode] ?? null;
-                
-                $pertumbuhan = ($prev && $prev > 0) 
-                    ? round((($jumlah - $prev) / $prev) * 100, 2) 
+
+                $pertumbuhan = ($prev && $prev > 0)
+                    ? round((($jumlah - $prev) / $prev) * 100, 2)
                     : null;
 
                 $result[] = [
-                    'kode'               => $row->kode,
-                    'nama'               => $row->nama,
-                    'jumlah_penduduk'    => $jumlah,
-                    'satuan'             => $row->satuan,
-                    'peringkat'          => $rank++,
+                    'kode' => $row->kode,
+                    'nama' => $row->nama,
+                    'jumlah_penduduk' => $jumlah,
+                    'satuan' => $row->satuan,
+                    'peringkat' => $rank++,
                     'pertumbuhan_persen' => $pertumbuhan,
                 ];
             }
@@ -297,197 +297,197 @@ class PendudukApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Data peta berhasil diambil',
-                'data'    => [
-                    'tahun'     => (int) $tahun,
+                'data' => [
+                    'tahun' => (int) $tahun,
                     'kabupaten' => $result,
-                ]
+                ],
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data peta: ' . $e->getMessage()
+                'message' => 'Gagal mengambil data peta: '.$e->getMessage(),
             ], 500);
         }
     }
 
     public function getKKYears(): JsonResponse
-{
-    try {
-        $years = KartuKeluarga::select('tahun')
-            ->distinct()
-            ->orderBy('tahun', 'desc')
-            ->pluck('tahun');
+    {
+        try {
+            $years = KartuKeluarga::select('tahun')
+                ->distinct()
+                ->orderBy('tahun', 'desc')
+                ->pluck('tahun');
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar tahun berhasil diambil',
-            'data' => $years
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Daftar tahun berhasil diambil',
+                'data' => $years,
+            ], 200);
 
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Gagal mengambil daftar tahun',
-            'error' => $e->getMessage()
-        ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil daftar tahun',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
-}
 
-/**
- * GET /api/penduduk/kk/index?tahun=2024
- * Endpoint: Ambil data KK (summary + details)
- */
-public function getKKIndex(Request $request): JsonResponse
-{
-    try {
-        $request->validate([
-            'tahun' => 'nullable|integer|min:2000|max:' . date('Y'),
-            'search' => 'nullable|string|max:100',
-            'per_page' => 'nullable|integer|min:1|max:100',
-        ]);
+    /**
+     * GET /api/penduduk/kk/index?tahun=2024
+     * Endpoint: Ambil data KK (summary + details)
+     */
+    public function getKKIndex(Request $request): JsonResponse
+    {
+        try {
+            $request->validate([
+                'tahun' => 'nullable|integer|min:2000|max:'.date('Y'),
+                'search' => 'nullable|string|max:100',
+                'per_page' => 'nullable|integer|min:1|max:100',
+            ]);
 
-        $tahun = $request->input('tahun', KartuKeluarga::max('tahun'));
-        $search = $request->input('search', '');
-        $perPage = $request->input('per_page', 25);
+            $tahun = $request->input('tahun', KartuKeluarga::max('tahun'));
+            $search = $request->input('search', '');
+            $perPage = $request->input('per_page', 25);
 
-        // --- A. SUMMARY ---
-        $totalKK = KartuKeluarga::tahun($tahun)->sum('jumlah_kartu_keluarga');
-        
-        // Hitung total KK semester sebelumnya (asumsi data per 2 tahun: 2020, 2022, 2024)
-        $tahunSebelumnya = $tahun - 2;
-        $totalTahunLalu = KartuKeluarga::tahun($tahunSebelumnya)->sum('jumlah_kartu_keluarga');
+            // --- A. SUMMARY ---
+            $totalKK = KartuKeluarga::tahun($tahun)->sum('jumlah_kartu_keluarga');
 
-        $pertumbuhan = 0;
-        if ($totalTahunLalu > 0) {
-            $pertumbuhan = (($totalKK - $totalTahunLalu) / $totalTahunLalu) * 100;
-        }
+            // Hitung total KK semester sebelumnya (asumsi data per 2 tahun: 2020, 2022, 2024)
+            $tahunSebelumnya = $tahun - 2;
+            $totalTahunLalu = KartuKeluarga::tahun($tahunSebelumnya)->sum('jumlah_kartu_keluarga');
 
-        // --- B. DETAIL PER KABUPATEN ---
-        $query = KartuKeluarga::tahun($tahun);
-
-        if (!empty($search)) {
-            $query->cari($search);
-        }
-
-        $details = $query->orderBy('jumlah_kartu_keluarga', 'desc')
-            ->paginate($perPage);
-
-        // --- C. DATA TREN (untuk chart) ---
-        $trenData = KartuKeluarga::select('tahun', \DB::raw('SUM(jumlah_kartu_keluarga) as total'))
-            ->groupBy('tahun')
-            ->orderBy('tahun', 'asc')
-            ->get();
-
-        // --- D. KABUPATEN TERTINGGI ---
-        $kabTertinggi = KartuKeluarga::tahun($tahun)
-            ->orderBy('jumlah_kartu_keluarga', 'desc')
-            ->first();
-
-        $persentaseTertinggi = 0;
-        if ($kabTertinggi && $totalKK > 0) {
-            $persentaseTertinggi = round(($kabTertinggi->jumlah_kartu_keluarga / $totalKK) * 100, 1);
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Data KK berhasil diambil',
-            'data' => [
-                'tahun_aktif' => (int) $tahun,
-                'summary' => [
-                    'total_kk' => (int) $totalKK,
-                    'pertumbuhan_persen' => round($pertumbuhan, 1),
-                    'total_tahun_lalu' => (int) $totalTahunLalu,
-                ],
-                'kab_tertinggi' => $kabTertinggi ? [
-                    'nama' => $kabTertinggi->nama_kabupaten_kota,
-                    'jumlah' => (int) $kabTertinggi->jumlah_kartu_keluarga,
-                    'persentase' => $persentaseTertinggi,
-                ] : null,
-                'details' => [
-                    'data' => $details->items(),
-                    'current_page' => $details->currentPage(),
-                    'last_page' => $details->lastPage(),
-                    'total' => $details->total(),
-                ],
-                'tren' => $trenData->map(fn($item) => [
-                    'tahun' => (int) $item->tahun,
-                    'total' => (int) $item->total,
-                ]),
-            ]
-        ], 200);
-
-        // --- E. KOTA PERTUMBUHAN TERCEPAT ---
-        // Ambil semua data tahun ini dan tahun sebelumnya
-        $dataTahunIni = KartuKeluarga::tahun($tahun)->get()->keyBy('kode_kabupaten_kota');
-        $dataTahunLalu = KartuKeluarga::tahun($tahunSebelumnya)->get()->keyBy('kode_kabupaten_kota');
-
-        $kotaTercepat = null;
-        $pertumbuhanTercepat = 0;
-
-        foreach ($dataTahunIni as $kode => $row) {
-            // Filter hanya Kota (biasanya kode diawali dengan angka tertentu, atau nama mengandung "Kota")
-            if (stripos($row->nama_kabupaten_kota, 'Kota') === false) {
-                continue;
+            $pertumbuhan = 0;
+            if ($totalTahunLalu > 0) {
+                $pertumbuhan = (($totalKK - $totalTahunLalu) / $totalTahunLalu) * 100;
             }
 
-            $prev = $dataTahunLalu[$kode] ?? null;
-            if ($prev && $prev->jumlah_kartu_keluarga > 0) {
-                $growth = (($row->jumlah_kartu_keluarga - $prev->jumlah_kartu_keluarga) / $prev->jumlah_kartu_keluarga) * 100;
-                if ($growth > $pertumbuhanTercepat) {
-                    $pertumbuhanTercepat = $growth;
-                    $kotaTercepat = $row;
-                }
-            }
-        }
+            // --- B. DETAIL PER KABUPATEN ---
+            $query = KartuKeluarga::tahun($tahun);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Data KK berhasil diambil',
-            'data' => [
-                'tahun_aktif' => (int) $tahun,
-                'summary' => [
-                    'total_kk' => (int) $totalKK,
-                    'pertumbuhan_persen' => round($pertumbuhan, 1),
-                    'total_tahun_lalu' => (int) $totalTahunLalu,
-                ],
-                'kab_tertinggi' => $kabTertinggi ? [
-                    'nama' => $kabTertinggi->nama_kabupaten_kota,
-                    'jumlah' => (int) $kabTertinggi->jumlah_kartu_keluarga,
-                    'persentase' => $persentaseTertinggi,
-                ] : null,
-                'kota_tercepat' => $kotaTercepat ? [
-                    'nama' => $kotaTercepat->nama_kabupaten_kota,
-                    'jumlah' => (int) $kotaTercepat->jumlah_kartu_keluarga,
-                    'pertumbuhan_persen' => round($pertumbuhanTercepat, 1),
-                ] : null,
-                'details' => [
-                    'data' => $details->items(),
-                    'current_page' => $details->currentPage(),
-                    'last_page' => $details->lastPage(),
-                    'total' => $details->total(),
-                ],
-                'tren' => $trenData->map(function($item) {
-                    return [
+            if (! empty($search)) {
+                $query->cari($search);
+            }
+
+            $details = $query->orderBy('jumlah_kartu_keluarga', 'desc')
+                ->paginate($perPage);
+
+            // --- C. DATA TREN (untuk chart) ---
+            $trenData = KartuKeluarga::select('tahun', \DB::raw('SUM(jumlah_kartu_keluarga) as total'))
+                ->groupBy('tahun')
+                ->orderBy('tahun', 'asc')
+                ->get();
+
+            // --- D. KABUPATEN TERTINGGI ---
+            $kabTertinggi = KartuKeluarga::tahun($tahun)
+                ->orderBy('jumlah_kartu_keluarga', 'desc')
+                ->first();
+
+            $persentaseTertinggi = 0;
+            if ($kabTertinggi && $totalKK > 0) {
+                $persentaseTertinggi = round(($kabTertinggi->jumlah_kartu_keluarga / $totalKK) * 100, 1);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data KK berhasil diambil',
+                'data' => [
+                    'tahun_aktif' => (int) $tahun,
+                    'summary' => [
+                        'total_kk' => (int) $totalKK,
+                        'pertumbuhan_persen' => round($pertumbuhan, 1),
+                        'total_tahun_lalu' => (int) $totalTahunLalu,
+                    ],
+                    'kab_tertinggi' => $kabTertinggi ? [
+                        'nama' => $kabTertinggi->nama_kabupaten_kota,
+                        'jumlah' => (int) $kabTertinggi->jumlah_kartu_keluarga,
+                        'persentase' => $persentaseTertinggi,
+                    ] : null,
+                    'details' => [
+                        'data' => $details->items(),
+                        'current_page' => $details->currentPage(),
+                        'last_page' => $details->lastPage(),
+                        'total' => $details->total(),
+                    ],
+                    'tren' => $trenData->map(fn ($item) => [
                         'tahun' => (int) $item->tahun,
                         'total' => (int) $item->total,
-                    ];
-                }),
-            ]
-        ], 200);
+                    ]),
+                ],
+            ], 200);
 
-    } catch (\Illuminate\Validation\ValidationException $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Validasi gagal',
-            'errors' => $e->errors()
-        ], 422);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Gagal mengambil data KK',
-            'error' => $e->getMessage()
-        ], 500);
+            // --- E. KOTA PERTUMBUHAN TERCEPAT ---
+            // Ambil semua data tahun ini dan tahun sebelumnya
+            $dataTahunIni = KartuKeluarga::tahun($tahun)->get()->keyBy('kode_kabupaten_kota');
+            $dataTahunLalu = KartuKeluarga::tahun($tahunSebelumnya)->get()->keyBy('kode_kabupaten_kota');
+
+            $kotaTercepat = null;
+            $pertumbuhanTercepat = 0;
+
+            foreach ($dataTahunIni as $kode => $row) {
+                // Filter hanya Kota (biasanya kode diawali dengan angka tertentu, atau nama mengandung "Kota")
+                if (stripos($row->nama_kabupaten_kota, 'Kota') === false) {
+                    continue;
+                }
+
+                $prev = $dataTahunLalu[$kode] ?? null;
+                if ($prev && $prev->jumlah_kartu_keluarga > 0) {
+                    $growth = (($row->jumlah_kartu_keluarga - $prev->jumlah_kartu_keluarga) / $prev->jumlah_kartu_keluarga) * 100;
+                    if ($growth > $pertumbuhanTercepat) {
+                        $pertumbuhanTercepat = $growth;
+                        $kotaTercepat = $row;
+                    }
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data KK berhasil diambil',
+                'data' => [
+                    'tahun_aktif' => (int) $tahun,
+                    'summary' => [
+                        'total_kk' => (int) $totalKK,
+                        'pertumbuhan_persen' => round($pertumbuhan, 1),
+                        'total_tahun_lalu' => (int) $totalTahunLalu,
+                    ],
+                    'kab_tertinggi' => $kabTertinggi ? [
+                        'nama' => $kabTertinggi->nama_kabupaten_kota,
+                        'jumlah' => (int) $kabTertinggi->jumlah_kartu_keluarga,
+                        'persentase' => $persentaseTertinggi,
+                    ] : null,
+                    'kota_tercepat' => $kotaTercepat ? [
+                        'nama' => $kotaTercepat->nama_kabupaten_kota,
+                        'jumlah' => (int) $kotaTercepat->jumlah_kartu_keluarga,
+                        'pertumbuhan_persen' => round($pertumbuhanTercepat, 1),
+                    ] : null,
+                    'details' => [
+                        'data' => $details->items(),
+                        'current_page' => $details->currentPage(),
+                        'last_page' => $details->lastPage(),
+                        'total' => $details->total(),
+                    ],
+                    'tren' => $trenData->map(function ($item) {
+                        return [
+                            'tahun' => (int) $item->tahun,
+                            'total' => (int) $item->total,
+                        ];
+                    }),
+                ],
+            ], 200);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data KK',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
-}
 }

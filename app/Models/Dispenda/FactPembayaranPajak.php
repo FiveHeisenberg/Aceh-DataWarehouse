@@ -1,24 +1,30 @@
 <?php
 
-namespace App\Models\Penduduk;
+namespace App\Models\Dispenda;
 
 use Illuminate\Database\Eloquent\Model;
 
-class KartuKeluarga extends Model
+class FactPembayaranPajak extends Model
 {
-    protected $table = 'kartu_keluarga';
+    protected $table = 'fact_pembayaran_pajak';
 
     protected $primaryKey = 'id';
+
+    protected $keyType = 'int';
+
+    public $incrementing = true;
 
     public $timestamps = false;
 
     protected $fillable = [
+        'wajib_pajak_id',
         'kode_provinsi',
         'nama_provinsi',
         'kode_kabupaten_kota',
         'nama_kabupaten_kota',
         'tahun',
-        'jumlah_kartu_keluarga',
+        'jumlah_pembayaran',
+        'nominal_pembayaran',
         'satuan',
         'source',
         'loaded_at',
@@ -26,7 +32,8 @@ class KartuKeluarga extends Model
 
     protected $casts = [
         'tahun' => 'integer',
-        'jumlah_kartu_keluarga' => 'integer',
+        'jumlah_pembayaran' => 'integer',
+        'nominal_pembayaran' => 'decimal:2',
         'loaded_at' => 'datetime',
     ];
 
@@ -35,13 +42,18 @@ class KartuKeluarga extends Model
         return $query->where('tahun', $tahun);
     }
 
+    public function scopeKodeKabupaten($query, $kode)
+    {
+        return $query->where('kode_kabupaten_kota', $kode);
+    }
+
     public function scopeCari($query, $keyword)
     {
         return $query->where('nama_kabupaten_kota', 'like', '%'.$keyword.'%');
     }
 
-    public function scopeKodeKabupaten($query, $kode)
+    public function wajibPajak()
     {
-        return $query->where('kode_kabupaten_kota', $kode);
+        return $this->belongsTo(DimWajibPajak::class, 'wajib_pajak_id', 'id');
     }
 }

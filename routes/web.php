@@ -1,5 +1,7 @@
 <?php
+
 require __DIR__.'/penduduk/web.php';
+require __DIR__.'/dispenda/web.php';
 
 use Illuminate\Support\Facades\Route;
 
