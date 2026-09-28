@@ -20,7 +20,8 @@
         summary: null,
         trend: [],
         detail: [],
-        search: ''
+        search: '',
+        kkTotal: null
     };
 
     // ==================== DOC ELEMENTS ====================
@@ -130,6 +131,23 @@
         }
     }
 
+    // JUMLAH KK
+    async function fetchTotalKartuKeluarga(tahun) {
+        try {
+            const url = `${CONFIG.API_BASE_URL}/jumlah-kk?tahun=${tahun}`;
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.kkTotal = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.log('Error fetch total KK: ', error);
+            return false;
+        }
+    }
+
     // ==================== RENDER ====================
 
     function renderYearDropdown() {
@@ -143,7 +161,7 @@
             elements.yearSelect.appendChild(option);
         });
 
-        elements.yearSelect.value = state.years[state.years.length - 1];
+        elements.yearSelect.value = state.years[0];
         state.currentYear = Number(elements.yearSelect.value);
     }
 
@@ -339,6 +357,13 @@
         });
     }
 
+    // NAMPILIN JUMLAH TOTAL KK
+    function renderTotalKK() {
+        if (!state.kkTotal) return;
+        if (elements.statTotal) elements.statTotal.textContent = formatNumber(state.kkTotal.total_kk);
+        if (elements.statYearBadge) elements.statYearBadge.textContent = `Tahun ${state.kkTotal.tahun}`;
+    }
+
     // ==================== MAIN ====================
 
     async function loadInitialData() {
@@ -373,6 +398,8 @@
         renderDistribusi();
         renderTable();
 
+        const totalOk = await fetchTotalKartuKeluarga(tahun);
+        if(totalOk) renderTotalKK();
         return true;
     }
 

@@ -94,5 +94,10 @@ Route::prefix('penduduk')->group(function () {
     Route::get('/komposisi-agama', [PendudukApiController::class, 'getKomposisiAgama'])
     ->name('penduduk.api.komposisi-agama');
 
+    /**
+     * GET /api/penduduk/jumlah-kk
+     */
+    Route::get('/jumlah-kk', [PendudukApiController::class, 'getKartuKeluargaTotal'])
+        ->name('penduduk.api.jumlah-kk');
 
 });

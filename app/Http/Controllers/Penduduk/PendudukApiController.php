@@ -12,10 +12,11 @@ class PendudukApiController extends Controller
     public function getTahun(): JsonResponse
     {
         try {
-            $tahun = DB::table('dim_waktu')
+            $tahun = DB::table('fact_penduduk as fp')
+            ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
             ->distinct()
-            ->orderBy('tahun', 'desc')
-            ->pluck('tahun');
+            ->orderBy('dw.tahun', 'desc')
+            ->pluck('dw.tahun');
 
         return response()->json([
             'success' => true,
@@ -531,5 +532,39 @@ class PendudukApiController extends Controller
         }
     }
 
+        // KARTU KELUARGA
+    public function getKartuKeluargaTotal(Request $request): JsonResponse
+    {
+        try {
+            $tahun = $request->input('tahun');
+
+            if (!$tahun) {
+                $tahun = DB::table('fact_penduduk as fp')
+                    ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                    ->max('wt.tahun');
+            }
+
+            $total = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->selectRaw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah_kk')
+                ->where('wt.tahun', $tahun)
+                ->value('jumlah_kk');
+            
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data Total Kartu Keluarga Berhasil Diambil',
+                    'data' => [
+                        'tahun' => (int) $tahun,
+                        'total_kk' => (int) $total,
+                        'satuan' => 'KK',
+                    ],
+                ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data total kartu keluarga: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 
 }
