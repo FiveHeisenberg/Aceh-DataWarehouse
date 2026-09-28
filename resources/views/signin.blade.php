@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Masuk Akun - Aceh Data Warehouse</title>
+    <title>Pendaftaran Akun - Aceh Data Warehouse</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,8 +59,8 @@
         }
         .brand-org { font-size: .85rem; color: var(--adw-muted); }
 
-        /* Kartu login */
-        .login-card {
+        /* Kartu */
+        .auth-card {
             position: relative;
             width: 100%;
             max-width: 430px;
@@ -71,7 +71,7 @@
             overflow: hidden;
         }
         /* Garis warna songket Aceh: merah, emas, hijau */
-        .login-card::before {
+        .auth-card::before {
             content: '';
             display: block;
             height: 5px;
@@ -80,13 +80,13 @@
                 var(--adw-gold) 34% 67%,
                 var(--adw-green) 67% 100%);
         }
-        .login-title {
+        .auth-title {
             font-family: 'Bricolage Grotesque', sans-serif;
             font-weight: 700;
             font-size: 1.85rem;
             letter-spacing: -.02em;
         }
-        .login-lead { color: var(--adw-muted); font-size: .95rem; }
+        .auth-lead { color: var(--adw-muted); font-size: .95rem; }
 
         /* Form */
         .form-label { font-weight: 600; font-size: .875rem; margin-bottom: .35rem; }
@@ -114,6 +114,7 @@
         }
         .btn-toggle:hover { color: var(--adw-green); background: #fff; }
         .input-group:focus-within .btn-toggle { border-color: var(--adw-green); }
+        .form-text { font-size: .8rem; color: var(--adw-muted); }
 
         .btn-adw {
             --bs-btn-color: #fff;
@@ -131,9 +132,9 @@
         }
 
         .divider { border-top: 1px solid var(--adw-line); opacity: 1; }
-        .register-text { font-size: .9rem; color: var(--adw-muted); }
-        .register-text a { font-weight: 600; text-decoration: none; }
-        .register-text a:hover { text-decoration: underline; }
+        .switch-text { font-size: .9rem; color: var(--adw-muted); }
+        .switch-text a { font-weight: 600; text-decoration: none; }
+        .switch-text a:hover { text-decoration: underline; }
 
         /* Footer */
         .footer-line {
@@ -143,7 +144,7 @@
         }
 
         @media (max-width: 575.98px) {
-            .login-title { font-size: 1.6rem; }
+            .auth-title { font-size: 1.6rem; }
         }
     </style>
 </head>
@@ -165,12 +166,12 @@
 
         {{-- Konten --}}
         <main class="flex-grow-1 d-flex justify-content-center align-items-center px-3 py-5">
-            <section class="login-card" aria-labelledby="judul-login">
+            <section class="auth-card" aria-labelledby="judul-daftar">
                 <div class="p-4 p-sm-5">
 
-                    <h1 id="judul-login" class="login-title text-center mb-2">Masuk Akun</h1>
-                    <p class="login-lead text-center mb-4">
-                        Masukkan akun Anda untuk mengakses dashboard analitik.
+                    <h1 id="judul-daftar" class="auth-title text-center mb-2">Pendaftaran Akun</h1>
+                    <p class="auth-lead text-center mb-4">
+                        Buat akun terlebih dahulu untuk mengakses dashboard analitik Data Warehouse.
                     </p>
 
                     <form method="POST" action="#">
@@ -181,35 +182,59 @@
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-person"></i></span>
                                 <input type="text" class="form-control" id="username" name="username"
-                                       placeholder="Masukkan username" autocomplete="username" required autofocus>
+                                       value="{{ old('username') }}"
+                                       placeholder="Masukkan username Anda" autocomplete="username" required autofocus>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                <input type="email" class="form-control" id="email" name="email"
+                                       value="{{ old('email') }}"
+                                       placeholder="nama@gmail.com" autocomplete="email" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                <input type="password" class="form-control" id="password" name="password"
+                                       placeholder="Minimal 8 karakter" minlength="8"
+                                       autocomplete="new-password" required>
+                                <button type="button" class="btn btn-toggle" data-toggle-password="password"
+                                        aria-label="Tampilkan password">
+                                    <i class="bi bi-eye-slash"></i>
+                                </button>
                             </div>
                         </div>
 
                         <div class="mb-4">
-                            <div class="d-flex justify-content-between align-items-baseline">
-                                <label for="password" class="form-label">Password</label>
-                                <a href="#" class="small text-decoration-none">Lupa password?</a>
-                            </div>
+                            <label for="password_confirmation" class="form-label">Konfirmasi password</label>
                             <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                <input type="password" class="form-control" id="password" name="password"
-                                       placeholder="Masukkan password" autocomplete="current-password" required>
-                                <button type="button" id="togglePassword" class="btn btn-toggle"
-                                        aria-label="Tampilkan password">
-                                    <i class="bi bi-eye-slash" id="togglePasswordIcon"></i>
+                                <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                                <input type="password" class="form-control" id="password_confirmation"
+                                       name="password_confirmation"
+                                       placeholder="Ulangi password Anda" minlength="8"
+                                       autocomplete="new-password" required>
+                                <button type="button" class="btn btn-toggle" data-toggle-password="password_confirmation"
+                                        aria-label="Tampilkan konfirmasi password">
+                                    <i class="bi bi-eye-slash"></i>
                                 </button>
                             </div>
                         </div>
 
                         <button type="submit" class="btn btn-adw w-100">
-                            Masuk ke dashboard
+                            Daftar akun
                         </button>
                     </form>
 
                     <hr class="divider my-4">
 
-                    <p class="register-text text-center mb-0">
-                        Belum punya akun? <a href="{{ route('signin') }}">Daftar akun di sini</a>
+                    <p class="switch-text text-center mb-0">
+                        Sudah punya akun? <a href="{{ route('login') }}">Masuk di sini</a>
                     </p>
                 </div>
             </section>
@@ -225,15 +250,17 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const pw = document.getElementById('password');
-        const btn = document.getElementById('togglePassword');
-        const icon = document.getElementById('togglePasswordIcon');
+        document.querySelectorAll('[data-toggle-password]').forEach((btn) => {
+            const input = document.getElementById(btn.dataset.togglePassword);
+            const icon = btn.querySelector('i');
+            const label = btn.getAttribute('aria-label');
 
-        btn.addEventListener('click', () => {
-            const show = pw.type === 'password';
-            pw.type = show ? 'text' : 'password';
-            icon.className = show ? 'bi bi-eye' : 'bi bi-eye-slash';
-            btn.setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password');
+            btn.addEventListener('click', () => {
+                const show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                icon.className = show ? 'bi bi-eye' : 'bi bi-eye-slash';
+                btn.setAttribute('aria-label', show ? label.replace('Tampilkan', 'Sembunyikan') : label);
+            });
         });
     </script>
 </body>
