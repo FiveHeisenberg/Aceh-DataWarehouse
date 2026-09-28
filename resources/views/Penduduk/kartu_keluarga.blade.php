@@ -214,12 +214,6 @@
                                         <div class="mb-3">
                                             <strong id="stat-total-kk" style="font-size: 38px; font-weight: 800; color: #1a1a2e; letter-spacing: -1px;">—</strong>
                                         </div>
-                                        <div class="d-flex align-items-center justify-content-between pt-3" style="border-top: 1px solid #e8e8e8;">
-                                            <span id="stat-kk-growth" class="badge rounded-pill d-none" style="background-color: #e8f5f0; color: #0d9488; font-size: 13px; font-weight: 700; padding: 6px 12px;">
-                                                <i id="stat-kk-growth-icon" class="bi bi-arrow-up-short me-1" style="font-size: 16px;"></i>
-                                                <span id="stat-kk-growth-value">—</span>
-                                            </span>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -228,14 +222,14 @@
                             <div class="col-md-6">
                                 <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
                                     <div class="card-body p-4">
-                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                        <div class="d-flex align-items-center justify-content-between mb-1">
                                             <span class="text-uppercase" style="font-size: 12px; font-weight: 700; color: #5a6577; letter-spacing: 1px;">Jumlah KK Terbanyak</span>
                                         </div>
-                                        <div class="mb-3">
-                                            <strong id="stat-kk-terbanyak-nama" style="font-size: 22px; font-weight: 800; color: #1a1a2e;">-</strong>
+                                        <div class="mb-1">
+                                            <strong id="stat-kk-terbanyak-jumlah" style="font-size: 38px; font-weight: 800; color: #1a1a2e;">—</strong>
                                         </div>
                                         <div class="d-flex align-items-center justify-content-between pt-3" style="border-top: 1px solid #e8e8e8;">
-                                            <span id="stat-kk-terbanyak-jumlah" class="badge rounded-pill" style="background-color: #e8f5f0; color: #0d9488; font-size: 13px; font-weight: 700; padding: 6px 12px;">-</span>
+                                            <span id="stat-kk-terbanyak-nama" class="badge rounded-pill" style="background-color: #e8f5f0; color: #0d9488; font-size: 13px; font-weight: 700; padding: 6px 12px;">-</span>
                                         </div>
                                     </div>
                                 </div>
@@ -268,16 +262,17 @@
                                 </div>
                                 <p id="distribusi-subtitle" class="mb-4" style="font-size: 13px; color: #8892a4;">&nbsp;</p>
 
-                                <div id="distribusi-container">
-                                    <div class="text-center py-4 text-muted">Memuat data...</div>
+                                <div id="distribusi-chart-wrapper" class="d-none" style="max-height: 520px; overflow-y: auto; padding-right: 6px;">
+                                    <div id="distribusi-list"></div>
                                 </div>
+                                <div id="distribusi-kosong" class="text-center py-4 text-muted">Memuat data...</div>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Table Card -->
-                <div class="card" style="border: 1px solid #e0e4f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                <!-- <div class="card" style="border: 1px solid #e0e4f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
                     <div class="card-header border-0 d-flex align-items-center justify-content-between p-4" style="background-color: #ffffff; border-radius: 12px 12px 0 0;">
                         <div>
                             <h2 class="mb-1" style="font-weight: 700; color: #1a1a2e; font-size: 18px;">Tabel Rincian Data KK per Kabupaten / Kota</h2>
@@ -310,7 +305,7 @@
                             Menampilkan <strong id="kk-show-count" style="color: #1a1a2e;">0</strong> dari <strong id="kk-total-count" style="color: #1a1a2e;">0</strong> Daerah Kabupaten/Kota
                         </div>
                     </div>
-                </div>
+                </div> -->
 
                 <!-- Footer -->
                 <footer class="mt-4 pb-4">
@@ -336,7 +331,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- Custom JS Kartu Keluarga -->
-<script src="{{ asset('js/penduduk/kartu_keluarga.js') }}"></script>
+<script src="{{ asset('js/Penduduk/kartu_keluarga.js') }}"></script>
 
 </body>
 </html>

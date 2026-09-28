@@ -39,6 +39,9 @@
         elements.trenChart = document.getElementById('trenKKChart');
         elements.distribusiContainer = document.getElementById('distribusi-container');
         elements.distribusiSubtitle = document.getElementById('distribusi-subtitle');
+        elements.distribusiWrapper = document.getElementById('distribusi-chart-wrapper')
+        elements.distribusiList = document.getElementById('distribusi-list');
+        elements.distribusiKosong = document.getElementById('distribusi-kosong')
         elements.searchInput = document.getElementById('kk-search');
         elements.tableBody = document.getElementById('kk-table-body');
         elements.tableYearHead = document.getElementById('kk-table-year-head');
@@ -168,7 +171,7 @@
     function renderSummary() {
         if (!state.summary) return;
 
-        if (elements.statYearBadge) elements.statYearBadge.textContent = `Tahun ${state.summary.tahun}`;
+        if (elements.statYearBadge) elements.statYearBadge.textContent = `${state.summary.tahun}`;
         if (elements.statTotal) elements.statTotal.textContent = formatNumber(state.summary.total_kk);
 
         const pertumbuhan = state.summary.pertumbuhan_persen;
@@ -199,7 +202,7 @@
             elements.statTerbanyakNama.textContent = terbanyak ? terbanyak.nama : '—';
         }
         if (elements.statTerbanyakJumlah) {
-            elements.statTerbanyakJumlah.textContent = terbanyak ? `${formatNumber(terbanyak.jumlah)} KK` : '—';
+            elements.statTerbanyakJumlah.textContent = terbanyak ? `${formatNumber(terbanyak.jumlah)}` : '—';
         }
     }
 
@@ -217,38 +220,86 @@
                 : '&nbsp;';
         }
         if (elements.distribusiSubtitle) {
-            elements.distribusiSubtitle.textContent = state.currentYear
-                ? `Perbandingan jumlah KK antar wilayah pada tahun ${state.currentYear}.`
-                : '&nbsp;';
+            if (totalRegion > 0 && state.currentYear) {
+                elements.distribusiSubtitle.textContent = `${totalRegion} kabupaten/kota - Total ${formatNumber(sumDetailKK())} KK pada tahun ${state.currentYear}.`;
+            } else {
+                elements.distribusiSubtitle.textContent = '&nbsp;';
+            }
         }
         if (elements.totalCount) elements.totalCount.textContent = totalRegion;
     }
 
+    function sumDetailKK() {
+        return state.detail.reduce((total, item) => total + (
+            Number(item.jumlah_kk) ||
+        0), 0)
+    }
+
+    function setDistribusiKosong(message) {
+        if (elements.distribusiWrapper) elements.distribusiWrapper.classList.add('d-none');
+        if (elements.distribusiKosong) {
+            elements.distribusiKosong.textContent = message;
+            elements.distribusiKosong.classList.remove('d-none');
+        }
+    }
+
+    function escapeHtml(text) {
+        return String(text).replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[ch]));
+    }
+
     function renderDistribusi() {
-        if (!elements.distribusiContainer) return;
+        if (!elements.distribusiList || !elements.distribusiWrapper) return;
+
+        // Bersihkan instance Chart.js lama (jika masih ada)
+        if (window.distribusiKKChartInstance) {
+            window.distribusiKKChartInstance.destroy();
+            window.distribusiKKChartInstance = null;
+        }
 
         if (state.detail.length === 0) {
-            elements.distribusiContainer.innerHTML = `<div class="text-center py-4 text-muted">Tidak ada data ditemukan</div>`;
+            elements.distribusiList.innerHTML = '';
+            setDistribusiKosong('Tidak ada data ditemukan');
             return;
         }
 
-        const top = state.detail.slice(0, 5);
-        const max = Math.max(...top.map(item => item.jumlah_kk), 1);
+        elements.distribusiWrapper.classList.remove('d-none');
+        if (elements.distribusiKosong) elements.distribusiKosong.classList.add('d-none');
 
-        elements.distribusiContainer.innerHTML = top.map(item => {
-            const persen = Math.round((item.jumlah_kk / max) * 100);
+        const totalKK = sumDetailKK();
+        const items = state.detail.map(item => ({
+            nama: item.nama_kabupaten_kota,
+            nilai: Number(item.jumlah_kk) || 0
+        }));
+        const maxValue = Math.max(...items.map(i => i.nilai), 0);
+
+        elements.distribusiList.innerHTML = items.map((item, index) => {
+            const lebar = maxValue > 0 ? (item.nilai / maxValue) * 100 : 0;
+            const persen = totalKK > 0 ? (item.nilai / totalKK) * 100 : 0;
+            const tooltip = `${formatNumber(item.nilai)} KK - ${persen.toLocaleString('id-ID', {maximumFractionDigits: 1})}% dari total`;
+            const margin = index === items.length - 1 ? '0' : '22px';
+
             return `
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between mb-1">
-                        <span style="font-size: 13px; font-weight: 600; color: #1a1a2e;">${item.nama_kabupaten_kota}</span>
-                        <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">${formatNumber(item.jumlah_kk)} KK</span>
+                <div style="margin-bottom: ${margin};" title="${tooltip}">
+                    <div class="d-flex align-items-center justify-content-between" style="margin-bottom: 8px; gap: 12px;">
+                        <span style="font-size: 16px; font-weight: 500; color: #1a1a2e;">${escapeHtml(item.nama)}</span>
+                        <span style="font-size: 16px; font-weight: 800; color: #1a1a2e; white-space: nowrap;">${formatNumber(item.nilai)} KK</span>
                     </div>
-                    <div class="progress" style="height: 10px; background-color: #e8f0ff; border-radius: 5px;">
-                        <div class="progress-bar" style="width: ${persen}%; background: linear-gradient(90deg, #0d9488 0%, #14b8a6 100%); border-radius: 5px;"></div>
+                    <div style="width: 100%; height: 14px; background-color: #e8effe; border-radius: 999px; overflow: hidden;">
+                        <div class="distribusi-bar-fill" data-width="${lebar}" style="width: 0; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #0d9488 0%, #14b8a6 100%); transition: width 0.6s ease;"></div>
                     </div>
-                </div>
-            `;
+                </div>`;
         }).join('');
+
+        // Animasi bar: mulai dari 0 lalu tumbuh ke lebar sebenarnya
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                elements.distribusiList.querySelectorAll('.distribusi-bar-fill').forEach(bar => {
+                    bar.style.width = bar.dataset.width + '%';
+                });
+            });
+        });
     }
 
     function renderTable() {
@@ -361,7 +412,7 @@
     function renderTotalKK() {
         if (!state.kkTotal) return;
         if (elements.statTotal) elements.statTotal.textContent = formatNumber(state.kkTotal.total_kk);
-        if (elements.statYearBadge) elements.statYearBadge.textContent = `Tahun ${state.kkTotal.tahun}`;
+        if (elements.statYearBadge) elements.statYearBadge.textContent = `${state.kkTotal.tahun}`;
     }
 
     // ==================== MAIN ====================
@@ -385,6 +436,7 @@
         const summaryOk = await fetchSummary(tahun);
         if (!summaryOk) {
             showTableError('Gagal memuat data dari server');
+            setDistribusiKosong('Gagal memuat data dari server');
             return false;
         }
         renderSummary();
@@ -392,6 +444,7 @@
         const detailOk = await fetchDetail(tahun);
         if (!detailOk) {
             showTableError('Gagal memuat tabel');
+            setDistribusiKosong('Gagal memuat data dari server');
             return false;
         }
         renderDynamicLabels();

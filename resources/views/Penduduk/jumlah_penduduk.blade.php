@@ -395,10 +395,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- 4. Custom JS Utama (Menangani API Index, Tabel, Chart Tren) -->
-<script src="{{ asset('js/penduduk/jumlah_penduduk.js') }}"></script>
+<script src="{{ asset('js/Penduduk/jumlah_penduduk.js') }}"></script>
 
 <!-- 5. Custom JS Peta (Menangani Leaflet & Choropleth) -->
-<script src="{{ asset('js/penduduk/map-leaflet.js') }}"></script>
+<script src="{{ asset('js/Penduduk/map-leaflet.js') }}"></script>
 
 
 
