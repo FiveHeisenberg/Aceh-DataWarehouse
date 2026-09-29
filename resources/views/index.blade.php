@@ -7,6 +7,36 @@
     <title>Aceh Data Warehouse</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+
+    <style>
+        .profile-toggle::after {
+            display: none;
+        }
+
+        .profile-toggle:focus {
+            box-shadow: none;
+        }
+
+        .profile-menu {
+            min-width: 210px;
+            border: 1px solid #e0e4f0;
+            border-radius: 10px
+            padding: 6px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.10);
+        }
+
+        .profile-menu .dropdown-item {
+            font-size: 13px;
+            color: #333;
+            border-radius: 6px;
+            padding: 8px 12px;
+        }
+
+        .profile-menu .dropdown-item:hover {
+            background-color: #e8f5f0;
+            color: #0d9488;
+        }
+    </style>
 </head>
 
 <body style="background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
@@ -39,8 +69,45 @@
             <div class="d-flex align-items-center" style="gap: 18px;">
                 <i class="bi bi-bell nav-icon" style="font-size: 19px; color: #5a6577;"></i>
                 <i class="bi bi-gear nav-icon" style="font-size: 19px; color: #5a6577;"></i>
-                <div class="d-flex align-items-center justify-content-center rounded-circle nav-icon" style="width: 34px; height: 34px; background-color: #eef2f9;">
-                    <i class="bi bi-person-fill" style="font-size: 18px; color: #5a6577;"></i>
+                <div class="dropdown">
+                    <button class="btn p-0 border-0 bg-transparent dropdown-toggle profile-toggle" type="button"
+                            data-bs-toggle="dropdown" aria-expanded="false" aria-label="Menu akun">
+                        <span class="d-flex align-items-center justify-content-center rounded-circle"
+                              style="width: 34px; height: 34px; background-color: #eef2f9;">
+                            <i class="bi bi-person-fill" style="font-size: 18px; color: #5a6577;"></i>
+                        </span>
+                    </button>
+
+                    <ul class="dropdown-menu dropdown-menu-end profile-menu">
+                        <li class="px-3 pt-1 pb-2">
+                            <div style="font-size: 13px; font-weight: 700; color: #1a1a2e;">Administrator</div>
+                            <div style="font-size: 11px; color: #8892a4;">admin@aceh.go.id</div>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+
+                        <li>
+                            <a href="#" class="dropdown-item d-flex align-items-center">
+                                <i class="bi bi-person me-2"></i> Profile
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="dropdown-item d-flex align-items-center">
+                                <i class="bi bi-people me-2"></i> Manajemen User
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="dropdown-item d-flex align-items-center">
+                                <i class="bi bi-arrow-repeat me-2"></i> ETL
+                            </a>
+                        </li>
+
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a href="#" class="dropdown-item d-flex align-items-center" style="color: #dc3545;">
+                                <i class="bi bi-box-arrow-right me-2"></i> Logout
+                            </a>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </nav>
