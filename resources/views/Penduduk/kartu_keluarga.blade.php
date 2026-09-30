@@ -84,7 +84,7 @@
             <a href="/" class="me-3 d-flex align-items-center" style="color: #5a6577;">
                 <i class="bi bi-chevron-left" style="font-size: 18px;"></i>
             </a>
-            <a href="/" class="text-decoration-none me-4" style="color: #1a1a2e; font-weight: 600; font-size: 15px;">Home</a>
+            <a href="/index" class="text-decoration-none me-4" style="color: #1a1a2e; font-weight: 600; font-size: 15px;">Home</a>
             <a href="#" class="text-decoration-none" style="color: #5a6577; font-weight: 500; font-size: 15px;">About</a>
         </div>
 
@@ -122,7 +122,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#" class="dropdown-item d-flex align-items-center">
+                        <a href="http://192.168.222.152:8080/" class="dropdown-item d-flex align-items-center">
                             <i class="bi bi-arrow-repeat me-2"></i> ETL
                         </a>
                     </li>
@@ -244,7 +244,7 @@
                 <!-- Breadcrumb + Filter -->
                 <div class="d-flex align-items-center justify-content-between mb-2">
                     <nav style="font-size: 15px; color: #5a6577;">
-                        <a href="/" class="text-decoration-none" style="color: #5a6577;">Home</a>
+                        <a href="/index" class="text-decoration-none" style="color: #5a6577;">Home</a>
                         <span class="mx-1">&gt;</span>
                         <span>Penduduk</span>
                         <span class="mx-1">&gt;</span>

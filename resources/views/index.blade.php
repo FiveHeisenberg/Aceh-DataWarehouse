@@ -96,7 +96,7 @@
                             </a>
                         </li>
                         <li>
-                            <a href="#" class="dropdown-item d-flex align-items-center">
+                            <a href="http://192.168.222.152:8080/" target="blank" class="dropdown-item d-flex align-items-center">
                                 <i class="bi bi-arrow-repeat me-2"></i> ETL
                             </a>
                         </li>
