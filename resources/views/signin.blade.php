@@ -131,6 +131,38 @@
             border-radius: 10px;
         }
 
+        /* Validasi */
+        .form-control.is-invalid {
+            border-color: var(--adw-red);
+            background-image: none;
+        }
+        .form-control.is-invalid:focus {
+            box-shadow: 0 0 0 .2rem rgba(168, 42, 47, .15);
+        }
+        .input-group:focus-within .input-group-text:has(~ .form-control.is-invalid) {
+            border-color: var(--adw-red);
+        }
+        .field-error {
+            display: flex;
+            align-items: center;
+            gap: .35rem;
+            margin-top: .35rem;
+            color: var(--adw-red);
+            font-size: .8rem;
+        }
+
+        /* Alert */
+        .alert-adw {
+            display: flex;
+            align-items: flex-start;
+            gap: .5rem;
+            border: 1px solid #bcdfd3;
+            background: #eef7f3;
+            color: var(--adw-green-dark);
+            font-size: .9rem;
+            border-radius: 10px;
+        }
+
         .divider { border-top: 1px solid var(--adw-line); opacity: 1; }
         .switch-text { font-size: .9rem; color: var(--adw-muted); }
         .switch-text a { font-weight: 600; text-decoration: none; }
@@ -174,34 +206,77 @@
                         Buat akun terlebih dahulu untuk mengakses dashboard analitik Data Warehouse.
                     </p>
 
-                    <form method="POST" action="#">
+                    @if (session('status'))
+                        <div class="alert alert-adw mb-4" role="alert">
+                            <i class="bi bi-check-circle-fill"></i>
+                            <span>{{ session('status') }}</span>
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('signin') }}" novalidate>
                         @csrf
 
                         <div class="mb-3">
                             <label for="username" class="form-label">Username</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-person"></i></span>
-                                <input type="text" class="form-control" id="username" name="username"
+                                <input type="text" class="form-control @error('username') is-invalid @enderror"
+                                       id="username" name="username"
                                        value="{{ old('username') }}"
-                                       placeholder="Masukkan username Anda" autocomplete="username" required autofocus>
+                                       placeholder="Masukkan username Anda"
+                                       autocomplete="username" required autofocus>
                             </div>
+                            @error('username')
+                                <div class="field-error">
+                                    <i class="bi bi-exclamation-circle"></i>
+                                    <span>{{ $message }}</span>
+                                </div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="nama_lengkap" class="form-label">Nama Lengkap</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-card-heading"></i></span>
+                                <input type="text" class="form-control @error('nama_lengkap') is-invalid @enderror"
+                                       id="nama_lengkap" name="nama_lengkap"
+                                       value="{{ old('nama_lengkap') }}"
+                                       maxlength="100"
+                                       placeholder="Nama lengkap sesuai KTP"
+                                       autocomplete="name" required>
+                            </div>
+                            @error('nama_lengkap')
+                                <div class="field-error">
+                                    <i class="bi bi-exclamation-circle"></i>
+                                    <span>{{ $message }}</span>
+                                </div>
+                            @enderror
                         </div>
 
                         <div class="mb-3">
                             <label for="email" class="form-label">Email</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                <input type="email" class="form-control" id="email" name="email"
+                                <input type="email" class="form-control @error('email') is-invalid @enderror"
+                                       id="email" name="email"
                                        value="{{ old('email') }}"
+                                       maxlength="100"
                                        placeholder="nama@gmail.com" autocomplete="email" required>
                             </div>
+                            @error('email')
+                                <div class="field-error">
+                                    <i class="bi bi-exclamation-circle"></i>
+                                    <span>{{ $message }}</span>
+                                </div>
+                            @enderror
                         </div>
 
                         <div class="mb-3">
                             <label for="password" class="form-label">Password</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                <input type="password" class="form-control" id="password" name="password"
+                                <input type="password" class="form-control @error('password') is-invalid @enderror"
+                                       id="password" name="password"
                                        placeholder="Minimal 8 karakter" minlength="8"
                                        autocomplete="new-password" required>
                                 <button type="button" class="btn btn-toggle" data-toggle-password="password"
@@ -209,21 +284,33 @@
                                     <i class="bi bi-eye-slash"></i>
                                 </button>
                             </div>
+                            @error('password')
+                                <div class="field-error">
+                                    <i class="bi bi-exclamation-circle"></i>
+                                    <span>{{ $message }}</span>
+                                </div>
+                            @enderror
                         </div>
 
                         <div class="mb-4">
                             <label for="password_confirmation" class="form-label">Konfirmasi password</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
-                                <input type="password" class="form-control" id="password_confirmation"
-                                       name="password_confirmation"
-                                       placeholder="Ulangi password Anda" minlength="8"
+                                <input type="password" class="form-control @error('password_confirmation') is-invalid @enderror"
+                                       id="password_confirmation" name="password_confirmation"
+                                       placeholder="Ulagi password Anda" minlength="8"
                                        autocomplete="new-password" required>
                                 <button type="button" class="btn btn-toggle" data-toggle-password="password_confirmation"
                                         aria-label="Tampilkan konfirmasi password">
                                     <i class="bi bi-eye-slash"></i>
                                 </button>
                             </div>
+                            @error('password_confirmation')
+                                <div class="field-error">
+                                    <i class="bi bi-exclamation-circle"></i>
+                                    <span>{{ $message }}</span>
+                                </div>
+                            @enderror
                         </div>
 
                         <button type="submit" class="btn btn-adw w-100">
