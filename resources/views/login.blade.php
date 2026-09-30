@@ -173,7 +173,7 @@
                         Masukkan akun Anda untuk mengakses dashboard analitik.
                     </p>
 
-                    <form method="POST" action="#">
+                    <form method="POST" action="{{ route('login.authenticate') }}">
                         @csrf
 
                         <div class="mb-3">
