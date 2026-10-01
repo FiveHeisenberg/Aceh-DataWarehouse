@@ -226,9 +226,9 @@
                     <ul class="dropdown-menu dropdown-menu-end profile-menu">
                         <li class="px-3 pt-1 pb-2">
                             <div style="font-size: 13px; font-weight: 700; color: var(--ink);">
-                                {{ Auth::user()->nama_lengkap ?? Auth::user()->username ?? 'Administrator' }}
+                                {{ $user->nama_lengkap ?? $user->username ?? 'Administrator' }}
                             </div>
-                            <div style="font-size: 11px; color: var(--soft);">{{ Auth::user()->email ?? '-' }}</div>
+                            <div style="font-size: 11px; color: var(--soft);">{{ $user->email ?: '-' }}</div>
                         </li>
                         <li><hr class="dropdown-divider my-1"></li>
 
@@ -277,8 +277,10 @@
 
                 {{-- Notifikasi sukses / error --}}
                 @if (session('success'))
-                    <div class="alert alert-success alert-ui d-flex align-items-center mb-4" role="alert">
+                    <div class="alert alert-success alert-ui alert-dismissible fade show d-flex align-items-center mb-4" role="alert" aria-live="polite">
                         <i class="bi bi-check-circle-fill me-2"></i> {{ session('success') }}
+                        <br>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
                     </div>
                 @endif
                 @if ($errors->any())
@@ -302,7 +304,7 @@
                                 <div class="text-center mb-4">
                                     <div class="avatar-wrap">
                                         <div class="avatar-box" id="avatarBox">
-<i class="bi bi-person-fill placeholder-icon"></i>
+                                            <i class="bi bi-person-fill placeholder-icon"></i>
                                         </div>
                                         <label for="fotoInput" class="camera-btn mb-0" title="Ubah foto">
                                             <i class="bi bi-camera" style="font-size: 17px;"></i>
@@ -315,7 +317,7 @@
                                     </div>
 
                                     <h5 class="mt-3 mb-0" style="font-weight: 800; font-size: 20px;">
-                                        {{ Auth::user()->nama_lengkap ?? Auth::user()->username }}
+                                        {{ $user->nama_lengkap ?? $user->username }}
                                     </h5>
                                 </div>
 
@@ -324,28 +326,28 @@
                                     <label class="form-label-ui">Username</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-person"></i></span>
-                                        <input type="text" class="form-control" value="{{ Auth::user()->username }}" readonly>
+                                        <input type="text" class="form-control" value="{{ $user->username }}" readonly>
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label-ui">Email</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                        <input type="text" class="form-control" value="{{ Auth::user()->email ?? '-' }}" readonly>
+                                        <input type="text" class="form-control" value="{{ $user->email ?: '-' }}" readonly>
                                     </div>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label-ui">Nomer Handphone</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-telephone"></i></span>
-                                        <input type="text" class="form-control" value="{{ Auth::user()->nomor_telepon ?? '-' }}" readonly>
+                                        <input type="text" class="form-control" value="{{ $user->nomor_telepon ?: '-' }}" readonly>
                                     </div>
                                 </div>
                                 <div class="mb-0">
                                     <label class="form-label-ui">Role</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="bi bi-shield-check"></i></span>
-                                        <input type="text" class="form-control" value="{{ Auth::user()->role->jenis_user ?? 'User' }}" readonly>
+                                        <input type="text" class="form-control" value="{{ $user->role?->jenis_user ?? 'User' }}" readonly>
                                     </div>
                                 </div>
 
@@ -366,7 +368,7 @@
                                 </div>
                             </div>
 
-                            <form method="POST" action="#">
+                            <form method="POST" action="{{ route('profile.update') }}">
                                 @csrf
                                 @method('PUT')
 
@@ -375,7 +377,7 @@
                                         <label class="form-label-ui">Username Akun</label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-at"></i></span>
-                                            <input type="text" name="username" class="form-control @error('username') is-invalid @enderror" value="{{ old('username', Auth::user()->username) }}">
+                                            <input type="text" name="username" class="form-control @error('username') is-invalid @enderror" value="{{ old('username', $user->username) }}">
                                         </div>
                                         @error('username') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                                     </div>
@@ -383,7 +385,7 @@
                                         <label class="form-label-ui">Nama Lengkap</label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-person"></i></span>
-                                            <input type="text" name="nama_lengkap" class="form-control @error('nama_lengkap') is-invalid @enderror" value="{{ old('nama_lengkap', Auth::user()->nama_lengkap ?? '') }}">
+                                            <input type="text" name="nama_lengkap" class="form-control @error('nama_lengkap') is-invalid @enderror" value="{{ old('nama_lengkap', $user->nama_lengkap ?? '') }}">
                                         </div>
                                         @error('nama_lengkap') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                                     </div>
@@ -391,7 +393,7 @@
                                         <label class="form-label-ui">Nomer Telepon</label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-telephone"></i></span>
-                                            <input type="tel" name="nomor_telepon" class="form-control @error('nomor_telepon') is-invalid @enderror" value="{{ old('nomor_telepon', Auth::user()->nomor_telepon ?? '') }}">
+                                            <input type="tel" name="nomor_telepon" class="form-control @error('nomor_telepon') is-invalid @enderror" value="{{ old('nomor_telepon', $user->nomor_telepon ?? '') }}">
                                         </div>
                                         @error('nomor_telepon') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                                     </div>
@@ -399,7 +401,7 @@
                                         <label class="form-label-ui">Email</label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', Auth::user()->email ?? '') }}">
+                                            <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email', $user->email ?? '') }}">
                                         </div>
                                         @error('email') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                                     </div>
@@ -423,7 +425,7 @@
                                 </div>
                             </div>
 
-                            <form method="POST" action="#">
+                            <form method="POST" action="{{ route('profile.password.update') }}">
                                 @csrf
                                 @method('PUT')
 
@@ -465,17 +467,16 @@
                                             </button>
                                         </div>
                                         <div class="hint mt-2" id="matchText">&nbsp;</div>
+                                        @error('password_confirmation') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                                     </div>
                                 </div>
-
-                                <div class="d-flex justify-content-end mt-4">
+                                <div class="d-flex justify-content-end">
                                     <button type="submit" class="btn btn-teal">
-                                        <i class="bi bi-shield-check me-1"></i> Simpan Kata Sandi Baru
+                                        <i class="bi bi-shield-check me-1">  Simpan Kata Sandi Baru</i>
                                     </button>
                                 </div>
                             </form>
                         </div>
-
                     </div>
                 </div>
 

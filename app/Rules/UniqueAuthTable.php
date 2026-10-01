@@ -13,8 +13,9 @@ class UniqueAuthTable implements ValidationRule
         private readonly string $column,
         private readonly string $message = '',
         private readonly string $connection = 'db_auth',
-    ) {
-    }
+        private readonly mixed $ignoreKey = null,
+        private readonly string $keyColumn = 'id_user',
+    ) {}
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
@@ -22,12 +23,15 @@ class UniqueAuthTable implements ValidationRule
             return;
         }
 
-        $exists = DB::connection($this->connection)
+        $query = DB::connection($this->connection)
             ->table($this->table)
-            ->where($this->column, $value)
-            ->exists();
+            ->where($this->column, $value);
 
-        if ($exists) {
+        if ($this->ignoreKey !== null) {
+            $query->where($this->keyColumn, '!=', $this->ignoreKey);
+        }
+
+        if ($query->exists()) {
             $fail($this->message !== '' ? $this->message : "{$this->column} sudah digunakan.");
         }
     }

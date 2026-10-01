@@ -1,9 +1,9 @@
 <?php
 
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Kesehatan\KesehatanController;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\ProfileController;
 
 Route::view('/', 'login')->name('login');
 
@@ -11,12 +11,15 @@ Route::view('/', 'login')->name('login');
 Route::view('/signin', 'signin')->name('signin');
 Route::post('/signin', [RegisteredUserController::class, 'store']);
 
-Route::view('/index', 'index')->name('index');
-
 Route::post('/', [LoginController::class, 'authenticate'])->name('login.authenticate');
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-// VIEW PROFILE PAGE
-Route::view('/profile', 'profile')->name('profile');
+// VIEW INDEX PAGE
+Route::view('/index', 'index')->name('index');
 
-Route::get('/kesehatan/puskesmas', [KesehatanController::class, 'index']);
+// VIEW PROFILE PAGE
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+});
