@@ -9,7 +9,7 @@ use App\Rules\UniqueAuthTable;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Password;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\Validation\ValidationException;
 
 class RegisteredUserController extends Controller
@@ -41,7 +41,7 @@ class RegisteredUserController extends Controller
                     'max:100',
                     new UniqueAuthTable('tb_user', 'email', 'Email sudah digunakan.'),
                 ],
-                'password' => ['required', 'string', 'min:8', 'confirmed' Password::min(8)->letter()->mixedCase()->number()],
+                'password' => ['required', 'string', 'confirmed', Password::min(8)->letters()->mixedCase()->numbers()],
             ],
             [
                 'username.required' => 'Username wajib diisi.',
