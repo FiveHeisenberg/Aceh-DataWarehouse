@@ -86,7 +86,7 @@
                         <li><hr class="dropdown-divider my-1"></li>
 
                         <li>
-                            <a href="#" class="dropdown-item d-flex align-items-center">
+                            <a href="{{ route('profile') }}" class="dropdown-item d-flex align-items-center">
                                 <i class="bi bi-person me-2"></i> Profile
                             </a>
                         </li>
