@@ -324,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function () {
     Object.assign(mobileToggle.style, {
         display: 'none',
         position: 'fixed',
-        top: '15px',
+        top: '85px',
         left: '15px',
         zIndex: '10001',
         width: '40px',

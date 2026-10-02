@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Penduduk\PendudukApiController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Penduduk\PendudukApiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,47 +15,89 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('penduduk')->group(function () {
 
     /**
-     * GET /api/penduduk/years
-     * Ambil daftar tahun yang tersedia di database
+     * GET /api/penduduk/tahun
+     * Daftar tahun yang tersedia (untuk filter tahun)
      */
-    Route::get('/years', [PendudukApiController::class, 'getYears'])
-        ->name('penduduk.api.years');
+    Route::get('/tahun', [PendudukApiController::class, 'getTahun'])
+        ->name('penduduk.api.tahun');
 
     /**
-     * GET /api/penduduk/index
-     * Ambil summary + detail data penduduk
-     * Query params: ?tahun=2023&search=banda&per_page=25
+     * GET /api/penduduk/jumlah-penduduk
+     * Jumlah penduduk (COUNT) per tahun
      */
-    Route::get('/index', [PendudukApiController::class, 'getIndex'])
-        ->name('penduduk.api.index');
+    Route::get('/jumlah-penduduk', [PendudukApiController::class, 'getJumlahPenduduk'])
+        ->name('penduduk.api.jumlah-penduduk');
 
     /**
-     * GET /api/penduduk/detail/{kode_kabupaten}
-     * Ambil detail data per kabupaten/kota
+     * GET /api/penduduk/map-jumlah-penduduk
+     * Data per kabupaten untuk peta choropleth
      */
-    Route::get('/detail/{kode_kabupaten}', [PendudukApiController::class, 'getDetail'])
-        ->name('penduduk.api.detail');
+    Route::get('/map-jumlah-penduduk', [PendudukApiController::class, 'getMapData'])
+        ->name('penduduk.api.map-jumlah-penduduk');
 
     /**
-     * GET /api/penduduk/tren
-     * Ambil data tren untuk chart
-     * Query params: ?kode_kab=1101&tahun_mulai=2020&tahun_akhir=2023
+     * GET /api/penduduk/trend-pertumbuhan
+     * List kabupaten (tanpa param) atau tren per tahun (dengan ?wilayah=)
      */
-    Route::get('/tren', [PendudukApiController::class, 'getTren'])
-        ->name('penduduk.api.tren');
+    Route::get('/trend-pertumbuhan', [PendudukApiController::class, 'getTrendPertumbuhan'])
+        ->name('penduduk.api.trend-pertumbuhan');
 
-    // Tambahkan ini di dalam group Route::prefix('penduduk')
-    // MAP MAP MAP
-    Route::get('/map', [PendudukApiController::class, 'getMapData'])
-        ->name('penduduk.api.map');
+    Route::get('/detail-penduduk', [PendudukApiController::class, 'getDetailPenduduk'])
+        ->name('penduduk.api.detail-penduduk');
 
-    // Group untuk Kartu Keluarga
-    Route::prefix('kk')->group(function () {
-        Route::get('/years', [PendudukApiController::class, 'getKKYears'])
-            ->name('kk.api.years');
+    /**
+     * GET /api/penduduk/struktur-umur
+     * Struktur kelompok umur berdasarkan range umur
+     */
+    Route::get('/struktur-umur', [PendudukApiController::class, 'getStrukturUmur'])
+        ->name('penduduk.api.struktur-umur');
 
-        Route::get('/index', [PendudukApiController::class, 'getKKIndex'])
-            ->name('kk.api.index');
-    });
+    /**
+     * GET /api/penduduk/kartu-keluarga/summary
+     * Ringkasan total KK per kabupaten, pertumbuhan, dan wilayah terbanyak (?tahun=)
+     */
+    Route::get('/kartu-keluarga/summary', [PendudukApiController::class, 'getKartuKeluargaSummary'])
+        ->name('penduduk.api.kartu-keluarga.summary');
+
+    /**
+     * GET /api/penduduk/kartu-keluarga/trend
+     * Tren jumlah KK per tahun
+     */
+    Route::get('/kartu-keluarga/trend', [PendudukApiController::class, 'getKartuKeluargaTrend'])
+        ->name('penduduk.api.kartu-keluarga.trend');
+
+    /**
+     * GET /api/penduduk/kartu-keluarga/detail
+     * Rincian jumlah KK per kabupaten/kota (?tahun=)
+     */
+    Route::get('/kartu-keluarga/detail', [PendudukApiController::class, 'getKartuKeluargaDetail'])
+        ->name('penduduk.api.kartu-keluarga.detail');
+    
+    /**
+     * GET /api/penduduk/pyramid-umur
+     * Data piramida penduduk: Kelompok umur (5-tahunan) x jenis kelamin (?tahun=)
+     */
+    Route::get('/pyramid-umur', [PendudukApiController::class, 'getPiramidaUmur'])
+        ->name('penduduk.api.pyramid-umur');
+
+    /**
+     * GET /api/penduduk/status-perkawinan
+     * Jumlah Penduduk berdasarkan status perkawinan (?tahun=)
+     */
+    Route::get('/status-perkawinan', [PendudukApiController::class,'getStatusPerkawinan'])
+    ->name('penduduk.api.status-perkawinan');
+
+    /**
+     * GET /api/penduduk/komposisi-agama
+     * Komposisi penduduk berdasarkan agama (?tahun=)
+     */
+    Route::get('/komposisi-agama', [PendudukApiController::class, 'getKomposisiAgama'])
+    ->name('penduduk.api.komposisi-agama');
+
+    /**
+     * GET /api/penduduk/jumlah-kk
+     */
+    Route::get('/jumlah-kk', [PendudukApiController::class, 'getKartuKeluargaTotal'])
+        ->name('penduduk.api.jumlah-kk');
 
 });

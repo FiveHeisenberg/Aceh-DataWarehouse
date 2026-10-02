@@ -1,243 +1,354 @@
 /**
  * Aceh Data Warehouse - Kartu Keluarga Module
- * File: public/js/penduduk/kartu_keluarga.js
+ * File: public/js/Penduduk/kartu_keluarga.js
+ *
+ * Mengelola interaksi dashboard kartu keluarga dengan API
+ * (Termasuk: Summary, Tabel, Chart Tren, dan Distribusi Wilayah)
  */
 (function() {
     'use strict';
 
     // ==================== KONFIGURASI ====================
     const CONFIG = {
-        API_BASE_URL: '/api/penduduk/kk',
-        DEFAULT_PER_PAGE: 25,
-        DEBOUNCE_DELAY: 300,
-        CHART_COLOR: '#0d9488',
-        CHART_BG_COLOR: 'rgba(13, 148, 136, 0.1)'
+        API_BASE_URL: '/api/penduduk'
     };
 
     // ==================== STATE ====================
     let state = {
         currentYear: null,
         years: [],
-        details: [],
         summary: null,
-        trendData: [],
-        kabTertinggi: null,
-        kotaTercepat: null,
-        searchKeyword: ''
+        trend: [],
+        detail: [],
+        search: '',
+        kkTotal: null
     };
 
-    // ==================== DOM ELEMENTS ====================
+    // ==================== DOC ELEMENTS ====================
     const elements = {};
 
     function cacheElements() {
         elements.yearSelect = document.getElementById('filter-tahun');
-        elements.statTotalKK = document.getElementById('stat-total-kk');
-        elements.statKKYearBadge = document.getElementById('stat-kk-year-badge');
-        elements.statKKGrowth = document.getElementById('stat-kk-growth');
-        elements.statKKGrowthIcon = document.getElementById('stat-kk-growth-icon');
-        elements.statKKGrowthValue = document.getElementById('stat-kk-growth-value');
-        
-        // Elemen Card KK Terbanyak
-        elements.statKKTerbanyakBadge = document.getElementById('stat-kk-terbanyak-badge');
-        elements.statKKTerbanyakNama = document.getElementById('stat-kk-terbanyak-nama');
-        elements.statKKTerbanyakJumlah = document.getElementById('stat-kk-terbanyak-jumlah');
-        
-        elements.tableBody = document.getElementById('kk-table-body');
-        elements.tableNote = document.getElementById('kk-table-note');
-        elements.searchInput = document.getElementById('kk-search');
+        elements.statYearBadge = document.getElementById('stat-kk-year-badge');
+        elements.statTotal = document.getElementById('stat-total-kk');
+        elements.statGrowth = document.getElementById('stat-kk-growth');
+        elements.statGrowthIcon = document.getElementById('stat-kk-growth-icon');
+        elements.statGrowthValue = document.getElementById('stat-kk-growth-value');
+        elements.statTerbanyakNama = document.getElementById('stat-kk-terbanyak-nama');
+        elements.statTerbanyakJumlah = document.getElementById('stat-kk-terbanyak-jumlah');
         elements.trenChart = document.getElementById('trenKKChart');
+        elements.distribusiContainer = document.getElementById('distribusi-container');
+        elements.distribusiSubtitle = document.getElementById('distribusi-subtitle');
+        elements.distribusiWrapper = document.getElementById('distribusi-chart-wrapper')
+        elements.distribusiList = document.getElementById('distribusi-list');
+        elements.distribusiKosong = document.getElementById('distribusi-kosong')
+        elements.searchInput = document.getElementById('kk-search');
+        elements.tableBody = document.getElementById('kk-table-body');
+        elements.tableYearHead = document.getElementById('kk-table-year-head');
+        elements.showCount = document.getElementById('kk-show-count');
+        elements.totalCount = document.getElementById('kk-total-count');
+        elements.cakupanData = document.getElementById('cakupan-data');
+        elements.tabelSubtitle = document.getElementById('tabel-subtitle');
     }
 
-    // ==================== UTILITY FUNCTIONS ====================
+    // ==================== UTILITY ====================
+
     function formatNumber(num) {
         if (!num && num !== 0) return '—';
         return num.toLocaleString('id-ID');
     }
 
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func.apply(this, args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-
-    function showLoading(element, message = 'Memuat data...') {
-        if (element) {
-            element.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">${message}</td></tr>`;
+    function showTableLoading(message = 'Memuat data...') {
+        if (elements.tableBody) {
+            elements.tableBody.innerHTML = `<tr><td colspan="2" class="text-center py-4 text-muted">${message}</td></tr>`;
         }
     }
 
-    function showError(element, message = 'Gagal memuat data') {
-        if (element) {
-            element.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-danger">${message}</td></tr>`;
+    function showTableError(message = 'Gagal memuat data') {
+        if (elements.tableBody) {
+            elements.tableBody.innerHTML = `<tr><td colspan="2" class="text-center py-4 text-danger">${message}</td></tr>`;
         }
     }
 
-    // ==================== API FUNCTIONS ====================
+    // ==================== API ====================
+
     async function fetchYears() {
         try {
-            const response = await fetch(`${CONFIG.API_BASE_URL}/years`);
+            const response = await fetch(`${CONFIG.API_BASE_URL}/tahun`);
             const result = await response.json();
             if (result.success) {
                 state.years = result.data;
                 return true;
-            } else {
-                console.error('Gagal mengambil tahun:', result.message);
-                return false;
             }
+            return false;
         } catch (error) {
             console.error('Error fetch years:', error);
             return false;
         }
     }
 
-    async function fetchKKIndex(tahun, search = '') {
+    async function fetchSummary(tahun) {
         try {
-            let url = `${CONFIG.API_BASE_URL}/index?tahun=${tahun}&per_page=${CONFIG.DEFAULT_PER_PAGE}`;
-            if (search) {
-                url += `&search=${encodeURIComponent(search)}`;
-            }
-
+            const url = `${CONFIG.API_BASE_URL}/kartu-keluarga/summary?tahun=${tahun}`;
             const response = await fetch(url);
             const result = await response.json();
-
             if (result.success) {
-                state.currentYear = result.data.tahun_aktif;
-                state.summary = result.data.summary;
-                
-                // Gunakan optional chaining (?.) agar aman jika data kosong
-                state.details = result.data?.details?.data || [];
-                state.trendData = result.data?.tren || [];
-                state.kabTertinggi = result.data?.kab_tertinggi || null;
-                state.kotaTercepat = result.data?.kota_tercepat || null;
-                
+                state.summary = result.data;
                 return true;
-            } else {
-                console.error('Gagal mengambil data KK:', result.message);
-                return false;
             }
+            return false;
         } catch (error) {
-            console.error('Error fetch KK index:', error);
+            console.error('Error fetch summary:', error);
             return false;
         }
     }
 
-    // ==================== RENDER FUNCTIONS ====================
+    async function fetchTrend() {
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/kartu-keluarga/trend`);
+            const result = await response.json();
+            if (result.success) {
+                state.trend = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error fetch trend:', error);
+            return false;
+        }
+    }
+
+    async function fetchDetail(tahun) {
+        try {
+            const url = `${CONFIG.API_BASE_URL}/kartu-keluarga/detail?tahun=${tahun}`;
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.detail = result.data.detail || [];
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error fetch detail:', error);
+            return false;
+        }
+    }
+
+    // JUMLAH KK
+    async function fetchTotalKartuKeluarga(tahun) {
+        try {
+            const url = `${CONFIG.API_BASE_URL}/jumlah-kk?tahun=${tahun}`;
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.kkTotal = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.log('Error fetch total KK: ', error);
+            return false;
+        }
+    }
+
+    // ==================== RENDER ====================
+
     function renderYearDropdown() {
         if (!elements.yearSelect || state.years.length === 0) return;
         elements.yearSelect.innerHTML = '';
+
         state.years.forEach(year => {
             const option = document.createElement('option');
             option.value = year;
             option.textContent = year;
-            if (year === state.years[0]) {
-                option.selected = true;
-                state.currentYear = year;
-            }
             elements.yearSelect.appendChild(option);
         });
+
+        elements.yearSelect.value = state.years[0];
+        state.currentYear = Number(elements.yearSelect.value);
     }
 
-    function renderSummaryCards() {
+    function renderSummary() {
         if (!state.summary) return;
 
-        // 1. Update card Total KK
-        if (elements.statKKYearBadge) {
-            elements.statKKYearBadge.textContent = `Aceh ${state.currentYear}`;
-        }
-        if (elements.statTotalKK) {
-            elements.statTotalKK.textContent = formatNumber(state.summary.total_kk);
-        }
-        
-        const pertumbuhan = state.summary.pertumbuhan_persen || 0;
-        const isNaik = pertumbuhan >= 0;
-        const prefix = isNaik ? '+' : '';
-        const formattedGrowth = `${prefix}${pertumbuhan.toFixed(1).replace('.', ',')}%`;
-        
-        if (elements.statKKGrowthValue) {
-            elements.statKKGrowthValue.textContent = formattedGrowth;
-        }
-        if (elements.statKKGrowthIcon) {
-            elements.statKKGrowthIcon.className = isNaik 
-                ? 'bi bi-arrow-up-short me-1' 
-                : 'bi bi-arrow-down-short me-1';
-            elements.statKKGrowthIcon.style.fontSize = '16px';
-        }
-        if (elements.statKKGrowth) {
-            elements.statKKGrowth.style.backgroundColor = isNaik ? '#e8f5f0' : '#fde8e8';
-            elements.statKKGrowth.style.color = isNaik ? '#0d9488' : '#dc2626';
+        if (elements.statYearBadge) elements.statYearBadge.textContent = `${state.summary.tahun}`;
+        if (elements.statTotal) elements.statTotal.textContent = formatNumber(state.summary.total_kk);
+
+        const pertumbuhan = state.summary.pertumbuhan_persen;
+
+        if (elements.statGrowth && elements.statGrowthValue) {
+            if (pertumbuhan === null || pertumbuhan === undefined) {
+                elements.statGrowth.classList.add('d-none');
+            } else {
+                elements.statGrowth.classList.remove('d-none');
+                const positif = pertumbuhan >= 0;
+                const abs = Math.abs(pertumbuhan);
+
+                elements.statGrowthValue.textContent = `${positif ? '+' : '-'}${abs.toLocaleString('id-ID', { maximumFractionDigits: 2 })}% vs thn lalu`;
+
+                if (elements.statGrowthIcon) {
+                    elements.statGrowthIcon.className = positif
+                        ? 'bi bi-arrow-up-short me-1'
+                        : 'bi bi-arrow-down-short me-1';
+                }
+
+                elements.statGrowth.style.backgroundColor = positif ? '#e8f5f0' : '#fdeaea';
+                elements.statGrowth.style.color = positif ? '#0d9488' : '#dc2626';
+            }
         }
 
-        // 2. Update card KK Terbanyak
-        renderKKTerbanyak();
+        const terbanyak = state.summary.kabupaten_terbanyak;
+        if (elements.statTerbanyakNama) {
+            elements.statTerbanyakNama.textContent = terbanyak ? terbanyak.nama : '—';
+        }
+        if (elements.statTerbanyakJumlah) {
+            elements.statTerbanyakJumlah.textContent = terbanyak ? `${formatNumber(terbanyak.jumlah)}` : '—';
+        }
     }
 
-    function renderKKTerbanyak() {
+    function renderDynamicLabels() {
+        const totalRegion = state.detail.length;
 
-        const data = state.kabTertinggi;
-        const isKota = data.nama.toLowerCase().includes('kota');
+        if (elements.cakupanData) {
+            elements.cakupanData.innerHTML = totalRegion > 0
+                ? `${totalRegion} kabupaten/kota menampilkan data KK per tahun.`
+                : '&nbsp;';
+        }
+        if (elements.tabelSubtitle) {
+            elements.tabelSubtitle.innerHTML = totalRegion > 0
+                ? `Jumlah KK per kabupaten/kota pada tahun ${state.currentYear}.`
+                : '&nbsp;';
+        }
+        if (elements.distribusiSubtitle) {
+            if (totalRegion > 0 && state.currentYear) {
+                elements.distribusiSubtitle.textContent = `${totalRegion} kabupaten/kota - Total ${formatNumber(sumDetailKK())} KK pada tahun ${state.currentYear}.`;
+            } else {
+                elements.distribusiSubtitle.textContent = '&nbsp;';
+            }
+        }
+        if (elements.totalCount) elements.totalCount.textContent = totalRegion;
+    }
 
-        if (elements.statKKTerbanyakBadge) {
-            elements.statKKTerbanyakBadge.textContent = isKota ? 'Kota' : 'Kabupaten';
+    function sumDetailKK() {
+        return state.detail.reduce((total, item) => total + (
+            Number(item.jumlah_kk) ||
+        0), 0)
+    }
+
+    function setDistribusiKosong(message) {
+        if (elements.distribusiWrapper) elements.distribusiWrapper.classList.add('d-none');
+        if (elements.distribusiKosong) {
+            elements.distribusiKosong.textContent = message;
+            elements.distribusiKosong.classList.remove('d-none');
         }
-        if (elements.statKKTerbanyakNama) {
-            elements.statKKTerbanyakNama.textContent = data.nama;
-        }
-        if (elements.statKKTerbanyakJumlah) {
-            elements.statKKTerbanyakJumlah.textContent = `${formatNumber(data.jumlah)} KK`;
+    }
+
+    function escapeHtml(text) {
+        return String(text).replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[ch]));
+    }
+
+    function renderDistribusi() {
+        if (!elements.distribusiList || !elements.distribusiWrapper) return;
+
+        // Bersihkan instance Chart.js lama (jika masih ada)
+        if (window.distribusiKKChartInstance) {
+            window.distribusiKKChartInstance.destroy();
+            window.distribusiKKChartInstance = null;
         }
 
-        console.log('Card KK Terbanyak rendered:', data);
+        if (state.detail.length === 0) {
+            elements.distribusiList.innerHTML = '';
+            setDistribusiKosong('Tidak ada data ditemukan');
+            return;
+        }
+
+        elements.distribusiWrapper.classList.remove('d-none');
+        if (elements.distribusiKosong) elements.distribusiKosong.classList.add('d-none');
+
+        const totalKK = sumDetailKK();
+        const items = state.detail.map(item => ({
+            nama: item.nama_kabupaten_kota,
+            nilai: Number(item.jumlah_kk) || 0
+        }));
+        const maxValue = Math.max(...items.map(i => i.nilai), 0);
+
+        elements.distribusiList.innerHTML = items.map((item, index) => {
+            const lebar = maxValue > 0 ? (item.nilai / maxValue) * 100 : 0;
+            const persen = totalKK > 0 ? (item.nilai / totalKK) * 100 : 0;
+            const tooltip = `${formatNumber(item.nilai)} KK - ${persen.toLocaleString('id-ID', {maximumFractionDigits: 1})}% dari total`;
+            const margin = index === items.length - 1 ? '0' : '22px';
+
+            return `
+                <div style="margin-bottom: ${margin};" title="${tooltip}">
+                    <div class="d-flex align-items-center justify-content-between" style="margin-bottom: 8px; gap: 12px;">
+                        <span style="font-size: 16px; font-weight: 500; color: #1a1a2e;">${escapeHtml(item.nama)}</span>
+                        <span style="font-size: 16px; font-weight: 800; color: #1a1a2e; white-space: nowrap;">${formatNumber(item.nilai)} KK</span>
+                    </div>
+                    <div style="width: 100%; height: 14px; background-color: #e8effe; border-radius: 999px; overflow: hidden;">
+                        <div class="distribusi-bar-fill" data-width="${lebar}" style="width: 0; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #0d9488 0%, #14b8a6 100%); transition: width 0.6s ease;"></div>
+                    </div>
+                </div>`;
+        }).join('');
+
+        // Animasi bar: mulai dari 0 lalu tumbuh ke lebar sebenarnya
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                elements.distribusiList.querySelectorAll('.distribusi-bar-fill').forEach(bar => {
+                    bar.style.width = bar.dataset.width + '%';
+                });
+            });
+        });
     }
 
     function renderTable() {
         if (!elements.tableBody) return;
-        if (!state.details || state.details.length === 0) {
-            elements.tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">Tidak ada data ditemukan</td></tr>`;
-            return;
+
+        if (elements.tableYearHead) {
+            elements.tableYearHead.textContent = state.currentYear ? `KK ${state.currentYear}` : 'Jumlah KK';
         }
-        elements.tableBody.innerHTML = '';
-        state.details.forEach((item) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="px-4 py-3">
-                    <i class="bi bi-${item.nama_kabupaten_kota.toLowerCase().includes('kota') ? 'building-fill' : 'building'} me-2" 
-                       style="color: ${item.nama_kabupaten_kota.toLowerCase().includes('kota') ? '#0d9488' : '#5a6577'};"></i>
-                    <strong style="color: #1a1a2e;">${item.nama_kabupaten_kota}</strong>
-                </td>
-                <td class="px-4 py-3 text-end text-muted">—</td>
-                <td class="px-4 py-3 text-end text-muted">—</td>
-                <td class="px-4 py-3 text-end" style="font-weight: 700; color: #1a1a2e;">
-                    ${formatNumber(item.jumlah_kartu_keluarga)}
-                </td>
-            `;
-            elements.tableBody.appendChild(row);
-        });
-        if (elements.tableNote) {
-            elements.tableNote.textContent = `${state.details.length} baris`;
+
+        const keyword = state.search.trim().toLowerCase();
+        const filtered = keyword
+            ? state.detail.filter(item => item.nama_kabupaten_kota.toLowerCase().includes(keyword))
+            : state.detail;
+
+        if (filtered.length === 0) {
+            showTableLoading(keyword ? 'Tidak ada hasil ditemukan' : 'Tidak ada data ditemukan');
+        } else {
+            elements.tableBody.innerHTML = '';
+            filtered.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-4 py-3">
+                        <i class="bi bi-building-fill me-2" style="color: #0d9488;"></i>
+                        <strong style="color: #1a1a2e;">${item.nama_kabupaten_kota}</strong>
+                    </td>
+                    <td class="px-4 py-3 text-end" style="font-weight: 700; color: #1a1a2e;">${formatNumber(item.jumlah_kk)}</td>
+                `;
+                elements.tableBody.appendChild(row);
+            });
         }
+
+        if (elements.showCount) elements.showCount.textContent = filtered.length;
+        if (elements.totalCount) elements.totalCount.textContent = state.detail.length;
     }
 
-    function renderTrenChart() {
-        if (!elements.trenChart || !state.trendData || state.trendData.length === 0) return;
+    function renderTrendChart() {
+        if (!elements.trenChart) return;
         if (typeof Chart === 'undefined') {
             console.warn('Chart.js tidak tersedia');
             return;
         }
+        if (state.trend.length === 0) return;
+
         const ctx = elements.trenChart.getContext('2d');
-        if (window.trenKKChartInstance) {
-            window.trenKKChartInstance.destroy();
-        }
-        const labels = state.trendData.map(item => {
-            return item.tahun === state.currentYear ? `${item.tahun} (Saat ini)` : item.tahun;
-        });
-        const data = state.trendData.map(item => item.total);
-        
+        if (window.trenKKChartInstance) window.trenKKChartInstance.destroy();
+
+        const labels = state.trend.map(item => item.tahun);
+        const data = state.trend.map(item => item.jumlah);
+
         window.trenKKChartInstance = new Chart(ctx, {
             type: 'line',
             data: {
@@ -245,16 +356,16 @@
                 datasets: [{
                     label: 'Jumlah KK',
                     data: data,
-                    borderColor: CONFIG.CHART_COLOR,
-                    backgroundColor: CONFIG.CHART_BG_COLOR,
+                    borderColor: '#0d9488',
+                    backgroundColor: 'rgba(13, 148, 136, 0.1)',
                     borderWidth: 3,
-                    pointBackgroundColor: '#ffffff',
-                    pointBorderColor: CONFIG.CHART_COLOR,
-                    pointBorderWidth: 3,
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
+                    pointBackgroundColor: '#0d9488',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
                     fill: true,
-                    tension: 0.3
+                    tension: 0.4
                 }]
             },
             options: {
@@ -270,36 +381,26 @@
                         displayColors: false,
                         callbacks: {
                             label: function(context) {
-                                return 'KK: ' + formatNumber(context.parsed.y);
+                                return 'Jumlah: ' + formatNumber(context.parsed.y) + ' KK';
                             }
                         }
                     }
                 },
                 scales: {
                     y: {
-                        beginAtZero: false,
+                        beginAtZero: true,
                         ticks: {
-                            callback: function(value) {
-                                return (value / 1000000).toFixed(2) + 'M';
-                            },
+                            precision: 0,
                             font: { size: 11 },
-                            color: '#8892a4'
-                        },
-                        grid: {
-                            color: '#e8e8e8',
-                            drawBorder: false,
-                            borderDash: [5, 5]
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            font: { size: 12, weight: '600' },
-                            color: function(context) {
-                                return context.tick.label.includes('Saat ini') 
-                                    ? CONFIG.CHART_COLOR 
-                                    : '#5a6577';
+                            color: '#8892a4',
+                            callback: function(value) {
+                                return formatNumber(value);
                             }
                         },
+                        grid: { color: '#e0e4f0', drawBorder: false }
+                    },
+                    x: {
+                        ticks: { font: { size: 12 }, color: '#5a6577' },
                         grid: { display: false }
                     }
                 }
@@ -307,55 +408,79 @@
         });
     }
 
-    // ==================== MAIN FUNCTIONS ====================
+    // NAMPILIN JUMLAH TOTAL KK
+    function renderTotalKK() {
+        if (!state.kkTotal) return;
+        if (elements.statTotal) elements.statTotal.textContent = formatNumber(state.kkTotal.total_kk);
+        if (elements.statYearBadge) elements.statYearBadge.textContent = `${state.kkTotal.tahun}`;
+    }
+
+    // ==================== MAIN ====================
+
     async function loadInitialData() {
         const yearsLoaded = await fetchYears();
-        if (!yearsLoaded) {
-            showError(elements.tableBody, 'Gagal memuat daftar tahun');
+        if (!yearsLoaded || state.years.length === 0) {
+            showTableError('Gagal memuat daftar tahun');
             return;
         }
         renderYearDropdown();
         await loadData(state.currentYear);
+        await fetchTrend();
+        renderTrendChart();
     }
 
-    async function loadData(tahun, search = '') {
-        showLoading(elements.tableBody, 'Memuat data...');
-        const success = await fetchKKIndex(tahun, search);
-        if (success) {
-            renderSummaryCards();
-            renderTable();
-            renderTrenChart();
-        } else {
-            showError(elements.tableBody, 'Gagal memuat data dari server');
+    async function loadData(tahun) {
+        state.currentYear = tahun;
+        showTableLoading();
+
+        const summaryOk = await fetchSummary(tahun);
+        if (!summaryOk) {
+            showTableError('Gagal memuat data dari server');
+            setDistribusiKosong('Gagal memuat data dari server');
+            return false;
         }
+        renderSummary();
+
+        const detailOk = await fetchDetail(tahun);
+        if (!detailOk) {
+            showTableError('Gagal memuat tabel');
+            setDistribusiKosong('Gagal memuat data dari server');
+            return false;
+        }
+        renderDynamicLabels();
+        renderDistribusi();
+        renderTable();
+
+        const totalOk = await fetchTotalKartuKeluarga(tahun);
+        if(totalOk) renderTotalKK();
+        return true;
     }
 
     function handleYearChange(event) {
-        const selectedYear = parseInt(event.target.value);
+        const selectedYear = parseInt(event.target.value, 10);
         if (selectedYear) {
-            state.currentYear = selectedYear;
-            loadData(selectedYear, state.searchKeyword);
+            loadData(selectedYear);
         }
     }
 
-    const handleSearch = debounce(function(event) {
-        state.searchKeyword = event.target.value.trim();
-        if (state.currentYear) {
-            loadData(state.currentYear, state.searchKeyword);
-        }
-    }, CONFIG.DEBOUNCE_DELAY);
+    function handleSearchInput(event) {
+        state.search = event.target.value;
+        renderTable();
+    }
 
-    // ==================== EVENT LISTENERS ====================
+    // ==================== EVENTS ====================
+
     function attachEventListeners() {
         if (elements.yearSelect) {
             elements.yearSelect.addEventListener('change', handleYearChange);
         }
         if (elements.searchInput) {
-            elements.searchInput.addEventListener('input', handleSearch);
+            elements.searchInput.addEventListener('input', handleSearchInput);
         }
     }
 
-    // ==================== INITIALIZATION ====================
+    // ==================== INIT ====================
+
     function init() {
         console.log('%c Aceh Data Warehouse - Kartu Keluarga ', 'background: #0d9488; color: #fff; font-size: 12px; padding: 4px 8px; border-radius: 4px;');
         cacheElements();
@@ -368,12 +493,5 @@
     } else {
         init();
     }
-
-    // Expose untuk debugging di console browser
-    window.KartuKeluarga = {
-        state: state,
-        loadData: loadData,
-        renderTrenChart: renderTrenChart
-    };
 
 })();

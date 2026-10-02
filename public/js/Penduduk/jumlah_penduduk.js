@@ -11,26 +11,21 @@
     // ==================== KONFIGURASI ====================
     const CONFIG = {
         API_BASE_URL: '/api/penduduk',
-        DEFAULT_PER_PAGE: 25,
-        DEBOUNCE_DELAY: 300
+        DEFAULT_PER_PAGE: 25
     };
 
     // ==================== STATE ====================
     let state = {
         currentYear: null,
         years: [],
+        strukturUmur: [],
+        pyramid: null,
+        kabupaten: [],
         details: [],
         summary: null,
         trendData: [],
-        searchKeyword: ''
-    };
-
-    // State khusus untuk Peta
-    let mapState = {
-        geoLayer: null,
-        popByKode: new Map(),
-        popByName: new Map(),
-        currentTahun: null
+        statusPerkawinan: [],
+        komposisiAgama: []
     };
 
     // ==================== DOC ELEMENTS ====================
@@ -42,11 +37,22 @@
         elements.statTotalSatuan = document.getElementById('stat-total-satuan');
         elements.statPertumbuhan = document.getElementById('stat-pertumbuhan');
         elements.tableBody = document.getElementById('table-body');
-        elements.tableNote = document.getElementById('table-note');
-        elements.searchInput = document.getElementById('table-search');
         elements.trendChart = document.getElementById('trendChart');
-        elements.filterKabupaten = document.getElementById('filter-kabupaten');
-        elements.acehMap = document.getElementById('aceh-map'); // Elemen Peta
+        elements.filterTrend = document.getElementById('filter-trend');
+
+        // Untuk Diagram Piramida
+        elements.pyramidChart = document.getElementById('pyramidChart');
+        elements.legendTotalL = document.getElementById('legend-total-l');
+        elements.legendTotalP = document.getElementById('legend-total-p');
+
+        // Untuk Analisi Status Perkawinan
+        elements.statSudahKawin = document.getElementById('stat-sudah-kawin');
+        elements.statBelumKawin = document.getElementById('stat-belum-kawin');
+        elements.statCeraiMati = document.getElementById('stat-cerai-mati');
+        elements.statCeraiHidup = document.getElementById('stat-cerai-hidup');
+
+        // Untuk Analisis Komposisi Agama
+        elements.agamaContainer = document.getElementById('agama-container')
     }
 
     // ==================== UTILITY FUNCTIONS ====================
@@ -56,27 +62,15 @@
         return num.toLocaleString('id-ID');
     }
 
-    function debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func.apply(this, args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
-    }
-
     function showLoading(element, message = 'Memuat data...') {
         if (element) {
-            element.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">${message}</td></tr>`;
+            element.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">${message}</td></tr>`;
         }
     }
 
     function showError(element, message = 'Gagal memuat data') {
         if (element) {
-            element.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-danger">${message}</td></tr>`;
+            element.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-danger">${message}</td></tr>`;
         }
     }
 
@@ -84,7 +78,7 @@
 
     async function fetchYears() {
         try {
-            const response = await fetch(`${CONFIG.API_BASE_URL}/years`);
+            const response = await fetch(`${CONFIG.API_BASE_URL}/tahun`);
             const result = await response.json();
             if (result.success) {
                 state.years = result.data;
@@ -97,151 +91,167 @@
         }
     }
 
-    async function fetchIndexData(tahun, search = '') {
+    async function fetchIndexData(tahun) {
         try {
-            let url = `${CONFIG.API_BASE_URL}/index?tahun=${tahun}&per_page=${CONFIG.DEFAULT_PER_PAGE}`;
-            if (search) url += `&search=${encodeURIComponent(search)}`;
-
-            const response = await fetch(url);
+            const response = await fetch(`${CONFIG.API_BASE_URL}/jumlah-penduduk`);
             const result = await response.json();
 
             if (result.success) {
-                state.currentYear = result.data.tahun_aktif;
-                state.summary = result.data.summary;
-                state.details = result.data.details.data;
-                state.trendData = result.data.tren;
+                const rows = result.data;
+                const current = rows.find(r => Number(r.tahun) === Number(tahun));
+                const prev = rows.find(r => Number(r.tahun) === Number(tahun) - 1);
+
+                state.currentYear = tahun;
+                state.summary = {
+                    total_penduduk: current ? Number(current.jumlah) : 0,
+                    total_tahun_lalu: prev ? Number(prev.jumlah) : 0,
+                    pertumbuhan_persen: (current && prev && prev.jumlah > 0)
+                        ? ((current.jumlah - prev.jumlah) / prev.jumlah) * 100
+                        : 0,
+                };
+                state.details = [];
+                state.trendData = rows.map(r => ({ tahun: Number(r.tahun), total: Number(r.jumlah) }));
                 return true;
             }
             return false;
         } catch (error) {
-            console.error('Error fetch index:', error);
+            console.error('Error fetch data:', error);
             return false;
         }
     }
 
-    // ==================== MAP FUNCTIONS ====================
-
-    // Normalisasi untuk pencocokan nama/kode yang toleran
-    const normKode = (k) => String(k || '').replace(/\D/g, '');
-    const normName = (n) => String(n || '')
-        .toUpperCase()
-        .replace(/^KABUPATEN\s+/, '')
-        .replace(/^KAB.?\s+/, '')
-        .replace(/^KOTA\s+/, '')
-        .replace(/[^A-Z]/g, '');
-
-    function lookupMapData(props) {
-        return mapState.popByName.get(normName(props.nama)) || mapState.popByKode.get(normKode(props.kode)) || null;
-    }
-
-    function getColor(pop) {
-        return pop > 500000 ? '#7f0000' :
-               pop > 400000 ? '#b30000' :
-               pop > 300000 ? '#d7301f' :
-               pop > 200000 ? '#ef6548' :
-               pop > 0       ? '#fcbba1' : '#e3e7ee';
-    }
-
-    function styleFeature(feature) {
-        const d = lookupMapData(feature.properties);
-        return {
-            color: '#ffffff',
-            weight: 1,
-            fillColor: getColor(d ? d.jumlah_penduduk : 0),
-            fillOpacity: 0.8,
-        };
-    }
-
-    function tooltipHtml(props) {
-        const d = lookupMapData(props);
-        if (!d) {
-            return `<strong>${props.nama}</strong><br>Tidak ada data untuk tahun ${mapState.currentTahun ?? '-'}`;
-        }
-        const growth = (d.pertumbuhan_persen === null || d.pertumbuhan_persen === undefined)
-            ? ''
-            : `<br>Pertumbuhan: ${d.pertumbuhan_persen > 0 ? '+' : ''}${d.pertumbuhan_persen}%`;
-            
-        return `<strong>${d.nama}</strong><br>
-                Tahun ${mapState.currentTahun}: ${formatNumber(d.jumlah_penduduk)} ${(d.satuan || 'jiwa').toLowerCase()}<br>
-                Peringkat ${d.peringkat} dari ${mapState.popByKode.size}${growth}`;
-    }
-
-    function onEachFeature(feature, layer) {
-        layer.bindTooltip('', { sticky: true, className: 'map-tip' });
-        layer.on({
-            mouseover: (e) => {
-                e.target.setStyle({ weight: 3, fillOpacity: 0.95 });
-                e.target.bringToFront();
-                e.target.setTooltipContent(tooltipHtml(feature.properties));
-            },
-            mouseout: (e) => {
-                if (mapState.geoLayer) mapState.geoLayer.resetStyle(e.target);
-            },
-            click: () => {
-                const d = lookupMapData(feature.properties);
-                if (elements.filterKabupaten && d) {
-                    elements.filterKabupaten.value = d.kode;
-                    elements.filterKabupaten.dispatchEvent(new Event('change'));
-                }
-            },
-        });
-    }
-
-    async function loadPopulationForYearMap(tahun) {
+    async function fetchKabupatenOptions() {
         try {
-            const url = `${CONFIG.API_BASE_URL}/map${tahun ? '?tahun=' + tahun : ''}`;
-            const res = await fetch(url);
-            const body = await res.json();
-            
-            if (!body.success) throw new Error(body.message || 'Gagal memuat data peta');
-            
-            mapState.currentTahun = body.data.tahun;
-            mapState.popByKode = new Map();
-            mapState.popByName = new Map();
-            
-            body.data.kabupaten.forEach((row) => {
-                mapState.popByKode.set(normKode(row.kode), row);
-                mapState.popByName.set(normName(row.nama), row);
-            });
-            
-            if (mapState.geoLayer) {
-                mapState.geoLayer.setStyle(styleFeature);
+            const response = await fetch(`${CONFIG.API_BASE_URL}/trend-pertumbuhan`);
+            const result = await response.json();
+            if (result.success) {
+                state.kabupaten = result.data.kabupaten;
+                return true;
             }
-        } catch (err) {
-            console.error('Gagal memuat data peta:', err);
+            return false;
+        } catch (error) {
+            console.error('Error fetch kabupaten:', error);
+            return false;
         }
     }
 
-    async function initMap() {
-        if (!elements.acehMap) return;
-        if (typeof L === 'undefined') {
-            console.warn('Leaflet belum termuat. Peta tidak dapat diinisialisasi.');
-            return;
-        }
-
-        const map = L.map(elements.acehMap, { scrollWheelZoom: false }).setView([4.7, 96.8], 8);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap',
-            maxZoom: 20,
-        }).addTo(map);
-
+    async function fetchTrendPerKabupaten(nama) {
         try {
-            // Ambil URL dari meta tag atau fallback ke path default
-            const geojsonUrl = document.querySelector('meta[name="geojson-url"]')?.content || '/assets/data/aceh-kabupaten.geojson';
-            const geojson = await fetch(geojsonUrl).then((r) => r.json());
-            
-            // Load data tahun terbaru saat inisialisasi
-            await loadPopulationForYearMap(null); 
-            
-            mapState.geoLayer = L.geoJSON(geojson, { 
-                style: styleFeature, 
-                onEachFeature 
-            }).addTo(map);
-            
-            map.fitBounds(mapState.geoLayer.getBounds(), { padding: [12, 12] });
-            
-        } catch (err) {
-            console.error('Gagal memuat peta GeoJSON:', err);
+            const response = await fetch(`${CONFIG.API_BASE_URL}/trend-pertumbuhan?wilayah=${encodeURIComponent(nama)}`);
+            const result = await response.json();
+            if (result.success) {
+                state.trendData = result.data.tren.map(r => ({ tahun: r.tahun, total: r.jumlah }));
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error fetch tren kabupaten:', error);
+            return false;
+        }
+    }
+
+    async function fetchTableData(tahun) {
+        try {
+            let url = `${CONFIG.API_BASE_URL}/detail-penduduk`;
+            const params = new URLSearchParams();
+            if (tahun) params.set('tahun', tahun);
+            const qs = params.toString();
+            if (qs) url += `?${qs}`;
+
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.details = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error fetch detail:', error);
+            return false;
+        }
+    }
+
+    async function fetchStrukturUmur(tahun) {
+        try {
+            let url = `${CONFIG.API_BASE_URL}/struktur-umur`;
+            const params = new URLSearchParams();
+            if (tahun) params.set('tahun', tahun);
+            const qs = params.toString();
+            if (qs) url += `?${qs}`;
+
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.strukturUmur = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error fetch struktur umur:', error);
+            return false;
+        }
+    }
+
+    async function fetchPiramidaUmur(tahun) {
+        try {
+            let url = `${CONFIG.API_BASE_URL}/pyramid-umur`;
+            const params = new URLSearchParams();
+            if (tahun) params.set('tahun', tahun);
+            const qs = params.toString();
+            if (qs) url += `?${qs}`;
+
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.pyramid = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error fetch piramida umur:', error);
+            return false;
+        }
+    }
+
+    async function fetchStatusPerkawinan(tahun) {
+        try {
+            let url = `${CONFIG.API_BASE_URL}/status-perkawinan`;
+            const params = new URLSearchParams();
+            if (tahun) params.set('tahun', tahun);
+            const qs = params.toString();
+            if (qs) url += `?${qs}`
+
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.statusPerkawinan = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.log('Error fetch Status Perkawinan:', error);
+            return false;
+        }
+    }
+
+    async function fetchKomposisiAgama(tahun) {
+        try {
+            let url = `${CONFIG.API_BASE_URL}/komposisi-agama`;
+            const params = new URLSearchParams();
+            if (tahun) params.set('tahun', tahun);
+            const qs = params.toString();
+            if (qs) url += `?${qs}`;
+
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.komposisiAgama = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.log('Error Fetch Komposisi Agama: ', error);
+            return false;
         }
     }
 
@@ -263,6 +273,18 @@
         });
     }
 
+    function renderTrendSelect() {
+        if (!elements.filterTrend || !state.kabupaten || state.kabupaten.length === 0) return;
+        elements.filterTrend.innerHTML = '<option value="">Seluruh Aceh (total)</option>';
+
+        state.kabupaten.forEach((kab) => {
+            const option = document.createElement('option');
+            option.value = kab.nama;
+            option.textContent = kab.nama;
+            elements.filterTrend.appendChild(option);
+        });
+    }
+
     function renderSummary() {
         if (!state.summary) return;
         if (elements.statTotal) elements.statTotal.textContent = formatNumber(state.summary.total_penduduk);
@@ -277,7 +299,7 @@
     function renderTable() {
         if (!elements.tableBody) return;
         if (!state.details || state.details.length === 0) {
-            elements.tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">Tidak ada data ditemukan</td></tr>`;
+            elements.tableBody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">Tidak ada data ditemukan</td></tr>`;
             return;
         }
         elements.tableBody.innerHTML = '';
@@ -287,11 +309,132 @@
                 <td class="px-4 py-3">${item.nama_kabupaten_kota}</td>
                 <td class="px-4 py-3 text-end">${item.tahun}</td>
                 <td class="px-4 py-3 text-end fw-semibold">${formatNumber(item.jumlah_penduduk)}</td>
-                <td class="px-4 py-3 text-end text-muted">${item.satuan || 'jiwa'}</td>
             `;
             elements.tableBody.appendChild(row);
         });
-        if (elements.tableNote) elements.tableNote.textContent = `${state.details.length} baris`;
+    }
+
+    function renderStrukturUmur() {
+        const container = document.getElementById('struktur-umur-container');
+        if (!container) return;
+
+        if (!state.strukturUmur || state.strukturUmur.length === 0) {
+            container.innerHTML = `<div class="text-center py-4 text-muted">Tidak ada data ditemukan</div>`;
+            return;
+        }
+
+        const colorMap = {
+            '0-5': { bg: '#f4f6fb', dot: '#93c5fd', color: '#1a1a2e' },
+            '6-9': { bg: '#f4f6fb', dot: '#5eead4', color: '#1a1a2e' },
+            '10-17': { bg: '#f4f6fb', dot: '#38bdf8', color: '#1a1a2e' },
+            '18-59': { bg: '#e8f5f0', dot: '#0d9488', color: '#0d9488' },
+            '60+': { bg: '#f4f6fb', dot: '#c4c9d4', color: '#1a1a2e' },
+            'Tidak Diketahui': { bg: '#f4f6fb', dot: '#8892a4', color: '#1a1a2e' },
+        };
+
+        container.innerHTML = state.strukturUmur
+            .map((item) => {
+                const c = colorMap[item.range_umur] || colorMap['Tidak Diketahui'];
+                return `
+                    <div class="d-flex align-items-center justify-content-between p-3 mb-2" style="background-color: ${c.bg}; border-radius: 10px;">
+                        <div class="d-flex align-items-center">
+                            <span class="rounded-circle me-3" style="width: 10px; height: 10px; background-color: ${c.dot}; display: inline-block; flex-shrink: 0;"></span>
+                            <div>
+                                <div style="font-weight: 700; color: ${c.color}; font-size: 14px;">${item.kategori} (${item.range_umur})</div>
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div style="font-weight: 800; color: ${c.color}; font-size: 18px;">${formatNumber(item.jumlah)}</div>
+                        </div>
+                    </div>
+                `;
+            })
+            .join('');
+    }
+
+    function niceMax(value) {
+        if (value <= 0) {
+            return 1;
+        }
+        const exp = Math.pow(10, Math.floor(Math.log10(value)));
+        const f = value / exp;
+        const nice = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
+        return nice * exp;
+    }
+
+    // NAMPILIN DIAGRAM PIRAMIDA
+    function renderPiramidaChart() {
+        const d = state.pyramid;
+        if (!d || !elements.pyramidChart || typeof Chart === 'undefined') return;
+
+        const ctx = elements.pyramidChart.getContext('2d');
+        if (window.pyramidChartInstance) window.pyramidChartInstance.destroy();
+
+        const maxValue = Math.max(...d.laki_laki, ...d.perempuan, 1);
+        const scale = niceMax(maxValue * 1.1);
+
+        window.pyramidChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: d.labels,
+                datasets: [
+                    {
+                        label: 'Laki-laki',
+                        data: d.laki_laki.map(v => -v),
+                        backgroundColor: '#2563a8',
+                        borderRadius: 3,
+                        barThickness: 14
+                    },
+                    {
+                        label: 'Perempuan',
+                        data: d.perempuan,
+                        backgroundColor: '#0d9488',
+                        borderRadius: 3,
+                        barThickness: 14
+                    }
+                ]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {display: false},
+                    tooltip: {
+                        callbacks: {
+                            label: function (item) {
+                                return item.dataset.label + ': ' + Math.abs(item.raw).toLocaleString('id-ID') + ' jiwa';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        min: -scale,
+                        max: scale,
+                        grid: {color: '#eef0f5'},
+                        ticks: {
+                            callback: function (value) {return Math.abs(value).toLocaleString('id-ID');},
+                            color: '#8892a4',
+                            font: {size: 11}
+                        }
+                    },
+                    y: {
+                        stacked: true,
+                        grid: {display: false},
+                        ticks: {color: '#5a6577', font: {size: 11}}
+                    }
+                }
+            }
+        });
+
+        if (elements.legendTotalL) {
+            elements.legendTotalL.textContent = 'Laki-laki (' + d.total_laki_laki.toLocaleString('id-ID') + ')';
+        }
+        if (elements.legendTotalP) {
+            elements.legendTotalP.textContent = 'Perempuan (' + d.total_perempuan.toLocaleString('id-ID') + ')';
+        }
     }
 
     function renderTrendChart() {
@@ -305,6 +448,20 @@
 
         const labels = state.trendData.map(item => item.tahun);
         const data = state.trendData.map(item => item.total);
+
+        const nilaiMax = Math.max(...data, 0);
+
+        let skala = 1, awalan = '';
+        if (nilaiMax >= 1e9)      { skala = 1e9; awalan = 'B'; }
+        else if (nilaiMax >= 1e6) { skala = 1e6; awalan = 'M'; }
+        else if (nilaiMax >= 1e3) { skala = 1e3; awalan = 'K'; }
+
+        function formatTick(v) {
+            const hasil = v / skala;
+            if (skala === 1) return v.toLocaleString('id-ID');
+            return (hasil >= 100 ? Math.round(hasil).toString()
+                : hasil.toFixed(hasil % 1 === 0 ? 0 : 1)) + awalan;
+        }
 
         window.trendChartInstance = new Chart(ctx, {
             type: 'line',
@@ -345,9 +502,10 @@
                 },
                 scales: {
                     y: {
-                        beginAtZero: false,
+                        beginAtZero: true,
+                        suggestedMax: Math.ceil((nilaiMax * 1.2) / skala) * skala,
                         ticks: {
-                            callback: function(value) { return (value / 1000000).toFixed(2) + 'M'; },
+                            callback: formatTick,
                             font: { size: 11 },
                             color: '#8892a4'
                         },
@@ -362,6 +520,68 @@
         });
     }
 
+    // NAMPILIN ANALISI STATUS PERKAWINAN
+    function renderStatusPerkawinan() {
+        const mapping = {
+            'Sudah Kawin': elements.statSudahKawin,
+            'Belum Kawin': elements.statBelumKawin,
+            'Cerai Mati': elements.statCeraiMati,
+            'Cerai Hidup': elements.statCeraiHidup,
+        };
+
+        if (!state.statusPerkawinan || state.statusPerkawinan.length === 0) {
+            Object.values(mapping).forEach(el => { if (el) el.textContent = '-'; });
+            return;
+        }
+
+        Object.values(mapping).forEach(el => { if (el) el.innerHTML = "Memuat . . ."; });
+
+        state.statusPerkawinan.forEach((item) => {
+            const el = mapping[item.status];
+            if (el) el.textContent = formatNumber(item.jumlah);
+        });
+    }
+
+    // NAMPILIN ANALISIS KOMPOSISI AGAMA
+    function renderAgama() {
+        const container = elements.agamaContainer;
+        if (!container) return;
+
+        if (!state.komposisiAgama || state.komposisiAgama.length === 0) {
+            container.innerHTML = '<div class="text-center py-4 text-muted">Tidak ada data ditemukan</div>';
+            return;
+        }
+
+        const palette = {
+            'Islam': '#0d9488',
+            'Kristen': '#2563a8',
+            'Kristen Protestan': '#2563a8',
+            'Katolik': '#7c3aed',
+            'Buddha': '#5eead4',
+            'Hindu': '#f59e0b',
+            'Konghucu': '#c4c9d4',
+        };
+
+        const total = state.komposisiAgama.reduce((acc, item) => acc + item.jumlah, 0);
+
+        container.innerHTML = state.komposisiAgama.map((item) => {
+            const persen = total > 0 ? (item.jumlah / total) * 100 : 0;
+            const color = palette[item.agama] || '#c4c9d4';
+            return `
+                <div class="mb-3">
+                    <div class="d-flex align-items-center justify-content-between mb-1">
+                        <span style="font-size: 13px; color: #1a1a2e;"><span style="display:inline-block;width:8px;height:8px;background-color:${color};border-radius:50%;margin-right:6px;"></span>${item.agama}</span>
+                        <span style="font-size: 13px; font-weight: 700; color: #1a1a2e;">${formatNumber(item.jumlah)} jiwa (${persen.toFixed(2)}%)</span>
+                    </div>
+                    <div class="progress" style="height: 5px; background-color: #eef0f5;">
+                        <div class="progress-bar" style="width: ${Math.min(100, persen)}%; background-color: ${color};"></div>
+                    </div>
+                </div>
+            `;
+        })
+        .join('');
+    }
+
     // ==================== MAIN FUNCTIONS ====================
 
     async function loadInitialData() {
@@ -372,35 +592,70 @@
         }
         renderYearDropdown();
         await loadData(state.currentYear);
+        await fetchKabupatenOptions();
+        renderTrendSelect();
+        await fetchStrukturUmur(state.currentYear);
+        renderStrukturUmur();
+        await fetchPiramidaUmur(state.currentYear);
+        renderPiramidaChart();
+        await fetchStatusPerkawinan(state.currentYear);
+        renderStatusPerkawinan();
+        await fetchKomposisiAgama(state.currentYear);
+        renderAgama();
     }
 
-    async function loadData(tahun, search = '') {
+    async function loadData(tahun) {
         showLoading(elements.tableBody, 'Memuat data...');
-        const success = await fetchIndexData(tahun, search);
+        const success = await fetchIndexData(tahun);
         if (success) {
             renderSummary();
-            renderTable();
             renderTrendChart();
         } else {
             showError(elements.tableBody, 'Gagal memuat data dari server');
+            return;
         }
+
+        const tableOk = await fetchTableData(tahun);
+        if (tableOk) {
+            renderTable();
+        } else {
+            showError(elements.tableBody, 'Gagal memuat tabel');
+        }
+
+        await fetchStrukturUmur(tahun);
+        renderStrukturUmur();
+        await fetchPiramidaUmur(tahun);
+        renderPiramidaChart();
+        await fetchStatusPerkawinan(tahun);
+        renderStatusPerkawinan();
+        await fetchKomposisiAgama(tahun);
+        renderAgama();
     }
 
     function handleYearChange(event) {
         const selectedYear = parseInt(event.target.value);
         if (selectedYear) {
             state.currentYear = selectedYear;
-            loadData(selectedYear, state.searchKeyword);
-            loadPopulationForYearMap(selectedYear); // Update peta secara sinkron
+            loadData(selectedYear);
         }
     }
 
-    const handleSearch = debounce(function(event) {
-        state.searchKeyword = event.target.value.trim();
-        if (state.currentYear) {
-            loadData(state.currentYear, state.searchKeyword);
+    function handleTrendFilterChange(event) {
+        const nama = event.target.value;
+
+        if (!nama) {
+            loadData(state.currentYear);
+            return;
         }
-    }, CONFIG.DEBOUNCE_DELAY);
+
+        fetchTrendPerKabupaten(nama).then((ok) => {
+            if (ok) {
+                renderTrendChart();
+            } else {
+                console.error('Gagal memuat tren untuk:', nama);
+            }
+        });
+    }
 
     // ==================== EVENT LISTENERS ====================
 
@@ -408,8 +663,8 @@
         if (elements.yearSelect) {
             elements.yearSelect.addEventListener('change', handleYearChange);
         }
-        if (elements.searchInput) {
-            elements.searchInput.addEventListener('input', handleSearch);
+        if (elements.filterTrend) {
+            elements.filterTrend.addEventListener('change', handleTrendFilterChange);
         }
     }
 
@@ -419,9 +674,6 @@
         console.log('%c Aceh Data Warehouse - Jumlah Penduduk ', 'background: #0d9488; color: #fff; font-size: 12px; padding: 4px 8px; border-radius: 4px;');
         cacheElements();
         attachEventListeners();
-        
-        // Inisialisasi Peta
-        initMap();
         
         // Load data awal (Tabel, Chart, Summary)
         loadInitialData();
