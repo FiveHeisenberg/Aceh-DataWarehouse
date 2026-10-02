@@ -135,6 +135,19 @@
         .register-text a { font-weight: 600; text-decoration: none; }
         .register-text a:hover { text-decoration: underline; }
 
+        /* ALERT */
+        .alert-adw {
+            display: flex;
+            align-items: flex-start;
+            gap: .5rem;
+            border: 1px solid #bcdfd3;
+            background: #eef7f3;
+            color: var(--adw-green-dark);
+            font-size: .9rem;
+            border-radius: 10px;
+        }
+        .aler-adw .btn-clode {margin-left: auto;}
+
         /* Footer */
         .footer-line {
             border-top: 1px solid var(--adw-line);
@@ -172,6 +185,15 @@
                     <p class="login-lead text-center mb-4">
                         Masukkan akun Anda untuk mengakses dashboard analitik.
                     </p>
+
+                    @if (session('status'))
+                        <!-- NOTIFIKASI STATUS LOGIN -->
+                        <div id="notif-register" class="alert alert-adw alert-dismissible fade show mb-4" role="alert" aria-live="polite">
+                            <i class="bi bi-check-circle-fill"></i>
+                            <span>{{ session('status') }}</span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                        </div>
+                    @endif
 
                     <form method="POST" action="{{ route('login.authenticate') }}">
                         @csrf
@@ -225,6 +247,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+
+        // FUNGSI LIHAT PASSWORD
         const pw = document.getElementById('password');
         const btn = document.getElementById('togglePassword');
         const icon = document.getElementById('togglePasswordIcon');
@@ -235,6 +259,17 @@
             icon.className = show ? 'bi bi-eye' : 'bi bi-eye-slash';
             btn.setAttribute('aria-label', show ? 'Sembunyikan password' : 'Tampilkan password');
         });
+
+        // NOTIFIKASI PENDAFTARAN BERHASIL (3 DETIK)
+        const notif = document.getElementById('notif-register');
+
+        if (notif) {
+            setTimeout(() => {
+                notif.classList.remove('show');
+                notif.addEventListener('transitionend', () => notif.remove(), {once: true});
+            }, 3000);
+        }
+
     </script>
 </body>
 </html>
