@@ -60,6 +60,9 @@
             background-color: #e8f5f0;
             color: #0d9488;
         }
+    
+        .modal { z-index: 1200; }
+        .modal-backdrop { z-index: 1190; }
     </style>
 </head>
 <body style="background-color: #f8f9fc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
@@ -104,15 +107,16 @@
                     </span>
                 </button>
 
+                @php($user = auth()->user())
                 <ul class="dropdown-menu dropdown-menu-end profile-menu">
                     <li class="px-3 pt-1 pb-2">
-                        <div style="font-size: 13px; font-weight: 700; color: #1a1a2e;">Administrator</div>
-                        <div style="font-size: 11px; color: #8892a4;">admin@aceh.go.id</div>
+                        <div style="font-size: 13px; font-weight: 700; color: #1a1a2e;">{{ $user->nama_lengkap ?? $user->username ?? 'Administrator' }}</div>
+                        <div style="font-size: 11px; color: #8892a4;">{{ $user?->email ?: '-' }}</div>
                     </li>
                     <li><hr class="dropdown-divider my-1"></li>
 
                     <li>
-                        <a href="#" class="dropdown-item d-flex align-items-center">
+                        <a href="{{ route('profile') }}" class="dropdown-item d-flex align-items-center">
                             <i class="bi bi-person me-2"></i> Profile
                         </a>
                     </li>
@@ -129,9 +133,9 @@
 
                     <li><hr class="dropdown-divider my-1"></li>
                     <li>
-                        <a href="#" class="dropdown-item d-flex align-items-center" style="color: #dc3545;">
+                        <button type="button" class="dropdown-item d-flex align-items-center w-100" style="color: #dc3545;" data-bs-toggle="modal" data-bs-target='#konfirmasiLogout'>
                             <i class="bi bi-box-arrow-right me-2"></i> Logout
-                        </a>
+                        </button>
                     </li>
                 </ul>
             </div>
@@ -335,42 +339,6 @@
                     </div>
                 </div>
 
-                <!-- Table Card -->
-                <!-- <div class="card" style="border: 1px solid #e0e4f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
-                    <div class="card-header border-0 d-flex align-items-center justify-content-between p-4" style="background-color: #ffffff; border-radius: 12px 12px 0 0;">
-                        <div>
-                            <h2 class="mb-1" style="font-weight: 700; color: #1a1a2e; font-size: 18px;">Tabel Rincian Data KK per Kabupaten / Kota</h2>
-                            <p id="tabel-subtitle" class="mb-0" style="font-size: 13px; color: #8892a4;">&nbsp;</p>
-                        </div>
-                        <div class="position-relative" style="width: 280px;">
-                            <i class="bi bi-search position-absolute" style="left: 12px; top: 50%; transform: translateY(-50%); color: #8892a4;"></i>
-                            <input id="kk-search" type="search" class="form-control ps-5" placeholder="Cari nama Kab/Kota..." style="border-radius: 6px; border: 1px solid #d0d8e0; font-size: 14px;">
-                        </div>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0" style="font-size: 14px;">
-                                <thead style="background-color: #eef2f9;">
-                                    <tr>
-                                        <th class="px-4 py-3" style="font-weight: 700; color: #1a1a2e; border-bottom: 1px solid #d8dde8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Kabupaten / Kota</th>
-                                        <th id="kk-table-year-head" class="px-4 py-3 text-end" style="font-weight: 700; color: #1a1a2e; border-bottom: 1px solid #d8dde8; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Jumlah KK</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="kk-table-body">
-                                    <tr>
-                                        <td colspan="2" class="text-center py-4 text-muted">Memuat data...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="card-footer border-0 d-flex align-items-center justify-content-between p-4" style="background-color: #ffffff; border-radius: 0 0 12px 12px;">
-                        <div style="font-size: 13px; color: #5a6577;">
-                            Menampilkan <strong id="kk-show-count" style="color: #1a1a2e;">0</strong> dari <strong id="kk-total-count" style="color: #1a1a2e;">0</strong> Daerah Kabupaten/Kota
-                        </div>
-                    </div>
-                </div> -->
-
                 <!-- Footer -->
                 <footer class="mt-4 pb-4">
                     <div class="d-flex align-items-center justify-content-between" style="border-top: 1px solid #e0e4f0; padding-top: 20px;">
@@ -385,6 +353,28 @@
 
             </div>
         </div>
+    </div>
+</div>
+
+<!-- NOTIFIKASI KONFIRMASI LOGOUT -->
+<div class="modal fade" id="konfirmasiLogout" tabindex="-1" role="dialog" aria-labelledby="konfirmasiLogoutLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <form id="formLogout" method="POST" action="{{ route('logout') }}">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-body text-center p-4 pb-2">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 56px; height: 56px; background-color: #fdecec;">
+                        <i class="bi bi-box-arrow-right" aria-hidden="true" style="font-size: 24px; color: #dc3545;"></i>
+                    </div>
+                    <h5 class="modal-title mb-2" id="konfirmasiLogoutLabel" style="font-weight: 700; font-size: 17px; color: #1a1a2e;">Keluar dari Akun?</h5>
+                    <p class="mb-0" style="font-size: 13px; color: #5a6577; line-height: 1.6;"> Anda akan keluar dari sesi ini dan perlu masuk kembali untuk melanjutkan.</p>
+                </div>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4 gap-2">
+                    <button type="button" class="btn btn-sm flex-fill" data-bs-dismiss="modal" style="background-color: #f0f2f5; color: #333; border: 1px solid #d0d0d0; font-weight: 600;">Batal</button>
+                    <button type="submit" form="formLogout" class="btn btn-sm flex-fill" style="background-color: #dc3545; color: #ffffff; border: 1px solid #dc3545; font-weight: 600;">Ya, Logout</button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 

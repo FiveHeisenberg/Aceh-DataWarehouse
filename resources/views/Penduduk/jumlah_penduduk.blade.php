@@ -41,6 +41,9 @@
             background-color: #e8f5f0;
             color: #0d9488;
         }
+
+        .modal { z-index: 1200; }
+        .modal-backdrop { z-index: 1190; }
     </style>
 
 </head>
@@ -86,15 +89,16 @@
                     </span>
                 </button>
 
+                @php($user = auth()->user())
                 <ul class="dropdown-menu dropdown-menu-end profile-menu">
                     <li class="px-3 pt-1 pb-2">
-                        <div style="font-size: 13px; font-weight: 700; color: #1a1a2e;">Administrator</div>
-                        <div style="font-size: 11px; color: #8892a4;">admin@aceh.go.id</div>
+                        <div style="font-size: 13px; font-weight: 700; color: #1a1a2e;">{{ $user->nama_lengkap ?? $user->username ?? 'Administrator' }}</div>
+                        <div style="font-size: 11px; color: #8892a4;">{{ $user?->email ?: '-' }}</div>
                     </li>
                     <li><hr class="dropdown-divider my-1"></li>
 
                     <li>
-                        <a href="#" class="dropdown-item d-flex align-items-center">
+                        <a href="{{ route('profile') }}" class="dropdown-item d-flex align-items-center">
                             <i class="bi bi-person me-2"></i> Profile
                         </a>
                     </li>
@@ -111,9 +115,9 @@
 
                     <li><hr class="dropdown-divider my-1"></li>
                     <li>
-                        <a href="#" class="dropdown-item d-flex align-items-center" style="color: #dc3545;">
+                        <button type="button" class="dropdown-item d-flex align-items-center w-100" style="color: #dc3545;" data-bs-toggle="modal" data-bs-target='#konfirmasiLogout'>
                             <i class="bi bi-box-arrow-right me-2"></i> Logout
-                        </a>
+                        </button>
                     </li>
                 </ul>
             </div>
@@ -447,6 +451,28 @@
 
             </div>
         </div>
+    </div>
+</div>
+
+<!-- NOTIFIKASI KONFIRMASI LOGOUT -->
+<div class="modal fade" id="konfirmasiLogout" tabindex="-1" role="dialog" aria-labelledby="konfirmasiLogoutLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <form id="formLogout" method="POST" action="{{ route('logout') }}">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-body text-center p-4 pb-2">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 56px; height: 56px; background-color: #fdecec;">
+                        <i class="bi bi-box-arrow-right" aria-hidden="true" style="font-size: 24px; color: #dc3545;"></i>
+                    </div>
+                    <h5 class="modal-title mb-2" id="konfirmasiLogoutLabel" style="font-weight: 700; font-size: 17px; color: #1a1a2e;">Keluar dari Akun?</h5>
+                    <p class="mb-0" style="font-size: 13px; color: #5a6577; line-height: 1.6;"> Anda akan keluar dari sesi ini dan perlu masuk kembali untuk melanjutkan.</p>
+                </div>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4 gap-2">
+                    <button type="button" class="btn btn-sm flex-fill" data-bs-dismiss="modal" style="background-color: #f0f2f5; color: #333; border: 1px solid #d0d0d0; font-weight: 600;">Batal</button>
+                    <button type="submit" form="formLogout" class="btn btn-sm flex-fill" style="background-color: #dc3545; color: #ffffff; border: 1px solid #dc3545; font-weight: 600;">Ya, Logout</button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 

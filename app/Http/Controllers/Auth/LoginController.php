@@ -28,6 +28,11 @@ class LoginController extends Controller
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
     
+        // NOTIFIKASI LENGKAPI DIRI, HANYA SEKALI DI AWAL SESI LOGIN
+        if (blank($user->nomor_telepon)) {
+            $request->session()->put('notif_lengkapi_diri', true);
+        }
+    
         return redirect()->intended(route('index'));
     }
 

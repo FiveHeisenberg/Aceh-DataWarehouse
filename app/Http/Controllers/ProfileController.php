@@ -27,6 +27,9 @@ class ProfileController extends Controller
 
         $request->user()->fill($data)->save();
 
+        // JIKA DATA SUDAH DILENGKAPI, BUANG NOTIFIKASI "LENGKAPI DATA DIRI"
+        $request->session()->forget('notif_lengkapi_diri');
+
         return back()->with('success', 'Data profile berhasil diperbarui.');
     }
 
