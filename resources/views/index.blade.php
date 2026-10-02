@@ -78,10 +78,11 @@
                         </span>
                     </button>
 
+                    @php($user = auth()->user())
                     <ul class="dropdown-menu dropdown-menu-end profile-menu">
                         <li class="px-3 pt-1 pb-2">
-                            <div style="font-size: 13px; font-weight: 700; color: #1a1a2e;">Administrator</div>
-                            <div style="font-size: 11px; color: #8892a4;">admin@aceh.go.id</div>
+                            <div style="font-size: 13px; font-weight: 700; color: #1a1a2e;">{{ $user->nama_lengkap ?? $user->username ?? 'Administratot' }}</div>
+                            <div style="font-size: 11px; color: #8892a4;">{{ $user?->email ?: '-' }}</div>
                         </li>
                         <li><hr class="dropdown-divider my-1"></li>
 
