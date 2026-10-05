@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 require __DIR__.'/penduduk/web.php';
 require __DIR__.'/dispenda/web.php';
