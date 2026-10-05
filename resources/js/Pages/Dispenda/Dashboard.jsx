@@ -1,9 +1,9 @@
 import { AppSidebar } from '@/Components/AppSidebar'
-import { DashboardHeader } from '@/Components/DashboardHeader'
-import { DetailWilayahTable } from '@/Components/DetailWilayahTable'
-import { KpiCards } from '@/Components/KpiCards'
-import { RevenueMap } from '@/Components/RevenueMap'
-import { TaxTrendChart } from '@/Components/TaxTrendChart'
+import { DashboardHeader } from '@/Components/Dispenda/DashboardHeader'
+import { DetailWilayahTable } from '@/Components/Dispenda/DetailWilayahTable'
+import { KpiCards } from '@/Components/Dispenda/KpiCards'
+import { RevenueMap } from '@/Components/Dispenda/RevenueMap'
+import { TaxTrendChart } from '@/Components/Dispenda/TaxTrendChart'
 
 export default function Dashboard({
     tahun,

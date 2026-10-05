@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { router } from '@inertiajs/react'
 import { AppSidebar } from '@/Components/AppSidebar'
-import { DetailObjekPajakModal } from '@/Components/DetailObjekPajakModal'
+import { DetailObjekPajakModal } from '@/Components/Dispenda/DetailObjekPajakModal'
 import { formatRupiah, cn } from '@/lib/utils'
 import { Search, Download, Building2, TrendingUp, DollarSign, Eye } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
