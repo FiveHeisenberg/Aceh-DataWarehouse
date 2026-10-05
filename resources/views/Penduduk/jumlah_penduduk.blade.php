@@ -66,7 +66,7 @@
 
         <!-- Back + Top Nav -->
         <div class="d-flex align-items-center">
-            <a href="/" class="me-3 d-flex align-items-center" style="color: #5a6577;">
+            <a href="#" class="me-3 d-flex align-items-center" style="color: #5a6577;" onclick="history.back(); return false;">
                 <i class="bi bi-chevron-left" style="font-size: 18px;"></i>
             </a>
             <a href="/index" class="text-decoration-none me-4" style="color: #1a1a2e; font-weight: 600; font-size: 15px;">Home</a>
@@ -137,7 +137,7 @@
                 </a>
                 <div class="ms-4 mt-1">
                     <a href="{{ route('penduduk.jumlah_penduduk') }}" class="d-block text-decoration-none py-1 px-2 rounded" style="background-color: #e8f5f0; color: #0d9488; font-weight: 600; font-size: 13px;">Jumlah Penduduk</a>
-                    <a href="{{ route('penduduk.kartu_keluarga') }}" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Kartu keluarga</a>
+                    <a href="{{ route('penduduk.kartu_keluarga') }}" class="d-block text-decoration-none py-2 px-2" style="font-size: 13px; color: #555;">Kartu keluarga</a>
                 </div>
             </div>
 

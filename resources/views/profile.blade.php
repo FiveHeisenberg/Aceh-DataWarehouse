@@ -202,7 +202,7 @@
 
             <!-- Kembali + Judul -->
             <div class="d-flex align-items-center gap-2">
-                <a href="{{ route('index') }}" class="icon-btn" title="Kembali" style="color: var(--ink); font-size: 22px;">
+                <a href="#" class="icon-btn" title="Kembali" style="color: var(--ink); font-size: 22px;" onclick="history.back(); return false;">
                     <i class="bi bi-chevron-left"></i>
                 </a>
                 <span style="font-weight: 500; font-size: 18px;">Profile User</span>
