@@ -310,7 +310,7 @@
                                         </span>
                                     </td>
                                     <td class="text-center">
-                                        <a href="#" class="btn-aksi btn-edit" title="Edit"><i class="bi bi-pencil-square"></i></a>
+                                        <a href="#" class="btn-aksi btn-edit" title="Edit" data-user-id="{{ $user->id_user }}"><i class="bi bi-pencil-square"></i></a>
                                         <a href="#" class="btn-aksi btn-hapus ms-1 title="Hapus"><i class="bi bi-trash3"></i></a>
                                     </td>
                                 </tr>
@@ -360,7 +360,214 @@
         </div>
     </div>
 
+    <!-- POPUP FORM EDIT USER -->
+    <div class="modal fade" id="modalEditUser" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-edit-user">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Edit User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formEditUser">
+                        @csrf
+                        @method('PUT')
+                        
+                        <div id="alertContainer"></div>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label-ui">Username</label>
+                                <input type="text" name="username" id="edit_username" class="form-control">
+                                <div class="form-text">Hanya huruf, angka, titik, garis bawah, dan tanda kurung.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-ui">Nama Lengkap</label>
+                                <input type="text" name="nama_lengkap" id="edit_nama_lengkap" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-ui">Email</label>
+                                <input type="email" name="email" id="edit_email" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-ui">Nomor Telepon</label>
+                                <input type="tel" name="nomor_telepon" id="edit_nomor_telepon" class="form-control" placeholder="Opsional">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label-ui">Role</label>
+                                <select name="id_role" id="edit_id_role" class="form-control">
+                                    <option value="">Pilih Role</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 mb-2">
+                            <button type="button" class="btn-reset-pwd" onclick="resetPassword()">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Reset Password
+                            </button>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end mt-4">
+                            <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-update" id="btnUpdateUser">
+                                <i class="bi bi-check2-circle me-1"></i> Update User
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Data untuk dropdown role
+        const roleOptions = @json($roles->pluck('jenis_user', 'id_role'));
+
+        // Inisialisasi modal
+        let editUserModal = null;
+        let selectedUserId = null;
+
+        // Tampilkan modal edit user
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                selectedUserId = this.getAttribute('data-user-id');
+                fetchUser(selectedUserId);
+            });
+        });
+
+        // Fetch data user dari server
+        function fetchUser(userId) {
+            fetch(`/manage-user/${userId}/edit`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        populateForm(data.user, data.roles);
+                        editUserModal = new bootstrap.Modal(document.getElementById('modalEditUser'));
+                        editUserModal.show();
+                    }
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('Gagal memuat data user.');
+                });
+        }
+
+        // Populate form dengan data user
+        function populateForm(user, roles) {
+            document.getElementById('edit_username').value = user.username;
+            document.getElementById('edit_nama_lengkap').value = user.nama_lengkap;
+            document.getElementById('edit_email').value = user.email;
+            document.getElementById('edit_nomor_telepon').value = user.nomor_telepon || '';
+            
+            // Populate dropdown role
+            const roleSelect = document.getElementById('edit_id_role');
+            roleSelect.innerHTML = '<option value="">Pilih Role</option>';
+            
+            roles.forEach(role => {
+                const option = document.createElement('option');
+                option.value = role.id_role;
+                option.textContent = role.jenis_user;
+                if (role.id_role == user.id_role) {
+                    option.selected = true;
+                }
+                roleSelect.appendChild(option);
+            });
+            
+            // Clear alert
+            document.getElementById('alertContainer').innerHTML = '';
+        }
+
+        // Handle form submit
+        document.getElementById('formEditUser').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            formData.append('_user_id', selectedUserId);
+            
+            fetch(`/manage-user/${selectedUserId}`, {
+                method: 'PUT',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                }
+            })
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                } else {
+                    return response.json().then(data => {
+                        if (data.errors) {
+                            displayErrors(data.errors);
+                        } else {
+                            alert('Gagal memperbarui data.');
+                        }
+                    });
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Terjadi kesalahan. Silakan coba lagi.');
+            });
+        });
+
+        // Tampilkan error validation
+        function displayErrors(errors) {
+            let alertHtml = '';
+            
+            if (errors.username) {
+                alertHtml += `<div class="alert alert-danger alert-ui alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ${errors.username[0]}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                </div>`;
+            }
+            
+            if (errors.email) {
+                alertHtml += `<div class="alert alert-danger alert-ui alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ${errors.email[0]}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                </div>`;
+            }
+            
+            if (errors.nama_lengkap) {
+                alertHtml += `<div class="alert alert-danger alert-ui alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ${errors.nama_lengkap[0]}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                </div>`;
+            }
+            
+            if (errors.nomor_telepon) {
+                alertHtml += `<div class="alert alert-danger alert-ui alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ${errors.nomor_telepon[0]}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                </div>`;
+            }
+            
+            if (errors.id_role) {
+                alertHtml += `<div class="alert alert-danger alert-ui alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ${errors.id_role[0]}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                </div>`;
+            }
+            
+            document.getElementById('alertContainer').innerHTML = alertHtml;
+        }
+
+        // Reset Password (placeholder)
+        function resetPassword() {
+            alert('Fitur reset password sedang dalam pengembangan.');
+            // TODO: Implementasi reset password
+        }
+
+        // Close modal on escape key
+        document.getElementById('modalEditUser').addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && editUserModal) {
+                editUserModal.hide();
+            }
+        });
+    </script>
 </body>
 
 </html>
