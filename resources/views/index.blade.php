@@ -128,7 +128,7 @@
                             </a>
                         </li>
                         <li>
-                            <a href="#" class="dropdown-item d-flex align-items-center">
+                            <a href="{{ route('manage-user') }}" class="dropdown-item d-flex align-items-center">
                                 <i class="bi bi-people me-2"></i> Manajemen User
                             </a>
                         </li>
