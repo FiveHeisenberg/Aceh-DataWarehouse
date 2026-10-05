@@ -170,6 +170,23 @@
                     </div>
                 </div>
 
+                <!-- Pendapatan Daerah -->
+                <div class="mb-1 sidebar-menu-item">
+                    <a href="#" class="d-flex align-items-center justify-content-between text-decoration-none p-2 rounded" style="color: #333;">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-wallet2 me-2" style="font-size: 18px; color: #555;"></i>
+                            <span style="font-weight: 500; font-size: 14px;">Pendapatan Daerah</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon" style="font-size: 14px; color: #999;"></i>
+                    </a>
+                    <!-- Sub Menu Pendapatan Daerah -->
+                    <div class="ms-4 mt-1 submenu" style="max-height: 0px; opacity: 0; overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;">
+                        <a href="{{ route('dispenda.dashboard') }}" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Pendapatan Daerah</a>
+                        <a href="{{ route('dispenda.objek-pajak') }}" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Objek Pajak</a>
+                        <a href="{{ route('dispenda.tagihan') }}" class="d-block text-decoration-none py-1 px-2" style="font-size: 13px; color: #555;">Data Tagihan</a>
+                    </div>
+                </div>
+
                 <!-- Pendidikan -->
                 <div class="mb-1">
                     <a href="#" class="d-flex align-items-center text-decoration-none p-2 rounded" style="color: #333;">
