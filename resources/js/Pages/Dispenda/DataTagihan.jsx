@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { router } from '@inertiajs/react'
 import { AppSidebar } from '@/Components/AppSidebar'
-import { DetailTagihanModal } from '@/Components/DetailTagihanModal'
+import { DetailTagihanModal } from '@/Components/Dispenda/DetailTagihanModal'
 import { formatRupiah, cn } from '@/lib/utils'
 import { Eye, Search, Download, FileText, CheckCircle2, AlertCircle } from 'lucide-react'
 
