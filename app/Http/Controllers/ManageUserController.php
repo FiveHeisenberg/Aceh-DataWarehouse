@@ -40,28 +40,28 @@ class ManageUserController extends Controller
         $validate = $request->validate(
             [
                 'username' => [
-                    'require',
+                    'required',
                     'string',
                     'min:3',
                     'max:50',
                     'regex:/^[A-Za-z0-9._-]+$/',
-                    Rule::unique('tb_user', 'username')->ignore($user->id_user,'id_user'),
+                    Rule::unique('db_auth.tb_user', 'username')->ignore($user->id_user,'id_user'),
                 ],
                 'nama_lengkap' => [
                     'required', 'string', 'max:100'
                 ],
                 'email' => [
-                    'require',
+                    'required',
                     'string',
                     'email:rfc',
                     'max:100',
-                    Rule::unique('tb_user', 'email')->ignore($user->id_user, 'id_user'),
+                    Rule::unique('db_auth.tb_user', 'email')->ignore($user->id_user, 'id_user'),
                 ],
                 'nomor_telepon' => [
                     'nullable', 'string', 'max:20'
                 ],
                 'id_role' => [
-                    'required', 'exists:tb_role,id_role'
+                    'required', 'exists:db_auth.tb_role,id_role'
                 ],
             ],
             [
@@ -98,8 +98,9 @@ class ManageUserController extends Controller
             throw $e;
         }
 
-        return redirect()
-            ->route('manage-user')
-            ->with('success', 'Data user berhasil diperbarui.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Data user berhasil diperbarui.'
+        ]);
     }
 }

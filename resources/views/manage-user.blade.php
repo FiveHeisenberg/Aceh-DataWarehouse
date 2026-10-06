@@ -488,16 +488,15 @@
             
             fetch(`/manage-user/${selectedUserId}`, {
                 method: 'PUT',
-                body: formData,
+                body: JSON.stringify(Object.fromEntries(formData)),
                 headers: {
+                    'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
                 }
             })
             .then(response => {
-                if (response.redirected) {
-                    window.location.href = response.url;
-                } else {
+                if (!response.ok) {
                     return response.json().then(data => {
                         if (data.errors) {
                             displayErrors(data.errors);
@@ -506,6 +505,13 @@
                         }
                     });
                 }
+                return response.json().then(data => {
+                    if (data.success) {
+                        showSuccessNotification(data.message);
+                        editUserModal.hide();
+                        refreshUserTable();
+                    }
+                })
             })
             .catch(err => {
                 console.error('Error:', err);
@@ -567,6 +573,30 @@
                 editUserModal.hide();
             }
         });
+
+        // DESAIN NOTIFIKASI UPDATE USER
+        function showSuccessNotification(message) {
+            const alertHtml = `
+                <div class="alert alert-success alert-ui alert-dismissible fade show d-flex align-items-center" role="alert" style="position: fixed; top: 90px; right: 20px; z-index: 1500; width: auto; max-width: 400px;">
+                    <i class="bi bi-check-circle-fill me-2"></i> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                </div>
+            `;
+
+            const container = document.createElement('div');
+            container.innerHTML = alertHtml;
+            document.body.appendChild(container.firstElementChild);
+
+            setTimeout(() => {
+                const alert = document.querySelector('alert-success');
+                if (alert) alert.remove();
+            }, 5000);
+        }
+
+        function refreshUserTable() {
+            location.reload();
+        }
+
     </script>
 </body>
 
