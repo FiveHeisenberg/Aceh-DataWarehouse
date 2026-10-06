@@ -177,6 +177,19 @@
 
         .modal { z-index: 1200; }
         .modal-backdrop { z-index: 1190; }
+
+        /* ---------- Indikator kekuatan password ---------- */
+        .strength { height: 6px; border-radius: 6px; background: #eceff5; overflow: hidden; }
+        .strength > span { display: block; height: 100%; width: 0; border-radius: 6px; transition: width .25s, background .25s; }
+        .hint { font-size: 12.5px; color: var(--soft); }
+
+        /* ---------- Button show/hide password ---------- */
+        .btn-eye {
+            background: #fff; border: 1px solid #d8dde8; color: var(--muted);
+            border-left: 0; padding-inline: 14px;
+        }
+        .btn-eye:hover { color: var(--teal); background: #fff; }
+
     </style>
 </head>
 
@@ -276,9 +289,9 @@
                         <a href="#" class="btn btn-outline-ui d-inline-flex align-items-center gap-2">
                             Export Data User <i class="bi bi-download"></i>
                         </a>
-                        <a href="#" class="btn btn-teal d-inline-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-teal d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalTambahUser">
                             Tambah User <i class="bi bi-plus-lg"></i>
-                        </a>
+                        </button>
                     </div>
                 </div>
 
@@ -438,6 +451,83 @@
         </div>
     </div>
     
+    <!-- POPUP FORM TAMBAH USER -->
+    <div class="modal fade" id="modalTambahUser" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title">Tambah User Baru</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formTambahUser">
+                        @csrf
+                        
+                        <div id="alertContainerTambah"></div>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label-ui">Username</label>
+                                <input type="text" name="username" id="add_username" class="form-control">
+                                <div class="form-text">Hanya huruf, angka, titik, garis bawah, dan tanda kurung.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-ui">Nama Lengkap</label>
+                                <input type="text" name="nama_lengkap" id="add_nama_lengkap" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-ui">Email</label>
+                                <input type="email" name="email" id="add_email" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-ui">Nomor Telepon</label>
+                                <input type="tel" name="nomor_telepon" id="add_nomor_telepon" class="form-control" placeholder="Opsional">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-ui">Role</label>
+                                <select name="id_role" id="add_id_role" class="form-control">
+                                    <option value="">Pilih Role</option>
+                                    @foreach($roles as $role)
+                                        <option value="{{ $role->id_role }}">{{ $role->jenis_user }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-ui">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                    <input type="password" id="add_password" name="password" class="form-control" placeholder="Minimal 8 karakter" oninput="cekKekuatanAdd(); cekKecocokanAdd();">
+                                    <button type="button" class="btn btn-eye" onclick="togglePasswordAdd('add_password', this)" title="Tampilkan/sembunyikan">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="strength mt-2"><span id="strengthBarAdd"></span></div>
+                                <div class="hint mt-1" id="strengthTextAdd">Kekuatan kata sandi</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-ui">Konfirmasi Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                                    <input type="password" id="add_password_confirmation" name="password_confirmation" class="form-control" placeholder="Masukkan ulang password" oninput="cekKecocokanAdd()">
+                                    <button type="button" class="btn btn-eye" onclick="togglePasswordAdd('add_password_confirmation', this)" title="Tampilkan/sembunyikan">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="hint mt-2" id="matchTextAdd">&nbsp;</div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-teal" id="btnTambahUser">
+                                <i class="bi bi-plus-circle me-1"></i> Tambah User
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -692,6 +782,160 @@
                 console.error('Error:', err);
                 alert('Terjadi kesalahan. Silakan coba lagi.');
             });
+        });
+
+        // Handle tambah user
+        let addUserModal = null;
+
+        document.getElementById('formTambahUser').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            
+            fetch('/manage-user', {
+                method: 'POST',
+                body: JSON.stringify(Object.fromEntries(formData)),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        if (data.errors) {
+                            displayErrorsTambah(data.errors);
+                        } else {
+                            alert('Gagal menambah user.');
+                        }
+                    });
+                }
+                return response.json().then(data => {
+                    if (data.success) {
+                        addUserModal.hide();
+                        showSuccessNotification(data.message);
+                        refreshUserTable();
+                        document.getElementById('formTambahUser').reset();
+                        document.getElementById('alertContainerTambah').innerHTML = '';
+                        document.getElementById('strengthTextAdd').textContent = 'Kekuatan kata sandi';
+                        document.getElementById('matchTextAdd').innerHTML = '&nbsp;';
+                    }
+                });
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Terjadi kesalahan. Silakan coba lagi.');
+            });
+        });
+
+        function displayErrorsTambah(errors) {
+            let alertHtml = '';
+            
+            if (errors.username) {
+                alertHtml += `<div class="alert alert-danger alert-ui alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ${errors.username[0]}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                </div>`;
+            }
+            if (errors.nama_lengkap) {
+                alertHtml += `<div class="alert alert-danger alert-ui alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ${errors.nama_lengkap[0]}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                </div>`;
+            }
+            if (errors.email) {
+                alertHtml += `<div class="alert alert-danger alert-ui alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ${errors.email[0]}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                </div>`;
+            }
+            if (errors.nomor_telepon) {
+                alertHtml += `<div class="alert alert-danger alert-ui alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ${errors.nomor_telepon[0]}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                </div>`;
+            }
+            if (errors.id_role) {
+                alertHtml += `<div class="alert alert-danger alert-ui alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ${errors.id_role[0]}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                </div>`;
+            }
+            if (errors.password) {
+                alertHtml += `<div class="alert alert-danger alert-ui alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ${errors.password[0]}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                </div>`;
+            }
+            if (errors.password_confirmation) {
+                alertHtml += `<div class="alert alert-danger alert-ui alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i> ${errors.password_confirmation[0]}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Tutup"></button>
+                </div>`;
+            }
+            
+            document.getElementById('alertContainerTambah').innerHTML = alertHtml;
+        }
+
+        function togglePasswordAdd(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const icon = btn.querySelector('i');
+            const hidden = input.type === 'password';
+            
+            input.type = hidden ? 'text' : 'password';
+            icon.classList.toggle('bi-eye', !hidden);
+            icon.classList.toggle('bi-eye-slash', hidden);
+        }
+
+        function cekKekuatanAdd() {
+            const v = document.getElementById('add_password').value;
+            const bar = document.getElementById('strengthBarAdd');
+            const txt = document.getElementById('strengthTextAdd');
+            
+            let skor = 0;
+            if (v.length >= 8) skor++;
+            if (/[A-Z]/.test(v) && /[a-z]/.test(v)) skor++;
+            if (/\d/.test(v)) skor++;
+            if (/[^A-Za-z0-9]/.test(v)) skor++;
+            
+            const level = [
+                { w: '0%',   c: '#eceff5', t: 'Kekuatan kata sandi' },
+                { w: '25%',  c: '#e5484d', t: 'Lemah' },
+                { w: '50%',  c: '#f59e0b', t: 'Cukup' },
+                { w: '75%',  c: '#84cc16', t: 'Kuat' },
+                { w: '100%', c: '#0d9488', t: 'Sangat kuat' },
+            ];
+            const l = v.length ? level[Math.max(skor, 1)] : level[0];
+            bar.style.width = l.w;
+            bar.style.background = l.c;
+            txt.textContent = l.t;
+        }
+
+        function cekKecocokanAdd() {
+            const p = document.getElementById('add_password').value;
+            const c = document.getElementById('add_password_confirmation').value;
+            const el = document.getElementById('matchTextAdd');
+            
+            if (!c) { el.innerHTML = '&nbsp;'; el.style.color = ''; return; }
+            if (p === c) {
+                el.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i>Kata sandi cocok';
+                el.style.color = '#0d9488';
+            } else {
+                el.innerHTML = '<i class="bi bi-x-circle-fill me-1"></i>Kata sandi belum cocok';
+                el.style.color = '#e5484d';
+            }
+        }
+
+        // Inisialisasi modal tambah user saat page load
+        document.addEventListener('DOMContentLoaded', function() {
+            addUserModal = new bootstrap.Modal(document.getElementById('modalTambahUser'), { backdrop: 'static' });
+        });
+
+        // Re-attach saat modal ditutup
+        document.getElementById('modalTambahUser').addEventListener('hidden.bs.modal', function() {
+            document.getElementById('formTambahUser').reset();
+            document.getElementById('alertContainerTambah').innerHTML = '';
         });
 
     </script>

@@ -112,4 +112,56 @@ class ManageUserController extends Controller
             'message' => 'Berhasil menghapus user'
         ]);
     }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'username' => [
+                'required', 'string', 'min:3', 'max:50',
+                'regex:/^[A-Za-z0-9._-]+$/',
+                Rule::unique('db_auth.tb_user', 'username')
+            ],
+            'nama_lengkap' => ['required', 'string', 'max:100'],
+            'email' => [
+                'required', 'email:rfc', 'max:100',
+                Rule::unique('db_auth.tb_user', 'email')
+            ],
+            'nomor_telepon' => ['nullable', 'string', 'max:20'],
+            'id_role' => ['required', 'exists:db_auth.tb_role,id_role'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password_confirmation' => ['required'],
+        ], [
+            'username.required' => 'Username wajib diisi.',
+            'username.min' => 'Username minimal 3 karakter.',
+            'username.max' => 'Username maksimal 50 karakter.',
+            'username.regex' => 'Username hanya boleh berisi huruf, angka, titik, garis bawah, dan tanda kurung.',
+            'username.unique' => 'Username sudah digunakan.',
+            'nama_lengkap.required' => 'Nama Lengkap wajib diisi.',
+            'nama_lengkap.max' => 'Nama Lengkap maksimal 100 karakter.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.max' => 'Email maksimal 100 karakter.',
+            'email.unique' => 'Email sudah digunakan.',
+            'nomor_telepon.max' => 'Nomor telepon maksimal 20 karakter.',
+            'id_role.required' => 'Role wajib dipilih.',
+            'id_role.exists' => 'Role tidak valid.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal 8 karakter.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+        ]);
+
+        User::create([
+            'username' => $validated['username'],
+            'nama_lengkap' => $validated['nama_lengkap'],
+            'email' => $validated['email'],
+            'nomor_telepon' => $validated['nomor_telepon'],
+            'password' => bcrypt($validated['password']),
+            'id_role' => $validated['id_role'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil menambah user'
+        ]);
+    }
 }
