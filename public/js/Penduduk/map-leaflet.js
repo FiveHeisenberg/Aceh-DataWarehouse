@@ -9,7 +9,6 @@
 
     const mapEl = document.getElementById('aceh-map');
     const yearSelect = document.getElementById('filter-tahun');
-    const kabSelect = document.getElementById('filter-kabupaten');
     
     if (!mapEl) return;
 
@@ -83,20 +82,13 @@
             mouseout: (e) => {
                 if (geoLayer) geoLayer.resetStyle(e.target);
             },
-            click: () => {
-                const d = lookup(feature.properties);
-                if (kabSelect && d) {
-                    kabSelect.value = d.kode;
-                    kabSelect.dispatchEvent(new Event('change'));
-                }
-            },
         });
     }
 
     // --- ADAPTASI UNTUK LARAVEL API ---
     async function loadPopulationForYear(tahun) {
         // Gunakan route Laravel, bukan map.php
-        const url = `/api/penduduk/map${tahun ? '?tahun=' + tahun : ''}`;
+        const url = `/api/penduduk/map-jumlah-penduduk${tahun ? '?tahun=' + tahun : ''}`;
         
         try {
             const res = await fetch(url);

@@ -15,11 +15,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // AKun admin (id_user = 1) sudah ada di db_auth dan tidak boleh
+        // disentuh oleh seeder.
+
+        if (User::query()->where('username', 'admin')->exists()) {
+            $this->command?->info('Akun admin sudah ada, seeder dilewati.');
+
+            return;
+        }
 
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'username' => 'operator',
+            'nama_lengkap' => 'Operator Aceh',
+            'email' => 'operator@test.com',
         ]);
     }
 }

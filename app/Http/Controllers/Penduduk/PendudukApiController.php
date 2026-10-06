@@ -3,8 +3,6 @@
 namespace App\Http\Controllers\Penduduk;
 
 use App\Http\Controllers\Controller;
-use App\Models\Penduduk\JumlahPenduduk;
-use App\Models\Penduduk\KartuKeluarga;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,285 +10,99 @@ use Illuminate\Validation\ValidationException;
 
 class PendudukApiController extends Controller
 {
-    /**
-     * GET /api/penduduk/years
-     * Endpoint: Ambil daftar tahun yang tersedia
-     */
-    public function getYears(): JsonResponse
+    public function getTahun(): JsonResponse
     {
         try {
-            $years = JumlahPenduduk::select('tahun')
-                ->distinct()
-                ->orderBy('tahun', 'desc')
-                ->pluck('tahun');
+            $tahun = DB::table('fact_penduduk as fp')
+            ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
+            ->distinct()
+            ->orderBy('dw.tahun', 'desc')
+            ->pluck('dw.tahun');
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Daftar tahun berhasil diambil',
-                'data' => $years,
-            ], 200);
-
+        return response()->json([
+            'success' => true,
+            'data' => $tahun,
+        ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil daftar tahun',
-                'error' => $e->getMessage(),
+                'message' => "Gagal mengambil data tahun: " . $e->getMessage(),
             ], 500);
         }
     }
 
-    /**
-     * GET /api/penduduk/index?tahun=2023&search=banda
-     * Endpoint: Ambil summary + detail data penduduk
-     */
-    public function getIndex(Request $request): JsonResponse
+    public function getJumlahPenduduk(): JsonResponse
     {
         try {
-            // Validasi input
-            $request->validate([
-                'tahun' => 'nullable|integer|min:2000|max:'.date('Y'),
-                'search' => 'nullable|string|max:100',
-                'kode_kab' => 'nullable|string|max:10',
-                'page' => 'nullable|integer|min:1',
-                'per_page' => 'nullable|integer|min:1|max:100',
-            ]);
-
-            // Ambil tahun (default: tahun terbaru)
-            $tahun = $request->input('tahun', JumlahPenduduk::max('tahun'));
-            $search = $request->input('search', '');
-            $kodeKab = $request->input('kode_kab', '');
-            $perPage = $request->input('per_page', 25);
-
-            // --- A. SUMMARY STATISTICS ---
-            $totalPenduduk = JumlahPenduduk::tahun($tahun)->sum('jumlah_penduduk');
-
-            $tahunSebelumnya = $tahun - 1;
-            $totalTahunLalu = JumlahPenduduk::tahun($tahunSebelumnya)->sum('jumlah_penduduk');
-
-            $pertumbuhan = 0;
-            if ($totalTahunLalu > 0) {
-                $pertumbuhan = (($totalPenduduk - $totalTahunLalu) / $totalTahunLalu) * 100;
-            }
-
-            // Hitung jumlah kabupaten/kota
-            $jumlahKabupaten = JumlahPenduduk::tahun($tahun)
-                ->distinct('kode_kabupaten_kota')
-                ->count('kode_kabupaten_kota');
-
-            // --- B. DETAIL DATA (PAGINATED) ---
-            $query = JumlahPenduduk::tahun($tahun);
-
-            if (! empty($search)) {
-                $query->cari($search);
-            }
-
-            if (! empty($kodeKab)) {
-                $query->kodeKabupaten($kodeKab);
-            }
-
-            $details = $query->orderBy('jumlah_penduduk', 'desc')
-                ->paginate($perPage);
-
-            // --- C. DATA UNTUK CHART TREN (3 tahun terakhir) ---
-            $trenData = JumlahPenduduk::select('tahun', DB::raw('SUM(jumlah_penduduk) as total'))
-                ->whereIn('tahun', [$tahun - 2, $tahun - 1, $tahun])
-                ->groupBy('tahun')
-                ->orderBy('tahun', 'asc')
+            $data = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
+                ->select('dw.tahun', DB::raw('COUNT(fp.jumlah_penduduk) as jumlah'))
+                ->groupBy('dw.tahun')
+                ->orderBy('dw.tahun', 'asc')
                 ->get();
-
-            // --- D. RESPONSE ---
+            
             return response()->json([
                 'success' => true,
-                'message' => 'Data berhasil diambil',
-                'data' => [
-                    'tahun_aktif' => (int) $tahun,
-                    'summary' => [
-                        'total_penduduk' => (int) $totalPenduduk,
-                        'pertumbuhan_persen' => round($pertumbuhan, 2),
-                        'total_tahun_lalu' => (int) $totalTahunLalu,
-                        'jumlah_kabupaten_kota' => (int) $jumlahKabupaten,
-                    ],
-                    'details' => [
-                        'data' => $details->items(),
-                        'current_page' => $details->currentPage(),
-                        'last_page' => $details->lastPage(),
-                        'per_page' => $details->perPage(),
-                        'total' => $details->total(),
-                    ],
-                    'tren' => $trenData->map(function ($item) {
-                        return [
-                            'tahun' => (int) $item->tahun,
-                            'total' => (int) $item->total,
-                        ];
-                    }),
-                ],
+                'data' => $data,
             ], 200);
-
-        } catch (ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $e->errors(),
-            ], 422);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data',
-                'error' => $e->getMessage(),
+                'message' => 'Gagal mengambil data penduduk: ' . $e->getMessage(),
             ], 500);
         }
     }
 
-    /**
-     * GET /api/penduduk/detail/{kode_kabupaten}
-     * Endpoint: Ambil detail data per kabupaten/kota
-     */
-    public function getDetail(string $kodeKabupaten): JsonResponse
-    {
-        try {
-            $data = JumlahPenduduk::where('kode_kabupaten_kota', $kodeKabupaten)
-                ->orderBy('tahun', 'desc')
-                ->get();
-
-            if ($data->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Data tidak ditemukan untuk kode kabupaten: '.$kodeKabupaten,
-                ], 404);
-            }
-
-            // Hitung pertumbuhan per tahun
-            $dataWithGrowth = $data->map(function ($item, $index) use ($data) {
-                $pertumbuhan = 0;
-                if ($index < $data->count() - 1) {
-                    $tahunLalu = $data[$index + 1]->jumlah_penduduk;
-                    if ($tahunLalu > 0) {
-                        $pertumbuhan = (($item->jumlah_penduduk - $tahunLalu) / $tahunLalu) * 100;
-                    }
-                }
-
-                return [
-                    'tahun' => $item->tahun,
-                    'jumlah_penduduk' => $item->jumlah_penduduk,
-                    'pertumbuhan_persen' => round($pertumbuhan, 2),
-                    'satuan' => $item->satuan,
-                ];
-            });
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Detail data berhasil diambil',
-                'data' => [
-                    'kode_kabupaten' => $kodeKabupaten,
-                    'nama_kabupaten' => $data->first()->nama_kabupaten_kota,
-                    'provinsi' => $data->first()->nama_provinsi,
-                    'histori' => $dataWithGrowth,
-                ],
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil detail data',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * GET /api/penduduk/tren?kode_kab=1101&tahun_mulai=2020&tahun_akhir=2023
-     * Endpoint: Ambil data tren untuk chart
-     */
-    public function getTren(Request $request): JsonResponse
-    {
-        try {
-            $request->validate([
-                'kode_kab' => 'nullable|string|max:10',
-                'tahun_mulai' => 'nullable|integer|min:2000',
-                'tahun_akhir' => 'nullable|integer|max:'.date('Y'),
-            ]);
-
-            $kodeKab = $request->input('kode_kab');
-            $tahunMulai = $request->input('tahun_mulai', 2020);
-            $tahunAkhir = $request->input('tahun_akhir', date('Y'));
-
-            $query = JumlahPenduduk::select('tahun', DB::raw('SUM(jumlah_penduduk) as total'))
-                ->whereBetween('tahun', [$tahunMulai, $tahunAkhir]);
-
-            if (! empty($kodeKab)) {
-                $query->where('kode_kabupaten_kota', $kodeKab);
-            }
-
-            $trenData = $query->groupBy('tahun')
-                ->orderBy('tahun', 'asc')
-                ->get();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Data tren berhasil diambil',
-                'data' => $trenData->map(function ($item) {
-                    return [
-                        'tahun' => (int) $item->tahun,
-                        'total' => (int) $item->total,
-                    ];
-                }),
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil data tren',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * GET /api/penduduk/map?tahun=2023
-     * Endpoint khusus untuk data peta (choropleth)
-     */
     public function getMapData(Request $request): JsonResponse
     {
         try {
-            // Ambil tahun dari request, default ke tahun terbaru
-            $tahun = $request->input('tahun', JumlahPenduduk::max('tahun'));
+            $tahun = $request->input('tahun');
 
-            // 1. Ambil data tahun saat ini
-            $currentData = JumlahPenduduk::select(
-                'kode_kabupaten_kota as kode',
-                'nama_kabupaten_kota as nama',
-                'jumlah_penduduk',
-                'satuan'
-            )
-                ->where('tahun', $tahun)
-                ->orderBy('jumlah_penduduk', 'desc')
+            if (!$tahun) {
+                $tahun = DB::table('fact_penduduk as fp')
+                    ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                    ->max('wt.tahun');
+            }
+
+            $current = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                ->select(
+                    'dw.id_kabupaten_kota as kode',
+                    'dw.nama_kabupaten_kota as nama',
+                    DB::raw('COUNT(fp.jumlah_penduduk) as jumlah')
+                )
+                ->where('wt.tahun', $tahun)
+                ->groupBy('dw.id_kabupaten_kota', 'dw.nama_kabupaten_kota')
+                ->orderBy('jumlah', 'desc')
                 ->get();
 
-            // 2. Ambil data tahun sebelumnya untuk hitung pertumbuhan
-            $prevData = JumlahPenduduk::select('kode_kabupaten_kota as kode', 'jumlah_penduduk')
-                ->where('tahun', $tahun - 1)
-                ->get()
-                ->pluck('jumlah_penduduk', 'kode'); // Key by kode
+            $prev = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                ->select('dw.id_kabupaten_kota as kode', DB::raw('COUNT(fp.jumlah_penduduk) as jumlah'))
+                ->where('wt.tahun', $tahun - 1)
+                ->groupBy('dw.id_kabupaten_kota')
+                ->pluck('jumlah', 'kode');
 
-            $result = [];
+            $kabupaten = [];
             $rank = 1;
 
-            foreach ($currentData as $row) {
-                $jumlah = (int) $row->jumlah_penduduk;
-                $prev = $prevData[$row->kode] ?? null;
+            foreach ($current as $row) {
+                $jumlah = (int) $row->jumlah;
+                $prevJumlah = $prev[$row->kode] ?? null;
 
-                $pertumbuhan = ($prev && $prev > 0)
-                    ? round((($jumlah - $prev) / $prev) * 100, 2)
+                $pertumbuhan = ($prevJumlah !== null && $prevJumlah > 0)
+                    ? round((($jumlah - $prevJumlah) / $prevJumlah) * 100, 2)
                     : null;
 
-                $result[] = [
+                $kabupaten[] = [
                     'kode' => $row->kode,
-                    'nama' => $row->nama,
+                    'nama' => ucwords(strtolower($row->nama)),
                     'jumlah_penduduk' => $jumlah,
-                    'satuan' => $row->satuan,
-                    'peringkat' => $rank++,
                     'pertumbuhan_persen' => $pertumbuhan,
+                    'peringkat' => $rank++,
+                    'satuan' => 'jiwa',
                 ];
             }
 
@@ -299,195 +111,461 @@ class PendudukApiController extends Controller
                 'message' => 'Data peta berhasil diambil',
                 'data' => [
                     'tahun' => (int) $tahun,
-                    'kabupaten' => $result,
+                    'kabupaten' => $kabupaten,
                 ],
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data peta: '.$e->getMessage(),
+                'message' => 'Gagal mengambil data peta: ' . $e->getMessage(),
             ], 500);
         }
     }
 
-    public function getKKYears(): JsonResponse
+    public function getTrendPertumbuhan(Request $request): JsonResponse
     {
         try {
-            $years = KartuKeluarga::select('tahun')
-                ->distinct()
-                ->orderBy('tahun', 'desc')
-                ->pluck('tahun');
+            $wilayah = $request->input('wilayah');
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Daftar tahun berhasil diambil',
-                'data' => $years,
-            ], 200);
+            if (!$wilayah) {
+                $kabupaten = DB::table('fact_penduduk as fp')
+                    ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                    ->select('dw.nama_kabupaten_kota as nama', DB::raw('COUNT(fp.jumlah_penduduk) as jumlah'))
+                    ->groupBy('dw.nama_kabupaten_kota')
+                    ->orderBy('dw.nama_kabupaten_kota')
+                    ->get();
 
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal mengambil daftar tahun',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    /**
-     * GET /api/penduduk/kk/index?tahun=2024
-     * Endpoint: Ambil data KK (summary + details)
-     */
-    public function getKKIndex(Request $request): JsonResponse
-    {
-        try {
-            $request->validate([
-                'tahun' => 'nullable|integer|min:2000|max:'.date('Y'),
-                'search' => 'nullable|string|max:100',
-                'per_page' => 'nullable|integer|min:1|max:100',
-            ]);
-
-            $tahun = $request->input('tahun', KartuKeluarga::max('tahun'));
-            $search = $request->input('search', '');
-            $perPage = $request->input('per_page', 25);
-
-            // --- A. SUMMARY ---
-            $totalKK = KartuKeluarga::tahun($tahun)->sum('jumlah_kartu_keluarga');
-
-            // Hitung total KK semester sebelumnya (asumsi data per 2 tahun: 2020, 2022, 2024)
-            $tahunSebelumnya = $tahun - 2;
-            $totalTahunLalu = KartuKeluarga::tahun($tahunSebelumnya)->sum('jumlah_kartu_keluarga');
-
-            $pertumbuhan = 0;
-            if ($totalTahunLalu > 0) {
-                $pertumbuhan = (($totalKK - $totalTahunLalu) / $totalTahunLalu) * 100;
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Daftar kabupaten berhasil diambil',
+                    'data' => [
+                        'kabupaten' => $kabupaten,
+                    ],
+                ], 200);
             }
 
-            // --- B. DETAIL PER KABUPATEN ---
-            $query = KartuKeluarga::tahun($tahun);
-
-            if (! empty($search)) {
-                $query->cari($search);
-            }
-
-            $details = $query->orderBy('jumlah_kartu_keluarga', 'desc')
-                ->paginate($perPage);
-
-            // --- C. DATA TREN (untuk chart) ---
-            $trenData = KartuKeluarga::select('tahun', \DB::raw('SUM(jumlah_kartu_keluarga) as total'))
-                ->groupBy('tahun')
-                ->orderBy('tahun', 'asc')
+            $tren = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                ->select('wt.tahun', DB::raw('COUNT(fp.jumlah_penduduk) as jumlah'))
+                ->where('dw.nama_kabupaten_kota', $wilayah)
+                ->groupBy('wt.tahun')
+                ->orderBy('wt.tahun', 'asc')
                 ->get();
 
-            // --- D. KABUPATEN TERTINGGI ---
-            $kabTertinggi = KartuKeluarga::tahun($tahun)
-                ->orderBy('jumlah_kartu_keluarga', 'desc')
-                ->first();
-
-            $persentaseTertinggi = 0;
-            if ($kabTertinggi && $totalKK > 0) {
-                $persentaseTertinggi = round(($kabTertinggi->jumlah_kartu_keluarga / $totalKK) * 100, 1);
+            if ($tren->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak ditemukan untuk wilayah: ' . $wilayah,
+                ], 404);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Data KK berhasil diambil',
+                'message' => 'Data tren berhasil diambil',
                 'data' => [
-                    'tahun_aktif' => (int) $tahun,
-                    'summary' => [
-                        'total_kk' => (int) $totalKK,
-                        'pertumbuhan_persen' => round($pertumbuhan, 1),
-                        'total_tahun_lalu' => (int) $totalTahunLalu,
-                    ],
-                    'kab_tertinggi' => $kabTertinggi ? [
-                        'nama' => $kabTertinggi->nama_kabupaten_kota,
-                        'jumlah' => (int) $kabTertinggi->jumlah_kartu_keluarga,
-                        'persentase' => $persentaseTertinggi,
-                    ] : null,
-                    'details' => [
-                        'data' => $details->items(),
-                        'current_page' => $details->currentPage(),
-                        'last_page' => $details->lastPage(),
-                        'total' => $details->total(),
-                    ],
-                    'tren' => $trenData->map(fn ($item) => [
-                        'tahun' => (int) $item->tahun,
-                        'total' => (int) $item->total,
-                    ]),
+                    'kabupaten' => ucwords(strtolower($wilayah)),
+                    'tren' => $tren->map(fn($r) => [
+                        'tahun' => (int) $r->tahun,
+                        'jumlah' => (int) $r->jumlah,
+                    ])->values(),
                 ],
             ], 200);
 
-            // --- E. KOTA PERTUMBUHAN TERCEPAT ---
-            // Ambil semua data tahun ini dan tahun sebelumnya
-            $dataTahunIni = KartuKeluarga::tahun($tahun)->get()->keyBy('kode_kabupaten_kota');
-            $dataTahunLalu = KartuKeluarga::tahun($tahunSebelumnya)->get()->keyBy('kode_kabupaten_kota');
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data tren: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 
-            $kotaTercepat = null;
-            $pertumbuhanTercepat = 0;
+    public function getDetailPenduduk(Request $request): JsonResponse
+    {
+        try {
+            $query = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
+                ->join('dim_wilayah as dww', 'fp.wilayah_key', '=', 'dww.wilayah_key')
+                ->select(
+                    'dww.nama_kabupaten_kota',
+                    'dw.tahun',
+                    DB::raw('COUNT(fp.jumlah_penduduk) as jumlah_penduduk')
+                )
+                ->groupBy('dww.nama_kabupaten_kota', 'dw.tahun');
 
-            foreach ($dataTahunIni as $kode => $row) {
-                // Filter hanya Kota (biasanya kode diawali dengan angka tertentu, atau nama mengandung "Kota")
-                if (stripos($row->nama_kabupaten_kota, 'Kota') === false) {
+            $query->when($request->has('tahun') && $request->input('tahun') !== '', function ($q) use ($request) {
+                return $q->where('dw.tahun', $request->input('tahun'));
+            });
+
+            $query->when($request->filled('search'), function ($q) use ($request) {
+                return $q->where('dww.nama_kabupaten_kota', 'like', '%' . $request->input('search') . '%');
+            });
+
+            $data = $query->orderByDesc('jumlah_penduduk')->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data detail penduduk berhasil diambil',
+                'data' => $data->map(fn($r) => [
+                    'nama_kabupaten_kota' => $r->nama_kabupaten_kota,
+                    'tahun' => (int) $r->tahun,
+                    'jumlah_penduduk' => (int) $r->jumlah_penduduk,
+                    'satuan' => 'jiwa',
+                ])->values(),
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data detail penduduk: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getKartuKeluargaSummary(Request $request): JsonResponse
+    {
+        try {
+            $tahun = $request->input('tahun');
+
+            if (!$tahun) {
+                $tahun = DB::table('fact_penduduk as fp')
+                    ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                    ->max('wt.tahun');
+            }
+
+            $perWilayah = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                ->select('dw.nama_kabupaten_kota as nama', DB::raw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah'))
+                ->whereNotNull('fp.kartu_keluarga_key')
+                ->where('wt.tahun', $tahun)
+                ->groupBy('dw.nama_kabupaten_kota')
+                ->orderByDesc('jumlah')
+                ->get();
+
+            $total = (int) $perWilayah->sum('jumlah');
+
+            $prevTotal = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->whereNotNull('fp.kartu_keluarga_key')
+                ->where('wt.tahun', $tahun - 1)
+                ->distinct()
+                ->count('fp.kartu_keluarga_key');
+
+            $pertumbuhan = ($prevTotal > 0)
+                ? round((($total - $prevTotal) / $prevTotal) * 100, 2)
+                : null;
+
+            $terbanyak = $perWilayah->first();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data kartu keluarga berhasil diambil',
+                'data' => [
+                    'tahun' => (int) $tahun,
+                    'total_kk' => $total,
+                    'pertumbuhan_persen' => $pertumbuhan,
+                    'jumlah_kabupaten' => $perWilayah->count(),
+                    'kabupaten_terbanyak' => $terbanyak ? [
+                        'nama' => $terbanyak->nama,
+                        'jumlah' => (int) $terbanyak->jumlah,
+                    ] : null,
+                ],
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data kartu keluarga: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getKartuKeluargaTrend(): JsonResponse
+    {
+        try {
+            $data = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->select('wt.tahun', DB::raw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah'))
+                ->whereNotNull('fp.kartu_keluarga_key')
+                ->groupBy('wt.tahun')
+                ->orderBy('wt.tahun', 'asc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data tren kartu keluarga berhasil diambil',
+                'data' => $data->map(fn($r) => [
+                    'tahun' => (int) $r->tahun,
+                    'jumlah' => (int) $r->jumlah,
+                ])->values(),
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data tren kartu keluarga: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getKartuKeluargaDetail(Request $request): JsonResponse
+    {
+        try {
+            $tahun = $request->input('tahun');
+
+            if (!$tahun) {
+                $tahun = DB::table('fact_penduduk as fp')
+                    ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                    ->max('wt.tahun');
+            }
+
+            $data = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                ->select('dw.nama_kabupaten_kota as nama', DB::raw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah'))
+                ->whereNotNull('fp.kartu_keluarga_key')
+                ->where('wt.tahun', $tahun)
+                ->groupBy('dw.nama_kabupaten_kota')
+                ->orderByDesc('jumlah')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data detail kartu keluarga berhasil diambil',
+                'data' => [
+                    'tahun' => (int) $tahun,
+                    'detail' => $data->map(fn($r) => [
+                        'nama_kabupaten_kota' => $r->nama,
+                        'jumlah_kk' => (int) $r->jumlah,
+                        'satuan' => 'KK',
+                    ])->values(),
+                ],
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data detail kartu keluarga: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getStrukturUmur(Request $request): JsonResponse
+    {
+        try {
+            $tahun = $request->input('tahun');
+
+            $query = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
+                ->selectRaw("
+                    CASE
+                        WHEN fp.umur BETWEEN 0 AND 5 THEN '0-5'
+                        WHEN fp.umur BETWEEN 6 AND 9 THEN '6-9'
+                        WHEN fp.umur BETWEEN 10 AND 17 THEN '10-17'
+                        WHEN fp.umur BETWEEN 18 AND 59 THEN '18-59'
+                        WHEN fp.umur >= 60 THEN '60+'
+                        ELSE 'Tidak Diketahui'
+                    END AS range_umur,
+                    CASE
+                        WHEN fp.umur BETWEEN 0 AND 5 THEN 'Bayi dan Balita'
+                        WHEN fp.umur BETWEEN 6 AND 9 THEN 'Anak-anak'
+                        WHEN fp.umur BETWEEN 10 AND 17 THEN 'Remaja'
+                        WHEN fp.umur BETWEEN 18 AND 59 THEN 'Dewasa'
+                        WHEN fp.umur >= 60 THEN 'Lansia'
+                        ELSE 'Tidak Diketahui'
+                    END AS kategori,
+                    COUNT(*) AS jumlah
+                ")
+                ->groupByRaw("1, 2");
+
+            if ($tahun) {
+                $query->where('dw.tahun', $tahun);
+            }
+
+            $data = $query
+                ->orderByRaw("FIELD(range_umur, '0-5', '6-9', '10-17', '18-59', '60+', 'Tidak Diketahui')")
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data struktur kelompok umur berhasil diambil',
+                'data' => $data->map(fn($r) => [
+                    'range_umur' => $r->range_umur,
+                    'kategori' => $r->kategori,
+                    'jumlah' => (int) $r->jumlah,
+                ])->values(),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data struktur kelompok umur: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getPiramidaUmur(Request $request): JsonResponse
+    {
+        try {
+            $tahun = $request->input('tahun');
+
+            $query = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
+                ->join('dim_penduduk as dp', 'fp.penduduk_key', '=', 'dp.penduduk_key')
+                ->whereNotNull('fp.umur')
+                ->selectRaw("
+                    FLOOR(fp.umur/5) * 5 AS bucket_start,
+                    dp.jenis_kelamin,
+                    SUM(fp.jumlah_penduduk) AS jumlah
+                ")
+                ->groupByRaw('FLOOR(fp.umur / 5) * 5, dp.jenis_kelamin');
+            
+            if ($tahun) {
+                $query->where('dw.tahun', $tahun);
+            }
+
+            $rows = $query->get();
+
+            $labels = [];
+            for ($b=0; $b <= 70 ; $b += 5) { 
+                $labels[] = $b . '-' . ($b + 4);
+            }
+            $labels[] = '75+';
+
+            $lakiLaki = array_fill(0, count($labels), 0);
+            $perempuan = array_fill(0, count($labels), 0);
+
+            foreach ($rows as $row) {
+                $bucket = (int) $row->bucket_start;
+                $idx = $bucket >= 75 ? count($labels) - 1: intdiv($bucket, 5);
+                if ($idx < 0 || $idx >= count($labels)) {
                     continue;
                 }
 
-                $prev = $dataTahunLalu[$kode] ?? null;
-                if ($prev && $prev->jumlah_kartu_keluarga > 0) {
-                    $growth = (($row->jumlah_kartu_keluarga - $prev->jumlah_kartu_keluarga) / $prev->jumlah_kartu_keluarga) * 100;
-                    if ($growth > $pertumbuhanTercepat) {
-                        $pertumbuhanTercepat = $growth;
-                        $kotaTercepat = $row;
-                    }
+                if ($row->jenis_kelamin === 'P') {
+                    $perempuan[$idx] += (int) $row->jumlah;
+                } else {
+                    $lakiLaki[$idx] += (int) $row->jumlah;
                 }
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Data KK berhasil diambil',
+                'message' => 'Data Piramida Penduduk Berhasil diambil',
                 'data' => [
-                    'tahun_aktif' => (int) $tahun,
-                    'summary' => [
-                        'total_kk' => (int) $totalKK,
-                        'pertumbuhan_persen' => round($pertumbuhan, 1),
-                        'total_tahun_lalu' => (int) $totalTahunLalu,
-                    ],
-                    'kab_tertinggi' => $kabTertinggi ? [
-                        'nama' => $kabTertinggi->nama_kabupaten_kota,
-                        'jumlah' => (int) $kabTertinggi->jumlah_kartu_keluarga,
-                        'persentase' => $persentaseTertinggi,
-                    ] : null,
-                    'kota_tercepat' => $kotaTercepat ? [
-                        'nama' => $kotaTercepat->nama_kabupaten_kota,
-                        'jumlah' => (int) $kotaTercepat->jumlah_kartu_keluarga,
-                        'pertumbuhan_persen' => round($pertumbuhanTercepat, 1),
-                    ] : null,
-                    'details' => [
-                        'data' => $details->items(),
-                        'current_page' => $details->currentPage(),
-                        'last_page' => $details->lastPage(),
-                        'total' => $details->total(),
-                    ],
-                    'tren' => $trenData->map(function ($item) {
-                        return [
-                            'tahun' => (int) $item->tahun,
-                            'total' => (int) $item->total,
-                        ];
-                    }),
+                    'labels'    => $labels,
+                    'laki_laki' => $lakiLaki,
+                    'perempuan' => $perempuan,
+                    'total_laki_laki'   => array_sum($lakiLaki),
+                    'total_perempuan'   => array_sum($perempuan),
                 ],
             ], 200);
-
-        } catch (ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validasi gagal',
-                'errors' => $e->errors(),
-            ], 422);
         } catch (\Exception $e) {
-            return response()->json([
+            return response() -> json ([
                 'success' => false,
-                'message' => 'Gagal mengambil data KK',
-                'error' => $e->getMessage(),
+                'message' => "Gagal Mengambil data piramida penduduk: " . $e->getMessage(),
             ], 500);
         }
     }
+
+    public function getStatusPerkawinan(Request $request): JsonResponse {
+        try {
+            $tahun = $request->input('tahun');
+
+            $query = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
+                ->join('dim_status_perkawinan as dsp', 'fp.status_perkawinan_key', '=', 'dsp.status_perkawinan_key')
+                ->select('dsp.status_perkawinan', DB::raw('count(fp.jumlah_penduduk) as jumlah'))
+                ->groupBy('dsp.status_perkawinan');
+
+                if ($tahun) {
+                    $query->where('dw.tahun', $tahun);
+                }
+
+                $data = $query->orderByDesc('jumlah')->get();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data Status Perkawinan Berhasil Diambil',
+                    'data' => $data->map(fn($r) => [
+                        'status' => $r->status_perkawinan,
+                        'jumlah' => (int) $r->jumlah,
+                    ])->values(),
+                ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data status perkawinan: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getKomposisiAgama(Request $request): JsonResponse {
+        try {
+            $tahun = $request->input('tahun');
+
+            $query = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
+                ->join('dim_agama as da', 'fp.agama_key', '=', 'da.agama_key')
+                ->select('da.nama_agama', DB::raw('count(fp.jumlah_penduduk) as jumlah'))
+                ->groupBy('da.nama_agama');
+
+            if ($tahun) {
+                $query->where('dw.tahun', $tahun);
+            }
+
+            $data = $query->orderByDesc('jumlah')->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data komposisi agama berhasil diambil',
+                'data' => $data->map(fn($r) => [
+                    'agama' => $r->nama_agama,
+                    'jumlah' => (int) $r->jumlah,
+                ]) ->values(),
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data komposisi agama: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+        // KARTU KELUARGA
+    public function getKartuKeluargaTotal(Request $request): JsonResponse
+    {
+        try {
+            $tahun = $request->input('tahun');
+
+            if (!$tahun) {
+                $tahun = DB::table('fact_penduduk as fp')
+                    ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                    ->max('wt.tahun');
+            }
+
+            $total = DB::table('fact_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->selectRaw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah_kk')
+                ->where('wt.tahun', $tahun)
+                ->value('jumlah_kk');
+            
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data Total Kartu Keluarga Berhasil Diambil',
+                    'data' => [
+                        'tahun' => (int) $tahun,
+                        'total_kk' => (int) $total,
+                        'satuan' => 'KK',
+                    ],
+                ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data total kartu keluarga: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
 }
