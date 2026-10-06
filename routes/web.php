@@ -1,9 +1,14 @@
 ﻿<?php
 
+<<<<<<< HEAD
 require __DIR__.'/penduduk/web.php';
 require __DIR__.'/dispenda/web.php';
 
 use Illuminate\Support\Facades\Route;
+=======
+require __DIR__.'/dispenda/web.php';
+
+>>>>>>> fitur/pendapatan-daerah
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Kesehatan\KesehatanController;
