@@ -12,15 +12,32 @@ use Illuminate\Validation\ValidationException;
 
 class ManageUserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('role')->get();
+        $sortBy = $request->query('sort_by', 'created_id_asc');
+
+        $query = User::with('role');
+
+        switch ($sortBy) {
+            case 'nama_asc':
+                $query->orderBy('nama_lengkap', 'asc');
+                break;
+            case 'created_id_asc':
+                $query->orderBy('id_user', 'asc');
+                break;
+            case 'role_admin_first':
+                $query->orderByRaw("CASE WHEN id_role = (SELECT id_role FROM db_auth.tb_role WHERE jenis_user = 'admin' LIMIT 1) THEN 0 ELSE 1 END");
+                break;
+        }
+
+        $users = $query->get();
         $roles = Role::all();
 
         return view('manage-user', [
             'user' => auth()->user(),
             'users' => $users,
-            'roles' => $roles
+            'roles' => $roles,
+            'currentSort' => $sortBy
         ]);
     }
 

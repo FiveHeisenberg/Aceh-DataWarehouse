@@ -190,6 +190,19 @@
         }
         .btn-eye:hover { color: var(--teal); background: #fff; }
 
+        /* ---------- Filter Button Badge ---------- */
+        .badge { padding: 4px 8px; font-size: 11px; font-weight: 600; }
+        .bg-teal { background-color: var(--teal) !important; }
+
+        .dropdown-menu .dropdown-item .bi-check {
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .dropdown-menu .dropdown-item.active .bi-check {
+            opacity: 1;
+        }
+
     </style>
 </head>
 
@@ -285,7 +298,19 @@
                         <button type="submit" class="btn btn-outline-ui">Cari</button>
                     </form>
 
+
+
                     <div class="d-flex flex-wrap gap-2">
+                        <div class="btn-group">
+                            <button class="btn btn-outline-ui dropdown-toggle d-inline-flex align-items-center gap-2" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-funnel me-1"></i> Filter <span id="filterBadge" class="badge bg-teal ms-1" style="display: none;"></span>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+                                <li><a class="dropdown-item" href="#" data-sort="created_id_asc"><i class="bi bi-check me-2"></i> Waktu Dibuat (ID)</a></li>
+                                <li><a class="dropdown-item" href="#" data-sort="nama_asc"><i class="bi bi-check me-2"></i> Nama Lengkap (A-Z)</a></li>
+                                <li><a class="dropdown-item" href="#" data-sort="role_admin_first"><i class="bi bi-check me-2"></i> Role (Admin → User)</a></li>
+                            </ul>
+                        </div>
                         <a href="#" class="btn btn-outline-ui d-inline-flex align-items-center gap-2">
                             Export Data User <i class="bi bi-download"></i>
                         </a>
@@ -704,7 +729,7 @@
         }
 
         function refreshUserTable() {
-            fetch('/manage-user')
+            fetch(`/manage-user?sort_by=${currentSort}`)
             .then(response => response.text())
             .then(html => {
                 const parser = new DOMParser();
@@ -937,6 +962,74 @@
             document.getElementById('formTambahUser').reset();
             document.getElementById('alertContainerTambah').innerHTML = '';
         });
+
+        // Filter user functionality
+        let currentSort = '{{ $currentSort ?? "created_id_asc" }}';
+
+        const sortLabels = {
+            'created_id_asc': 'Waktu Dibuat',
+            'nama_asc': 'Nama (A-Z)',
+            'role_admin_first': 'Role'
+        };
+
+        // Initialize active filter indicator
+        document.addEventListener('DOMContentLoaded', function() {
+            updateFilterIndicator();
+        });
+
+        // Handle filter dropdown clicks
+        document.querySelectorAll('.dropdown-menu .dropdown-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sortBy = this.getAttribute('data-sort');
+                filterUserTable(sortBy);
+            });
+        });
+
+        function updateFilterIndicator() {
+            // Remove active class from all items
+            document.querySelectorAll('.dropdown-menu .dropdown-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Add active class to current filter
+            const activeItem = document.querySelector(`[data-sort="${currentSort}"]`);
+            if (activeItem) {
+                activeItem.classList.add('active');
+            }
+            
+            // Update badge on button
+            const badge = document.getElementById('filterBadge');
+            if (currentSort !== 'created_id_asc') {
+                badge.textContent = sortLabels[currentSort] || '';
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function filterUserTable(sortBy) {
+            currentSort = sortBy;
+            
+            fetch(`/manage-user?sort_by=${sortBy}`)
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newTableBody = doc.querySelector('table tbody');
+                    document.querySelector('table tbody').innerHTML = newTableBody.innerHTML;
+                    
+                    // Update filter indicator
+                    updateFilterIndicator();
+                    
+                    // Re-attach event listeners untuk edit & delete
+                    reattachEditDeleteHandlers();
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('Gagal memfilter data.');
+                });
+        }
 
     </script>
 </body>
