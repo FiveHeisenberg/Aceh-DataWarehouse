@@ -69,7 +69,7 @@ class PendudukApiController extends Controller
                 ->select(
                     'dw.id_kabupaten_kota as kode',
                     'dw.nama_kabupaten_kota as nama',
-                    DB::raw('COUNT(fp.jumlah_penduduk) as jumlah')
+                    DB::raw('SUM(fp.jumlah_penduduk) as jumlah')
                 )
                 ->where('wt.tahun', $tahun)
                 ->groupBy('dw.id_kabupaten_kota', 'dw.nama_kabupaten_kota')
