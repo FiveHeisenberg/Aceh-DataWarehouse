@@ -20,11 +20,14 @@ Route::view('/index', 'index')->name('index');
 
 // UNTUK FITUR PROFILE DAN MANAJEMEN USER
 Route::middleware('auth')->group(function () {
+    // PROFILE
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 
+    // MANAGE USER
     Route::get('/manage-user', [ManageUserController::class, 'index'])->name('manage-user');
     Route::get('/manage-user/{user}/edit', [ManageUserController::class, 'edit'])->name('manage-user.edit');
     Route::put('/manage-user/{user}', [ManageUserController::class, 'update'])->name('manage-user.update');
+    Route::delete('/manage-user/{user}', [ManageUserController::class, 'destroy'])->name('manage-user.destroy');
 });

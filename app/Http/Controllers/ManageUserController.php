@@ -103,4 +103,13 @@ class ManageUserController extends Controller
             'message' => 'Data user berhasil diperbarui.'
         ]);
     }
+
+    public function destroy(User $user)
+    {
+        $user->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil menghapus user'
+        ]);
+    }
 }

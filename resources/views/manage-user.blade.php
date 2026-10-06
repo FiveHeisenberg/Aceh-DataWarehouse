@@ -311,7 +311,7 @@
                                     </td>
                                     <td class="text-center">
                                         <a href="#" class="btn-aksi btn-edit" title="Edit" data-user-id="{{ $user->id_user }}"><i class="bi bi-pencil-square"></i></a>
-                                        <a href="#" class="btn-aksi btn-hapus ms-1 title="Hapus"><i class="bi bi-trash3"></i></a>
+                                        <button type="button" class="btn-aksi btn-hapus ms-1" title="Hapus" data-user-id="{{ $user->id_user }}" data-user-name="{{ $user->nama_lengkap }}"><i class="bi bi-trash3"></i></button>
                                     </td>
                                 </tr>
                                 @empty
@@ -418,6 +418,26 @@
             </div>
         </div>
     </div>
+
+    <!-- NOTIFIKASI KONFIRMASI HAPUS USER -->
+    <div class="modal fade" id="konfirmasiHapusUser" tabindex="-1" role="dialog" aria-labelledby="konfirmasiHapusUserLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4 pb-2">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 56px; height: 56px; background-color: #fdecec;">
+                        <i class="bi bi-trash3" aria-hidden="true" style="font-size: 24px; color: #dc3545;"></i>
+                    </div>
+                    <h5 class="modal-title mb-2" id="konfirmasiHapusUserLabel" style="font-weight: 700; font-size: 17px; color: #1a1a2e;">Yakin ingin menghapus user <span id="namaUserHapus"></span>?</h5>
+                    <p class="mb-0" style="font-size: 13px; color: #5a6577; line-height: 1.6;">Data user yang dihapus tidak dapat dikembalikan.</p>
+                </div>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4 gap-2">
+                    <button type="button" class="btn btn-sm flex-fill" data-bs-dismiss="modal" style="background-color: #f0f2f5; color: #333; border: 1px solid #d0d0d0; font-weight: 600;">Batal</button>
+                    <button type="button" id="btnKonfirmasiHapus" class="btn btn-sm flex-fill" style="background-color: #dc3545; color: #ffffff; border: 1px solid #dc3545; font-weight: 600;">Ya, Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -588,14 +608,91 @@
             document.body.appendChild(container.firstElementChild);
 
             setTimeout(() => {
-                const alert = document.querySelector('alert-success');
+                const alert = document.querySelector('.alert-success');
                 if (alert) alert.remove();
             }, 5000);
         }
 
         function refreshUserTable() {
-            location.reload();
+            fetch('/manage-user')
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newTableBody = doc.querySelector('table tbody');
+                document.querySelector('table tbody').innerHTML = newTableBody.innerHTML;
+                
+                reattachEditDeleteHandlers();
+            })
+            .catch(err => {
+                console.error('Error refreshing table:', err);
+                location.reload();
+            });
         }
+
+        function reattachEditDeleteHandlers() {
+            document.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    selectedUserId = this.getAttribute('data-user-id');
+                    fetchUser(selectedUserId);
+                });
+            });
+
+            document.querySelectorAll('.btn-hapus').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    selectedUserIdDelete = this.getAttribute('data-user-id');
+                    const userName = this.getAttribute('data-user-name');
+                    document.getElementById('namaUserHapus').textContent = userName;
+                    deleteUserModal = new bootstrap.Modal(document.getElementById('konfirmasiHapusUser'));
+                    deleteUserModal.show();
+                });
+            });
+        }
+
+        // Handle delete user
+        let selectedUserIdDelete = null;
+        let deleteUserModal = null;
+
+        document.querySelectorAll('.btn-hapus').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                selectedUserIdDelete = this.getAttribute('data-user-id');
+                const userName = this.getAttribute('data-user-name');
+                document.getElementById('namaUserHapus').textContent = userName;
+                deleteUserModal = new bootstrap.Modal(document.getElementById('konfirmasiHapusUser'));
+                deleteUserModal.show();
+            });
+        });
+
+        document.getElementById('btnKonfirmasiHapus').addEventListener('click', function() {
+            fetch(`/manage-user/${selectedUserIdDelete}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        alert('Gagal menghapus user.');
+                    });
+                }
+                return response.json().then(data => {
+                    if (data.success) {
+                        deleteUserModal.hide();
+                        showSuccessNotification(data.message);
+                        refreshUserTable();
+                    }
+                });
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Terjadi kesalahan. Silakan coba lagi.');
+            });
+        });
 
     </script>
 </body>
