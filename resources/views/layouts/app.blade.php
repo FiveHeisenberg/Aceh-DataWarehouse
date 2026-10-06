@@ -95,7 +95,7 @@
     </style>
 </head>
 
-<body style="background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+<body data-route="{{ Route::currentRouteName() }}" style="background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
 
     <div class="d-flex flex-column" style="min-height: 100vh;">
 
@@ -123,7 +123,6 @@
                 onclick="history.back(); return false;">
                     <i class="bi bi-chevron-left"></i>
                 </a>
-                <span id="pageTitle" style="font-weight: 500; font-size: 16px; color: #1a1a2e;"></span>
             </div>
 
             <!-- Back + Top Nav -->
@@ -294,12 +293,16 @@
             }).show();
         }
 
+        // Hapus penanda saat logout, supaya login berikutnya dianggap halaman pertama
+        document.getElementById('formLogout').addEventListener('submit', function () {
+            sessionStorage.removeItem('adwSudahNavigasi');
+        });
+
         // Back Button Logic
         document.addEventListener('DOMContentLoaded', function () {
             const backButtonGroup = document.getElementById('backButtonGroup');
             const pageTitle = document.getElementById('pageTitle');
 
-            // Mapping route ke page title
             const routeTitles = {
                 'penduduk.jumlah_penduduk': 'Jumlah Penduduk',
                 'penduduk.kartu_keluarga': 'Kartu Keluarga',
@@ -308,40 +311,20 @@
                 'dispenda.objek-pajak': 'Objek Pajak',
             };
 
-            // Deteksi current route
-            let currentRoute = document.body.getAttribute('data-route') || '';
-            if (!currentRoute) {
-                const path = window.location.pathname;
-                if (path === '/' || path === '/index' || path === '/index.php') {
-                    currentRoute = 'index';
-                } else if (path.includes('jumlah-penduduk')) {
-                    currentRoute = 'penduduk.jumlah_penduduk';
-                } else if (path.includes('kartu-keluarga')) {
-                    currentRoute = 'penduduk.kartu_keluarga';
-                } else if (path.includes('dispenda') && path.includes('dashboard')) {
-                    currentRoute = 'dispenda.dashboard';
-                } else if (path.includes('dispenda') && path.includes('tagihan')) {
-                    currentRoute = 'dispenda.tagihan';
-                } else if (path.includes('dispenda') && path.includes('objek-pajak')) {
-                    currentRoute = 'dispenda.objek-pajak';
-                }
-            }
+            // Nama route dari Laravel
+            const currentRoute = document.body.getAttribute('data-route') || '';
 
-            const path = window.location.pathname;
-            const isIndexPage = currentRoute === '' || currentRoute === 'index' ||
-                path === '/' || path === '/index' || path === '/index.php';
+            // Halaman pertama setelah login = penanda belum ada, atau datang dari halaman login
+            const sudahNavigasi = sessionStorage.getItem('adwSudahNavigasi') === '1';
+            const dariLogin = document.referrer && new URL(document.referrer).pathname.includes('/login');
+            const halamanPertama = !sudahNavigasi || dariLogin;
 
-            // Halaman asal: harus dari aplikasi yang sama dan bukan dari login
-            const ref = document.referrer;
-            let cameFromApp = false;
-            if (ref) {
-                const refUrl = new URL(ref);
-                cameFromApp = refUrl.origin === window.location.origin
-                    && !refUrl.pathname.includes('/login');
-            }
+            // Tandai: halaman berikutnya bukan halaman pertama lagi
+            sessionStorage.setItem('adwSudahNavigasi', '1');
 
-            // Tampilkan tombol back hanya jika bukan index dan datang dari halaman lain di aplikasi
-            if (!isIndexPage && cameFromApp) {
+            const isIndexPage = window.location.pathname === '/';
+
+            if (!halamanPertama && !isIndexPage) {
                 backButtonGroup.classList.remove('d-none');
                 backButtonGroup.classList.add('d-flex');
                 pageTitle.textContent = routeTitles[currentRoute] || 'Dashboard';
