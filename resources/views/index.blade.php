@@ -115,6 +115,7 @@
                     </button>
 
                     @php($user = auth()->user())
+                    @php($adminRoleId = 1)
                     <ul class="dropdown-menu dropdown-menu-end profile-menu">
                         <li class="px-3 pt-1 pb-2">
                             <div style="font-size: 13px; font-weight: 700; color: #1a1a2e;">{{ $user->nama_lengkap ?? $user->username ?? 'Administrator' }}</div>
@@ -127,18 +128,25 @@
                                 <i class="bi bi-person me-2"></i> Profile
                             </a>
                         </li>
+
+                        @if($user->id_role === $adminRoleId)
                         <li>
                             <a href="{{ route('manage-user') }}" class="dropdown-item d-flex align-items-center">
                                 <i class="bi bi-people me-2"></i> Manajemen User
                             </a>
                         </li>
+                        @endif
+
+                        <!-- ETL - hanya untuk admin -->
+                        @if($user->id_role === $adminRoleId)
                         <li>
                             <a href="http://192.168.222.152:8080/" target="blank" class="dropdown-item d-flex align-items-center">
                                 <i class="bi bi-arrow-repeat me-2"></i> ETL
                             </a>
                         </li>
-
                         <li><hr class="dropdown-divider my-1"></li>
+                        @endif
+
                         <li>
                             <button type="button" class="dropdown-item d-flex align-items-center w-100" style="color: #dc3545;" data-bs-toggle="modal" data-bs-target='#konfirmasiLogout'>
                                 <i class="bi bi-box-arrow-right me-2"></i> Logout
