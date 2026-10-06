@@ -1,4 +1,6 @@
-﻿﻿<?php
+﻿<?php
+
+require __DIR__.'/dispenda/web.php';
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;

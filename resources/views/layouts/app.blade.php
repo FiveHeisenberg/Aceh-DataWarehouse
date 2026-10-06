@@ -82,6 +82,15 @@
             border-radius: 6px;
         }
 
+        /* Putar chevron saat submenu terbuka (Bootstrap Collapse) */
+        .sidebar-menu-item > a .chevron-icon {
+            transition: transform .3s ease;
+        }
+
+        .sidebar-menu-item > a[aria-expanded="true"] .chevron-icon {
+            transform: rotate(90deg);
+        }
+
     </style>
 </head>
 
@@ -167,21 +176,42 @@
         <div class="d-flex flex-grow-1" style="margin-top: 70px;">
 
             <!-- ==================== SIDEBAR ==================== -->
-            <div class="p-3 sidebar" style="width: 260px; background-color: #ffffff; border-right: 1px solid #e0e0e0; position: fixed; top: 70px; left: 0; bottom: 0; overflow-y: auto; z-index: 1000;">
+            <div class="p-3 sidebar" id="sidebarMenu" style="width: 260px; background-color: #ffffff; border-right: 1px solid #e0e0e0; position: fixed; top: 70px; left: 0; bottom: 0; overflow-y: auto; z-index: 1000;">
 
                 <!-- Penduduk -->
                 <div class="mb-1 sidebar-menu-item">
-                    <a href="#" class="d-flex align-items-center justify-content-between text-decoration-none p-2 rounded" style="color: #333;">
+                    <a href="#submenuPenduduk" data-bs-toggle="collapse" role="button"
+                       aria-expanded="{{ request()->routeIs('penduduk.*') ? 'true' : 'false' }}"
+                       aria-controls="submenuPenduduk"
+                       class="d-flex align-items-center justify-content-between text-decoration-none p-2 rounded" style="color: #333;">
                         <div class="d-flex align-items-center">
                             <i class="bi bi-people-fill me-2" style="font-size: 18px;"></i>
                             <span style="font-weight: 600; font-size: 14px;">Penduduk</span>
                         </div>
                         <i class="bi bi-chevron-right chevron-icon" style="font-size: 14px;"></i>
                     </a>
-                    <!-- Sub Menu Penduduk -->
-                    <div class="ms-4 mt-1 submenu" style="max-height: 0px; opacity: 0; overflow: hidden; transition: max-height 0.3s ease, opacity 0.3s ease, padding 0.3s ease;">
+                    <div class="collapse ms-4 mt-1 {{ request()->routeIs('penduduk.*') ? 'show' : '' }}" id="submenuPenduduk" data-bs-parent="#sidebarMenu">
                         <a href="{{ route('penduduk.jumlah_penduduk') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('penduduk.jumlah_penduduk') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Jumlah Penduduk</a>
                         <a href="{{ route('penduduk.kartu_keluarga') }}" class="d-block text-decoration-none py-2 px-2 {{ request()->routeIs('penduduk.kartu_keluarga') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Kartu Keluarga</a>
+                    </div>
+                </div>
+
+                <!-- Pendapatan Daerah -->
+                <div class="mb-1 sidebar-menu-item">
+                    <a href="#submenuDispenda" data-bs-toggle="collapse" role="button"
+                       aria-expanded="{{ request()->routeIs('dispenda.*') ? 'true' : 'false' }}"
+                       aria-controls="submenuDispenda"
+                       class="d-flex align-items-center justify-content-between text-decoration-none p-2 rounded" style="color: #333;">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-bank me-2" style="font-size: 18px;"></i>
+                            <span style="font-weight: 600; font-size: 14px;">Pendapatan Daerah</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon" style="font-size: 14px;"></i>
+                    </a>
+                    <div class="collapse ms-4 mt-1 {{ request()->routeIs('dispenda.*') ? 'show' : '' }}" id="submenuDispenda" data-bs-parent="#sidebarMenu">
+                        <a href="{{ route('dispenda.dashboard') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('dispenda.dashboard') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Ringkasan Pendapatan</a>
+                        <a href="{{ route('dispenda.tagihan') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('dispenda.tagihan') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Data Tagihan</a>
+                        <a href="{{ route('dispenda.objek-pajak') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('dispenda.objek-pajak') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Objek Pajak</a>
                     </div>
                 </div>
             </div>
@@ -238,31 +268,7 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/landing.js') }}"></script>
-
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Buka otomatis submenu yang berisi link aktif
-            const activeLinks = document.querySelectorAll('.sidebar .text-decoration-none.active');
-            activeLinks.forEach(link => {
-                const parent = link.closest('.submenu');
-                if (parent) {
-                    parent.style.maxHeight = parent.scrollHeight + 'px';
-                    parent.style.opacity = '1';
-                    parent.style.padding = '8px 0';
-                    parent.style.margin = '4px 0';
-
-                    const menuButton = parent.previousElementSibling;
-                    if (menuButton) {
-                        const chevron = menuButton.querySelector('.chevron-icon');
-                        if (chevron) {
-                            chevron.classList.remove('bi-chevron-right');
-                            chevron.classList.add('bi-chevron-down');
-                        }
-                    }
-                }
-            });
-        });
-
+    <script>
         const toastLengkapiDiri = document.getElementById('notifLengkapiDiri');
 
         if (toastLengkapiDiri) {
