@@ -127,7 +127,7 @@
 
             <!-- Back + Top Nav -->
             <div class="d-flex align-items-center">
-                <a href="/" class="text-decoration-none me-4" style="color: #1a1a2e; font-weight: 600; font-size: 15px;">Home</a>
+                <a href="/index" class="text-decoration-none me-4" style="color: #1a1a2e; font-weight: 600; font-size: 15px;">Home</a>
                 <a href="#" class="text-decoration-none" style="color: #5a6577; font-weight: 500; font-size: 15px;">About</a>
             </div>
 
