@@ -20,11 +20,11 @@ Route::prefix('Dispenda')->name('dispenda.')->group(function () {
     Route::get('/tagihan', [DispendaController::class, 'dataTagihan'])
         ->name('tagihan');
 
-    Route::get('/tagihan/{id}', [DispendaController::class, 'detailTagihan'])
-        ->name('tagihan.detail');
-
     Route::get('/tagihan-export', [DispendaController::class, 'exportTagihan'])
         ->name('tagihan.export');
+
+    Route::get('/tagihan/{id}', [DispendaController::class, 'detailTagihan'])
+        ->name('tagihan.detail');
 
     Route::get('/objek-pajak', [DispendaController::class, 'objekPajak'])
         ->name('objek-pajak');

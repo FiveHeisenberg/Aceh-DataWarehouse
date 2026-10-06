@@ -143,7 +143,7 @@
                     @endforeach
                 </select>
 
-                <button type="submit" class="btn btn-sm text-white" style="background-color: #0d9488; border-color: #0d9488;">
+                <button type="submit" formaction="{{ route('dispenda.tagihan.export') }}" class="btn btn-sm text-white" style="background-color: #0d9488; border-color: #0d9488;">
                     <i class="bi bi-download me-1"></i>Export Data
                 </button>
             </form>

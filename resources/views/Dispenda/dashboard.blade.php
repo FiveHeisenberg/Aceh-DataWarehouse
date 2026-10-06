@@ -111,8 +111,8 @@
                     <div class="panel-card">
                         <h2 class="panel-title mb-0">Tren Penerimaan Pajak</h2>
                         <p class="panel-sub mb-3">tagihan lunas per bulan jatuh tempo</p>
-                        <div style="height: 260px;"><canvas id="chart-tren"></canvas></div>
-                        <div class="mt-3" style="max-width: 256px;">
+                        <div style="height: 356px;"><canvas id="chart-tren"></canvas></div>
+                        <div class="mt-3 w-100">
                             <label for="filter-wilayah" class="panel-sub d-block mb-1">Tampilkan tren</label>
                             <select name="wilayah_id" id="filter-wilayah" form="filter-dashboard" class="form-select form-select-sm shadow-sm" data-autosubmit>
                                 <option value="all">Seluruh Aceh (total)</option>
