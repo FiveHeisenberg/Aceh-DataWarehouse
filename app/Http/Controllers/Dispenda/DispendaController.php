@@ -7,7 +7,6 @@ use App\Exports\TagihanExport;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
 class DispendaController extends Controller
@@ -140,7 +139,7 @@ class DispendaController extends Controller
             ];
         }
 
-        return Inertia::render('Dispenda/Dashboard', [
+        return view('Dispenda.dashboard', [
             'tahun' => (int) $tahun,
             'availableYears' => array_map('intval', $availableYears),
             'totalPendapatan' => (int) $totalPendapatan,
@@ -242,7 +241,7 @@ class DispendaController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return Inertia::render('Dispenda/DataTagihan', [
+        return view('Dispenda.data_tagihan', [
             'tagihan' => $tagihan,
             'filters' => [
                 'search' => $search,
@@ -382,7 +381,7 @@ class DispendaController extends Controller
 
         // Chart WAJIB clone $baseQuery, bukan query kosong, supaya ikut filter aktif.
         // PDO mengembalikan SUM/COUNT sebagai string ("44730000000") dan Laravel tidak
-        // mem-cast hasil query builder — Recharts gagal menghitung slice kalau dapat string.
+        // mem-cast hasil query builder ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Recharts gagal menghitung slice kalau dapat string.
         $trendPendaftaran = (clone $baseQuery)
             ->selectRaw('YEAR(dwh.dim_objek_pajak.waktu_load) as tahun, COUNT(*) as total')
             ->groupBy('tahun')
@@ -415,7 +414,7 @@ class DispendaController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return Inertia::render('Dispenda/ObjekPajak', [
+        return view('Dispenda.objek_pajak', [
             'objekPajak' => $objekPajak,
             'filters' => [
                 'search' => $search,
