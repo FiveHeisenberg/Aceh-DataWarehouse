@@ -71,7 +71,7 @@ class RegisteredUserController extends Controller
         $role = Role::query()
             ->where('jenis_user', self::DEFAULT_ROLE)
             ->first();
-        
+
         if ($role === null) {
             throw ValidationException::withMessages([
                 'username' => 'Pendaftaran sedan tidak tersedia. Silahkan coba lagi nanti.',
@@ -88,7 +88,7 @@ class RegisteredUserController extends Controller
                 'password' => $validate['password'],
             ]);
         } catch (QueryException $e) {
-            //1062 = duplicate entry untuk unique index username / email.
+            // 1062 = duplicate entry untuk unique index username / email.
             if (($e->errorInfo[1] ?? null) == 1062) {
                 throw ValidationException::withMessages([
                     'username' => 'Username atau email sudah digunakan.',

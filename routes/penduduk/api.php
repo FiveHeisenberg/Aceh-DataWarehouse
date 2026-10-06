@@ -72,7 +72,7 @@ Route::prefix('penduduk')->group(function () {
      */
     Route::get('/kartu-keluarga/detail', [PendudukApiController::class, 'getKartuKeluargaDetail'])
         ->name('penduduk.api.kartu-keluarga.detail');
-    
+
     /**
      * GET /api/penduduk/pyramid-umur
      * Data piramida penduduk: Kelompok umur (5-tahunan) x jenis kelamin (?tahun=)
@@ -84,15 +84,15 @@ Route::prefix('penduduk')->group(function () {
      * GET /api/penduduk/status-perkawinan
      * Jumlah Penduduk berdasarkan status perkawinan (?tahun=)
      */
-    Route::get('/status-perkawinan', [PendudukApiController::class,'getStatusPerkawinan'])
-    ->name('penduduk.api.status-perkawinan');
+    Route::get('/status-perkawinan', [PendudukApiController::class, 'getStatusPerkawinan'])
+        ->name('penduduk.api.status-perkawinan');
 
     /**
      * GET /api/penduduk/komposisi-agama
      * Komposisi penduduk berdasarkan agama (?tahun=)
      */
     Route::get('/komposisi-agama', [PendudukApiController::class, 'getKomposisiAgama'])
-    ->name('penduduk.api.komposisi-agama');
+        ->name('penduduk.api.komposisi-agama');
 
     /**
      * GET /api/penduduk/jumlah-kk

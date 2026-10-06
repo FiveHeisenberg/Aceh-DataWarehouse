@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
 
 class PendudukApiController extends Controller
 {
@@ -14,19 +13,19 @@ class PendudukApiController extends Controller
     {
         try {
             $tahun = DB::table('fact_penduduk as fp')
-            ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
-            ->distinct()
-            ->orderBy('dw.tahun', 'desc')
-            ->pluck('dw.tahun');
+                ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
+                ->distinct()
+                ->orderBy('dw.tahun', 'desc')
+                ->pluck('dw.tahun');
 
-        return response()->json([
-            'success' => true,
-            'data' => $tahun,
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'data' => $tahun,
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => "Gagal mengambil data tahun: " . $e->getMessage(),
+                'message' => 'Gagal mengambil data tahun: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -40,7 +39,7 @@ class PendudukApiController extends Controller
                 ->groupBy('dw.tahun')
                 ->orderBy('dw.tahun', 'asc')
                 ->get();
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $data,
@@ -48,7 +47,7 @@ class PendudukApiController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data penduduk: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data penduduk: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -58,7 +57,7 @@ class PendudukApiController extends Controller
         try {
             $tahun = $request->input('tahun');
 
-            if (!$tahun) {
+            if (! $tahun) {
                 $tahun = DB::table('fact_penduduk as fp')
                     ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                     ->max('wt.tahun');
@@ -118,7 +117,7 @@ class PendudukApiController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data peta: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data peta: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -128,7 +127,7 @@ class PendudukApiController extends Controller
         try {
             $wilayah = $request->input('wilayah');
 
-            if (!$wilayah) {
+            if (! $wilayah) {
                 $kabupaten = DB::table('fact_penduduk as fp')
                     ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
                     ->select('dw.nama_kabupaten_kota as nama', DB::raw('COUNT(fp.jumlah_penduduk) as jumlah'))
@@ -157,7 +156,7 @@ class PendudukApiController extends Controller
             if ($tren->isEmpty()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Data tidak ditemukan untuk wilayah: ' . $wilayah,
+                    'message' => 'Data tidak ditemukan untuk wilayah: '.$wilayah,
                 ], 404);
             }
 
@@ -166,7 +165,7 @@ class PendudukApiController extends Controller
                 'message' => 'Data tren berhasil diambil',
                 'data' => [
                     'kabupaten' => ucwords(strtolower($wilayah)),
-                    'tren' => $tren->map(fn($r) => [
+                    'tren' => $tren->map(fn ($r) => [
                         'tahun' => (int) $r->tahun,
                         'jumlah' => (int) $r->jumlah,
                     ])->values(),
@@ -176,7 +175,7 @@ class PendudukApiController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data tren: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data tren: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -199,7 +198,7 @@ class PendudukApiController extends Controller
             });
 
             $query->when($request->filled('search'), function ($q) use ($request) {
-                return $q->where('dww.nama_kabupaten_kota', 'like', '%' . $request->input('search') . '%');
+                return $q->where('dww.nama_kabupaten_kota', 'like', '%'.$request->input('search').'%');
             });
 
             $data = $query->orderByDesc('jumlah_penduduk')->get();
@@ -207,7 +206,7 @@ class PendudukApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Data detail penduduk berhasil diambil',
-                'data' => $data->map(fn($r) => [
+                'data' => $data->map(fn ($r) => [
                     'nama_kabupaten_kota' => $r->nama_kabupaten_kota,
                     'tahun' => (int) $r->tahun,
                     'jumlah_penduduk' => (int) $r->jumlah_penduduk,
@@ -218,7 +217,7 @@ class PendudukApiController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data detail penduduk: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data detail penduduk: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -228,7 +227,7 @@ class PendudukApiController extends Controller
         try {
             $tahun = $request->input('tahun');
 
-            if (!$tahun) {
+            if (! $tahun) {
                 $tahun = DB::table('fact_penduduk as fp')
                     ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                     ->max('wt.tahun');
@@ -277,7 +276,7 @@ class PendudukApiController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data kartu keluarga: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data kartu keluarga: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -296,7 +295,7 @@ class PendudukApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Data tren kartu keluarga berhasil diambil',
-                'data' => $data->map(fn($r) => [
+                'data' => $data->map(fn ($r) => [
                     'tahun' => (int) $r->tahun,
                     'jumlah' => (int) $r->jumlah,
                 ])->values(),
@@ -305,7 +304,7 @@ class PendudukApiController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data tren kartu keluarga: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data tren kartu keluarga: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -315,7 +314,7 @@ class PendudukApiController extends Controller
         try {
             $tahun = $request->input('tahun');
 
-            if (!$tahun) {
+            if (! $tahun) {
                 $tahun = DB::table('fact_penduduk as fp')
                     ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                     ->max('wt.tahun');
@@ -336,7 +335,7 @@ class PendudukApiController extends Controller
                 'message' => 'Data detail kartu keluarga berhasil diambil',
                 'data' => [
                     'tahun' => (int) $tahun,
-                    'detail' => $data->map(fn($r) => [
+                    'detail' => $data->map(fn ($r) => [
                         'nama_kabupaten_kota' => $r->nama,
                         'jumlah_kk' => (int) $r->jumlah,
                         'satuan' => 'KK',
@@ -347,7 +346,7 @@ class PendudukApiController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data detail kartu keluarga: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data detail kartu keluarga: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -378,7 +377,7 @@ class PendudukApiController extends Controller
                     END AS kategori,
                     COUNT(*) AS jumlah
                 ")
-                ->groupByRaw("1, 2");
+                ->groupByRaw('1, 2');
 
             if ($tahun) {
                 $query->where('dw.tahun', $tahun);
@@ -391,7 +390,7 @@ class PendudukApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Data struktur kelompok umur berhasil diambil',
-                'data' => $data->map(fn($r) => [
+                'data' => $data->map(fn ($r) => [
                     'range_umur' => $r->range_umur,
                     'kategori' => $r->kategori,
                     'jumlah' => (int) $r->jumlah,
@@ -400,7 +399,7 @@ class PendudukApiController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data struktur kelompok umur: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data struktur kelompok umur: '.$e->getMessage(),
             ], 500);
         }
     }
@@ -414,13 +413,13 @@ class PendudukApiController extends Controller
                 ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
                 ->join('dim_penduduk as dp', 'fp.penduduk_key', '=', 'dp.penduduk_key')
                 ->whereNotNull('fp.umur')
-                ->selectRaw("
+                ->selectRaw('
                     FLOOR(fp.umur/5) * 5 AS bucket_start,
                     dp.jenis_kelamin,
                     SUM(fp.jumlah_penduduk) AS jumlah
-                ")
+                ')
                 ->groupByRaw('FLOOR(fp.umur / 5) * 5, dp.jenis_kelamin');
-            
+
             if ($tahun) {
                 $query->where('dw.tahun', $tahun);
             }
@@ -428,8 +427,8 @@ class PendudukApiController extends Controller
             $rows = $query->get();
 
             $labels = [];
-            for ($b=0; $b <= 70 ; $b += 5) { 
-                $labels[] = $b . '-' . ($b + 4);
+            for ($b = 0; $b <= 70; $b += 5) {
+                $labels[] = $b.'-'.($b + 4);
             }
             $labels[] = '75+';
 
@@ -438,7 +437,7 @@ class PendudukApiController extends Controller
 
             foreach ($rows as $row) {
                 $bucket = (int) $row->bucket_start;
-                $idx = $bucket >= 75 ? count($labels) - 1: intdiv($bucket, 5);
+                $idx = $bucket >= 75 ? count($labels) - 1 : intdiv($bucket, 5);
                 if ($idx < 0 || $idx >= count($labels)) {
                     continue;
                 }
@@ -454,22 +453,23 @@ class PendudukApiController extends Controller
                 'success' => true,
                 'message' => 'Data Piramida Penduduk Berhasil diambil',
                 'data' => [
-                    'labels'    => $labels,
+                    'labels' => $labels,
                     'laki_laki' => $lakiLaki,
                     'perempuan' => $perempuan,
-                    'total_laki_laki'   => array_sum($lakiLaki),
-                    'total_perempuan'   => array_sum($perempuan),
+                    'total_laki_laki' => array_sum($lakiLaki),
+                    'total_perempuan' => array_sum($perempuan),
                 ],
             ], 200);
         } catch (\Exception $e) {
-            return response() -> json ([
+            return response()->json([
                 'success' => false,
-                'message' => "Gagal Mengambil data piramida penduduk: " . $e->getMessage(),
+                'message' => 'Gagal Mengambil data piramida penduduk: '.$e->getMessage(),
             ], 500);
         }
     }
 
-    public function getStatusPerkawinan(Request $request): JsonResponse {
+    public function getStatusPerkawinan(Request $request): JsonResponse
+    {
         try {
             $tahun = $request->input('tahun');
 
@@ -479,29 +479,30 @@ class PendudukApiController extends Controller
                 ->select('dsp.status_perkawinan', DB::raw('count(fp.jumlah_penduduk) as jumlah'))
                 ->groupBy('dsp.status_perkawinan');
 
-                if ($tahun) {
-                    $query->where('dw.tahun', $tahun);
-                }
+            if ($tahun) {
+                $query->where('dw.tahun', $tahun);
+            }
 
-                $data = $query->orderByDesc('jumlah')->get();
+            $data = $query->orderByDesc('jumlah')->get();
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Data Status Perkawinan Berhasil Diambil',
-                    'data' => $data->map(fn($r) => [
-                        'status' => $r->status_perkawinan,
-                        'jumlah' => (int) $r->jumlah,
-                    ])->values(),
-                ], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Data Status Perkawinan Berhasil Diambil',
+                'data' => $data->map(fn ($r) => [
+                    'status' => $r->status_perkawinan,
+                    'jumlah' => (int) $r->jumlah,
+                ])->values(),
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data status perkawinan: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data status perkawinan: '.$e->getMessage(),
             ], 500);
         }
     }
 
-    public function getKomposisiAgama(Request $request): JsonResponse {
+    public function getKomposisiAgama(Request $request): JsonResponse
+    {
         try {
             $tahun = $request->input('tahun');
 
@@ -520,26 +521,26 @@ class PendudukApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Data komposisi agama berhasil diambil',
-                'data' => $data->map(fn($r) => [
+                'data' => $data->map(fn ($r) => [
                     'agama' => $r->nama_agama,
                     'jumlah' => (int) $r->jumlah,
-                ]) ->values(),
+                ])->values(),
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data komposisi agama: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data komposisi agama: '.$e->getMessage(),
             ], 500);
         }
     }
 
-        // KARTU KELUARGA
+    // KARTU KELUARGA
     public function getKartuKeluargaTotal(Request $request): JsonResponse
     {
         try {
             $tahun = $request->input('tahun');
 
-            if (!$tahun) {
+            if (! $tahun) {
                 $tahun = DB::table('fact_penduduk as fp')
                     ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                     ->max('wt.tahun');
@@ -550,22 +551,21 @@ class PendudukApiController extends Controller
                 ->selectRaw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah_kk')
                 ->where('wt.tahun', $tahun)
                 ->value('jumlah_kk');
-            
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Data Total Kartu Keluarga Berhasil Diambil',
-                    'data' => [
-                        'tahun' => (int) $tahun,
-                        'total_kk' => (int) $total,
-                        'satuan' => 'KK',
-                    ],
-                ], 200);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data Total Kartu Keluarga Berhasil Diambil',
+                'data' => [
+                    'tahun' => (int) $tahun,
+                    'total_kk' => (int) $total,
+                    'satuan' => 'KK',
+                ],
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data total kartu keluarga: ' . $e->getMessage(),
+                'message' => 'Gagal mengambil data total kartu keluarga: '.$e->getMessage(),
             ], 500);
         }
     }
-
 }
