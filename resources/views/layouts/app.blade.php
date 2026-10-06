@@ -112,6 +112,20 @@
                 </div>
             </div>
 
+            <!-- Back Button + Page Title -->
+            <div class="d-none align-items-center gap-2" id="backButtonGroup">
+                <a href="#" class="icon-btn" title="Kembali" 
+                style="color: #1a1a2e; font-size: 22px; width: 40px; height: 40px; 
+                        display: inline-flex; align-items: center; justify-content: center; 
+                        border-radius: 50%; transition: background 0.15s, color 0.15s;"
+                onmouseover="this.style.backgroundColor='#e8f5f0'; this.style.color='#0d9488';"
+                onmouseout="this.style.backgroundColor='transparent'; this.style.color='#1a1a2e';"
+                onclick="history.back(); return false;">
+                    <i class="bi bi-chevron-left"></i>
+                </a>
+                <span id="pageTitle" style="font-weight: 500; font-size: 16px; color: #1a1a2e;"></span>
+            </div>
+
             <!-- Back + Top Nav -->
             <div class="d-flex align-items-center">
                 <a href="/" class="text-decoration-none me-4" style="color: #1a1a2e; font-weight: 600; font-size: 15px;">Home</a>
@@ -269,16 +283,72 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/landing.js') }}"></script>
-    <script>
-        const toastLengkapiDiri = document.getElementById('notifLengkapiDiri');
 
+    <script>
+        // Toast notification
+        const toastLengkapiDiri = document.getElementById('notifLengkapiDiri');
         if (toastLengkapiDiri) {
             bootstrap.Toast.getOrCreateInstance(toastLengkapiDiri, {
                 delay: 2000,
                 autohide: true
             }).show();
         }
+
+        // Back Button Logic
+        document.addEventListener('DOMContentLoaded', function () {
+            const backButtonGroup = document.getElementById('backButtonGroup');
+            const pageTitle = document.getElementById('pageTitle');
+
+            // Mapping route ke page title
+            const routeTitles = {
+                'penduduk.jumlah_penduduk': 'Jumlah Penduduk',
+                'penduduk.kartu_keluarga': 'Kartu Keluarga',
+                'dispenda.dashboard': 'Ringkasan Pendapatan',
+                'dispenda.tagihan': 'Data Tagihan',
+                'dispenda.objek-pajak': 'Objek Pajak',
+            };
+
+            // Deteksi current route
+            let currentRoute = document.body.getAttribute('data-route') || '';
+            if (!currentRoute) {
+                const path = window.location.pathname;
+                if (path === '/' || path === '/index' || path === '/index.php') {
+                    currentRoute = 'index';
+                } else if (path.includes('jumlah-penduduk')) {
+                    currentRoute = 'penduduk.jumlah_penduduk';
+                } else if (path.includes('kartu-keluarga')) {
+                    currentRoute = 'penduduk.kartu_keluarga';
+                } else if (path.includes('dispenda') && path.includes('dashboard')) {
+                    currentRoute = 'dispenda.dashboard';
+                } else if (path.includes('dispenda') && path.includes('tagihan')) {
+                    currentRoute = 'dispenda.tagihan';
+                } else if (path.includes('dispenda') && path.includes('objek-pajak')) {
+                    currentRoute = 'dispenda.objek-pajak';
+                }
+            }
+
+            const path = window.location.pathname;
+            const isIndexPage = currentRoute === '' || currentRoute === 'index' ||
+                path === '/' || path === '/index' || path === '/index.php';
+
+            // Halaman asal: harus dari aplikasi yang sama dan bukan dari login
+            const ref = document.referrer;
+            let cameFromApp = false;
+            if (ref) {
+                const refUrl = new URL(ref);
+                cameFromApp = refUrl.origin === window.location.origin
+                    && !refUrl.pathname.includes('/login');
+            }
+
+            // Tampilkan tombol back hanya jika bukan index dan datang dari halaman lain di aplikasi
+            if (!isIndexPage && cameFromApp) {
+                backButtonGroup.classList.remove('d-none');
+                backButtonGroup.classList.add('d-flex');
+                pageTitle.textContent = routeTitles[currentRoute] || 'Dashboard';
+            }
+        });
     </script>
+
     @stack('scripts')
 </body>
 
