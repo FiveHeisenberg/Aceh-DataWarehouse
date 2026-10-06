@@ -238,37 +238,25 @@
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ asset('js/landing.js') }}"></script>
-    <script>
+
+        <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const menuItems = document.querySelectorAll('.sidebar-menu-item > a');
-
-            menuItems.forEach(item => {
-                item.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const submenu = this.nextElementSibling;
-                    const chevron = this.querySelector('.chevron-icon');
-
-                    submenu.style.maxHeight = submenu.style.maxHeight === '0px' ? submenu.scrollHeight + 'px' : '0px';
-                    submenu.style.opacity = submenu.style.opacity === '0' ? '1' : '0';
-                    submenu.style.paddingTop = submenu.style.opacity === '1' ? '8px' : '0px';
-
-                    chevron.style.transform = chevron.style.transform === 'rotate(90deg)' ? 'rotate(0deg)' : 'rotate(90deg)';
-                });
-            });
-
+            // Buka otomatis submenu yang berisi link aktif
             const activeLinks = document.querySelectorAll('.sidebar .text-decoration-none.active');
             activeLinks.forEach(link => {
                 const parent = link.closest('.submenu');
                 if (parent) {
                     parent.style.maxHeight = parent.scrollHeight + 'px';
                     parent.style.opacity = '1';
-                    parent.style.paddingTop = '8px';
+                    parent.style.padding = '8px 0';
+                    parent.style.margin = '4px 0';
 
                     const menuButton = parent.previousElementSibling;
                     if (menuButton) {
                         const chevron = menuButton.querySelector('.chevron-icon');
                         if (chevron) {
-                            chevron.style.transform = 'rotate(90deg)';
+                            chevron.classList.remove('bi-chevron-right');
+                            chevron.classList.add('bi-chevron-down');
                         }
                     }
                 }
