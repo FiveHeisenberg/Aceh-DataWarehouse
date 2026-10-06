@@ -31,4 +31,5 @@ Route::middleware('auth')->group(function () {
     Route::put('/manage-user/{user}', [ManageUserController::class, 'update'])->name('manage-user.update');
     Route::delete('/manage-user/{user}', [ManageUserController::class, 'destroy'])->name('manage-user.destroy');
     Route::post('/manage-user', [ManageUserController::class, 'store'])->name('manage-user.store');
+    Route::get('/manage-user/export', [ManageUserController::class, 'export'])->name('manage-user.export');
 });

@@ -298,8 +298,6 @@
                         <button type="button" class="btn btn-outline-ui" onclick="performSearch()">Cari</button>
                     </form>
 
-
-
                     <div class="d-flex flex-wrap gap-2">
                         <div class="btn-group">
                             <button class="btn btn-outline-ui dropdown-toggle d-inline-flex align-items-center gap-2" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -311,9 +309,9 @@
                                 <li><a class="dropdown-item" href="#" data-sort="role_admin_first"><i class="bi bi-check me-2"></i> Role (Admin → User)</a></li>
                             </ul>
                         </div>
-                        <a href="#" class="btn btn-outline-ui d-inline-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-ui d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#konfirmasiExportUser">
                             Export Data User <i class="bi bi-download"></i>
-                        </a>
+                        </button>
                         <button type="button" class="btn btn-teal d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#modalTambahUser">
                             Tambah User <i class="bi bi-plus-lg"></i>
                         </button>
@@ -549,6 +547,25 @@
                             </button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFIKASI KONFIRMASI EXPORT USER -->
+    <div class="modal fade" id="konfirmasiExportUser" tabindex="-1" role="dialog" aria-labelledby="konfirmasiExportUserLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-body text-center p-4 pb-2">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3" style="width: 56px; height: 56px; background-color: #e8f5f0;">
+                        <i class="bi bi-download" aria-hidden="true" style="font-size: 24px; color: #0d9488;"></i>
+                    </div>
+                    <h5 class="modal-title mb-2" id="konfirmasiExportUserLabel" style="font-weight: 700; font-size: 17px; color: #1a1a2e;">Download Data User?</h5>
+                    <p class="mb-0" style="font-size: 13px; color: #5a6577; line-height: 1.6;">File CSV berisi data username, nama lengkap, dan email dari semua user akan diunduh.</p>
+                </div>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4 gap-2">
+                    <button type="button" class="btn btn-sm flex-fill" data-bs-dismiss="modal" style="background-color: #f0f2f5; color: #333; border: 1px solid #d0d0d0; font-weight: 600;">Batal</button>
+                    <button type="button" id="btnKonfirmasiExport" class="btn btn-sm flex-fill" style="background-color: #0d9488; color: #ffffff; border: 1px solid #0d9488; font-weight: 600;">Ya, Download</button>
                 </div>
             </div>
         </div>
@@ -1010,8 +1027,12 @@
 
         function filterUserTable(sortBy) {
             currentSort = sortBy;
+
+            const params = new URLSearchParams();
+            params.append('sort_by', sortBy);
+            params.append('search', currentSearch);
             
-            fetch(`/manage-user?sort_by=${sortBy}`)
+            fetch(`/manage-user?${params.toString()}`)
                 .then(response => response.text())
                 .then(html => {
                     const parser = new DOMParser();
@@ -1076,6 +1097,18 @@
             document.getElementById('searchInput').value = searchValue;
             currentSearch = searchValue;
         }
+    });
+
+    // Handle export user
+    let exportUserModal = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        exportUserModal = new bootstrap.Modal(document.getElementById('konfirmasiExportUser'));
+    });
+
+    document.getElementById('btnKonfirmasiExport').addEventListener('click', function() {
+        window.location.href = '/manage-user/export';
+        exportUserModal.hide();
     });
 
     </script>

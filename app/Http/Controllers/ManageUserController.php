@@ -191,4 +191,27 @@ class ManageUserController extends Controller
             'message' => 'Berhasil menambah user'
         ]);
     }
+
+    public function export()
+    {
+        $users = User::with('role')->orderBy('id_user', 'asc')->get();
+
+        $csv = "Username,Nama Lengkap,Email\n";
+        
+        foreach ($users as $user) {
+            $username = str_replace('"', '""', $user->username);
+            $namaLengkap = str_replace('"', '""', $user->nama_lengkap);
+            $email = str_replace('"', '""', $user->email);
+            
+            $csv .= "\"{$username}\",\"{$namaLengkap}\",\"{$email}\"\n";
+        }
+
+        $filename = 'DataWareHouse-UserData-' . date('Y-m-d') . '.csv';
+
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
+    }
+
 }
