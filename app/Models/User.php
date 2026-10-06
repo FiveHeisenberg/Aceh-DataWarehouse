@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+
 // use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
@@ -19,7 +20,9 @@ class User extends Authenticatable
      * tabel autentikasi berada di database terpisah dari data warehouse.
      */
     protected $connection = 'db_auth';
+
     protected $table = 'tb_user';
+
     protected $primaryKey = 'id_user';
 
     /**

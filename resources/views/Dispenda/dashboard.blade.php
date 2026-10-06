@@ -3,19 +3,12 @@
     // Server-side jumlah baris untuk tabel wilayah, tanpa prefix "Kabupaten "/"Kota ".
     $wilayahLabel = fn (?string $n) => preg_replace('/^(Kabupaten |Kota )\s*/i', '', (string) $n);
 @endphp
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="geojson-url" content="{{ asset('aceh-regencies.json') }}">
-    <title>Ringkasan Pendapatan Daerah - Aceh Data Warehouse</title>
+@extends('layouts.app')
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+@push('styles')
+    <meta name="geojson-url" content="{{ asset('aceh-regencies.json') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
-        body { background-color: #f8f9fc; }
         .kpi-card, .panel-card {
             background: #fff;
             border: 1px solid #e5e7eb;
@@ -23,20 +16,6 @@
             box-shadow: 0 1px 2px rgba(16, 24, 40, .05);
         }
         .panel-card { padding: 1.5rem; height: 100%; }
-        .sidebar-nav-item {
-            display: flex; align-items: center; gap: .75rem;
-            padding: .625rem .75rem; border-radius: .5rem;
-            font-size: .875rem; font-weight: 500; text-decoration: none;
-            border-left: 4px solid transparent; color: #374151;
-        }
-        .sidebar-nav-item:hover { background-color: #f3f4f6; }
-        .sidebar-nav-item.active { background-color: #ccfbf1; color: #0f766e; border-left-color: #0d9488; }
-        .sidebar-sub-item {
-            display: block; padding: .5rem .75rem; border-radius: .375rem;
-            font-size: .875rem; text-decoration: none; color: #6b7280;
-        }
-        .sidebar-sub-item:hover { background-color: #f3f4f6; color: #111827; }
-        .sidebar-sub-item.active { background-color: #f0fdfa; color: #0f766e; font-weight: 500; }
         .metric-label { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; }
         .metric-value { font-size: 1.5rem; font-weight: 700; color: #111827; }
         .panel-title { font-size: 1rem; font-weight: 600; color: #111827; }
@@ -49,43 +28,9 @@
         .map-gradient { height: 8px; width: 6rem; border-radius: 999px; background: linear-gradient(to right, #d1fae5, #0f766e); }
         .map-tip { font-size: .75rem; }
     </style>
-</head>
-<body>
+@endpush
 
-<div class="d-flex" style="min-height: 100vh;">
-
-    {{-- ==================== SIDEBAR ==================== --}}
-    <aside class="d-flex flex-column flex-shrink-0 bg-white border-end" style="width: 288px; position: sticky; top: 0; height: 100vh; overflow-y: auto;">
-        <div class="d-flex align-items-center gap-3 px-4 py-4">
-            <div class="d-flex align-items-center justify-content-center rounded-circle bg-dark text-white fw-bold flex-shrink-0" style="width: 40px; height: 40px;">A</div>
-            <div class="min-w-0">
-                <p class="mb-0 text-truncate fw-bold" style="font-size: .875rem; color: #111827;">Aceh Data Warehouse</p>
-                <p class="mb-0 text-truncate" style="font-size: .75rem; color: #6b7280;">Provinsi Aceh</p>
-            </div>
-        </div>
-
-        <nav class="d-flex flex-column gap-1 px-3 pt-2" aria-label="Navigasi utama">
-            <a href="#" class="sidebar-nav-item"><i class="bi bi-people-fill" style="font-size: 18px;"></i> Penduduk</a>
-            <a href="#" class="sidebar-nav-item"><i class="bi bi-heart-fill" style="font-size: 18px;"></i> Sosial</a>
-            <a href="#" class="sidebar-nav-item"><i class="bi bi-activity" style="font-size: 18px;"></i> Kesehatan</a>
-            <a href="#" class="sidebar-nav-item"><i class="bi bi-mortarboard-fill" style="font-size: 18px;"></i> Pendidikan</a>
-            <a href="#" class="sidebar-nav-item active" aria-current="page"><i class="bi bi-bank" style="font-size: 18px;"></i> Pendapatan Daerah</a>
-
-            <ul class="list-unstyled mt-1 mb-1 ps-4" aria-label="Sub-menu Dispenda">
-                <li><a href="{{ route('dispenda.dashboard') }}" class="sidebar-sub-item active" aria-current="page">Ringkasan Pendapatan</a></li>
-                <li><a href="{{ route('dispenda.tagihan') }}" class="sidebar-sub-item">Data Tagihan</a></li>
-                <li><a href="{{ route('dispenda.objek-pajak') }}" class="sidebar-sub-item">Objek Pajak</a></li>
-            </ul>
-        </nav>
-
-        <div class="mt-auto px-4 py-4">
-            <p class="mb-0" style="font-size: .75rem; color: #6b7280;">Badan Pengelolaan Keuangan Aceh</p>
-            <p class="mb-0" style="font-size: .75rem; color: #9ca3af;">v2026.1</p>
-        </div>
-    </aside>
-
-    {{-- ==================== MAIN ==================== --}}
-    <main class="flex-grow-1 overflow-x-hidden px-4 px-lg-5 py-4">
+@section('content')
         <div class="d-flex flex-column gap-4 mx-auto" style="max-width: 1400px;">
 
             {{-- HEADER + FILTER --}}
@@ -223,17 +168,14 @@
             </div>
 
         </div>
-    </main>
-</div>
+@endsection
 
+@push('scripts')
 <script type="application/json" id="data-revenue">@json($revenueByRegency)</script>
 <script type="application/json" id="data-tren">@json($taxTrend)</script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ asset('js/Dispenda/filters.js') }}"></script>
 <script src="{{ asset('js/Dispenda/dashboard.js') }}"></script>
-
-</body>
-</html>
+@endpush

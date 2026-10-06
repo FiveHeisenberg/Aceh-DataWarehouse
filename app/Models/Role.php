@@ -8,8 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Role extends Model
 {
     protected $connection = 'db_auth';
+
     protected $table = 'tb_role';
+
     protected $primaryKey = 'id_role';
+
     public $timestamps = false;
 
     protected $fillable = [

@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
 use App\Models\Role;
-use App\Rules\UniqueAuthTable;
+use App\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -21,9 +20,9 @@ class ManageUserController extends Controller
 
         // Apply search filter jika ada
         if ($search) {
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('username', 'like', "%$search%")
-                ->orWhere('nama_lengkap', 'like', "%$search%");
+                    ->orWhere('nama_lengkap', 'like', "%$search%");
             });
         }
 
@@ -47,18 +46,18 @@ class ManageUserController extends Controller
             'users' => $users,
             'roles' => $roles,
             'currentSort' => $sortBy,
-            'currentSearch' => $search
+            'currentSearch' => $search,
         ]);
     }
 
     public function edit(User $user)
     {
         $roles = Role::all();
-        
+
         return response()->json([
             'success' => true,
             'user' => $user,
-            'roles' => $roles
+            'roles' => $roles,
         ]);
     }
 
@@ -72,10 +71,10 @@ class ManageUserController extends Controller
                     'min:3',
                     'max:50',
                     'regex:/^[A-Za-z0-9._-]+$/',
-                    Rule::unique('db_auth.tb_user', 'username')->ignore($user->id_user,'id_user'),
+                    Rule::unique('db_auth.tb_user', 'username')->ignore($user->id_user, 'id_user'),
                 ],
                 'nama_lengkap' => [
-                    'required', 'string', 'max:100'
+                    'required', 'string', 'max:100',
                 ],
                 'email' => [
                     'required',
@@ -85,10 +84,10 @@ class ManageUserController extends Controller
                     Rule::unique('db_auth.tb_user', 'email')->ignore($user->id_user, 'id_user'),
                 ],
                 'nomor_telepon' => [
-                    'nullable', 'string', 'max:20'
+                    'nullable', 'string', 'max:20',
                 ],
                 'id_role' => [
-                    'required', 'exists:db_auth.tb_role,id_role'
+                    'required', 'exists:db_auth.tb_role,id_role',
                 ],
             ],
             [
@@ -127,16 +126,17 @@ class ManageUserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Data user berhasil diperbarui.'
+            'message' => 'Data user berhasil diperbarui.',
         ]);
     }
 
     public function destroy(User $user)
     {
         $user->delete();
+
         return response()->json([
             'success' => true,
-            'message' => 'Berhasil menghapus user'
+            'message' => 'Berhasil menghapus user',
         ]);
     }
 
@@ -146,12 +146,12 @@ class ManageUserController extends Controller
             'username' => [
                 'required', 'string', 'min:3', 'max:50',
                 'regex:/^[A-Za-z0-9._-]+$/',
-                Rule::unique('db_auth.tb_user', 'username')
+                Rule::unique('db_auth.tb_user', 'username'),
             ],
             'nama_lengkap' => ['required', 'string', 'max:100'],
             'email' => [
                 'required', 'email:rfc', 'max:100',
-                Rule::unique('db_auth.tb_user', 'email')
+                Rule::unique('db_auth.tb_user', 'email'),
             ],
             'nomor_telepon' => ['nullable', 'string', 'max:20'],
             'id_role' => ['required', 'exists:db_auth.tb_role,id_role'],
@@ -188,7 +188,7 @@ class ManageUserController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Berhasil menambah user'
+            'message' => 'Berhasil menambah user',
         ]);
     }
 
@@ -197,21 +197,20 @@ class ManageUserController extends Controller
         $users = User::with('role')->orderBy('id_user', 'asc')->get();
 
         $csv = "Username,Nama Lengkap,Email\n";
-        
+
         foreach ($users as $user) {
             $username = str_replace('"', '""', $user->username);
             $namaLengkap = str_replace('"', '""', $user->nama_lengkap);
             $email = str_replace('"', '""', $user->email);
-            
+
             $csv .= "\"{$username}\",\"{$namaLengkap}\",\"{$email}\"\n";
         }
 
-        $filename = 'DataWareHouse-UserData-' . date('Y-m-d') . '.csv';
+        $filename = 'DataWareHouse-UserData-'.date('Y-m-d').'.csv';
 
         return response($csv, 200, [
             'Content-Type' => 'text/csv; charset=UTF-8',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }
-
 }

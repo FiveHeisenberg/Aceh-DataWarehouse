@@ -3,6 +3,7 @@
 namespace App\Models\Penduduk;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class JumlahPenduduk extends Model
 {
@@ -74,6 +75,6 @@ class JumlahPenduduk extends Model
     public function tahunSebelumnya()
     {
         return $this->hasOne(self::class, 'kode_kabupaten_kota', 'kode_kabupaten_kota')
-            ->where('tahun', \DB::raw('tahun - 1'));
+            ->where('tahun', DB::raw('tahun - 1'));
     }
 }

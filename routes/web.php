@@ -1,12 +1,13 @@
-﻿<?php
+<?php
+
+use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/dispenda/web.php';
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\Kesehatan\KesehatanController;
-use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ManageUserController;
+use App\Http\Controllers\ProfileController;
 
 Route::view('/', 'login')->name('login');
 
