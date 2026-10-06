@@ -290,12 +290,12 @@
                 <!-- Toolbar: cari (kiri) | export + tambah (kanan) -->
                 <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
 
-                    <form class="d-flex gap-2 flex-grow-1 search-wrap" action="#" method="GET" onsubmit="return false;">
+                    <form class="d-flex gap-2 flex-grow-1 search-wrap" onsubmit="return false;">
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-search"></i></span>
-                            <input type="text" name="q" class="form-control" placeholder="Cari User">
+                            <input type="text" id="searchInput" class="form-control" placeholder="Cari User" oninput="performSearch()">
                         </div>
-                        <button type="submit" class="btn btn-outline-ui">Cari</button>
+                        <button type="button" class="btn btn-outline-ui" onclick="performSearch()">Cari</button>
                     </form>
 
 
@@ -1030,6 +1030,53 @@
                     alert('Gagal memfilter data.');
                 });
         }
+
+    // Real-time search functionality
+    let currentSearch = '';
+    let searchTimeout;
+
+    function performSearch() {
+        const searchInput = document.getElementById('searchInput').value;
+        
+        // Debounce: tunggu user selesai ketik sebelum fetch
+        clearTimeout(searchTimeout);
+        
+        searchTimeout = setTimeout(() => {
+            currentSearch = searchInput;
+            searchUserTable();
+        }, 300); // Tunggu 300ms setelah user berhenti ketik
+    }
+
+    function searchUserTable() {
+        const params = new URLSearchParams();
+        params.append('search', currentSearch);
+        params.append('sort_by', currentSort);
+        
+        fetch(`/manage-user?${params.toString()}`)
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newTableBody = doc.querySelector('table tbody');
+                document.querySelector('table tbody').innerHTML = newTableBody.innerHTML;
+                
+                // Re-attach event listeners
+                reattachEditDeleteHandlers();
+            })
+            .catch(err => {
+                console.error('Error searching:', err);
+                alert('Gagal melakukan pencarian.');
+            });
+    }
+
+    // Update searchInput value saat page load (jika ada search dari sebelumnya)
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchValue = '{{ $currentSearch ?? "" }}';
+        if (searchValue) {
+            document.getElementById('searchInput').value = searchValue;
+            currentSearch = searchValue;
+        }
+    });
 
     </script>
 </body>

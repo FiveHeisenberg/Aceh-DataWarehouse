@@ -15,8 +15,17 @@ class ManageUserController extends Controller
     public function index(Request $request)
     {
         $sortBy = $request->query('sort_by', 'created_id_asc');
+        $search = $request->query('search', '');
 
         $query = User::with('role');
+
+        // Apply search filter jika ada
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('username', 'like', "%$search%")
+                ->orWhere('nama_lengkap', 'like', "%$search%");
+            });
+        }
 
         switch ($sortBy) {
             case 'nama_asc':
@@ -37,7 +46,8 @@ class ManageUserController extends Controller
             'user' => auth()->user(),
             'users' => $users,
             'roles' => $roles,
-            'currentSort' => $sortBy
+            'currentSort' => $sortBy,
+            'currentSearch' => $search
         ]);
     }
 
