@@ -25,7 +25,7 @@
             background: rgba(255, 255, 255, .93); border: 1px solid #e5e7eb;
             border-radius: .5rem; padding: .5rem .75rem; box-shadow: 0 1px 3px rgba(0,0,0,.1);
         }
-        .map-gradient { height: 8px; width: 6rem; border-radius: 999px; background: linear-gradient(to right, #d1fae5, #0f766e); }
+        .map-gradient { height: 8px; width: 6rem; border-radius: 999px; background: linear-gradient(to right, rgb(254,240,138), rgb(249,115,22), rgb(220,38,38), rgb(127,29,29)); }
         .map-tip { font-size: .75rem; }
     </style>
 @endpush

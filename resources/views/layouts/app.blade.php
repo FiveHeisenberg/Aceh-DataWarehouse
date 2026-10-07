@@ -147,7 +147,7 @@
                             </a>
                         </li>
 
-                        @if($user->id_role === $adminRoleId)
+                        @if($user?->id_role === $adminRoleId)
                         <li>
                             <a href="{{ route('manage-user') }}" class="dropdown-item d-flex align-items-center">
                                 <i class="bi bi-people me-2"></i> Manajemen User
@@ -155,7 +155,7 @@
                         </li>
                         @endif
 
-                        @if($user->id_role === $adminRoleId)
+                        @if($user?->id_role === $adminRoleId)
                         <li>
                             <a href="http://192.168.222.152:8080/" target="blank" class="dropdown-item d-flex align-items-center">
                                 <i class="bi bi-arrow-repeat me-2"></i> ETL

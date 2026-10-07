@@ -16,15 +16,27 @@
             : 'Rp ' + juta.toLocaleString('id-ID') + ' M';
     }
 
-    // Setara d3.scaleLinear().domain([min,max]).range(['#d1fae5','#0f766e'])
-    const LOW = [0xd1, 0xfa, 0xe5];
-    const HIGH = [0x0f, 0x76, 0x6e];
+    // Colors: Yellow (#fef08a), Orange (#f97316), Red (#dc2626), Dark Red (#7f1d1d)
+    const STOPS = [
+        [254, 240, 138], // low
+        [249, 115, 22],  // med
+        [220, 38, 38],   // high
+        [127, 29, 29]    // very high
+    ];
 
     function makeScale(min, max) {
         const span = max - min;
         return (v) => {
             const t = span > 0 ? Math.min(1, Math.max(0, (v - min) / span)) : 1;
-            const c = LOW.map((lo, i) => Math.round(lo + (HIGH[i] - lo) * t));
+            const numSegments = STOPS.length - 1;
+            const scaledT = t * numSegments;
+            const idx = Math.min(Math.floor(scaledT), numSegments - 1);
+            const localT = scaledT - idx;
+            
+            const start = STOPS[idx];
+            const end = STOPS[idx + 1];
+            
+            const c = start.map((startVal, i) => Math.round(startVal + (end[i] - startVal) * localT));
             return 'rgb(' + c.join(',') + ')';
         };
     }
@@ -148,7 +160,7 @@
                         color: '#ffffff',
                         weight: 0.5,
                         fillColor: colorScale(byName.get(stripPrefiks(feature.properties.name)) ?? 0),
-                        fillOpacity: 1,
+                        fillOpacity: 0.75,
                     }),
                     onEachFeature: (feature, lyr) => {
                         const nama = feature.properties.name;
@@ -160,7 +172,7 @@
                         });
 
                         lyr.on({
-                            mouseover: (e) => e.target.setStyle({ fillColor: '#134e4a', weight: 1.5 }),
+                            mouseover: (e) => e.target.setStyle({ weight: 2, fillOpacity: 0.95 }),
                             mouseout: (e) => geoLayer.resetStyle(e.target),
                         });
                     },
