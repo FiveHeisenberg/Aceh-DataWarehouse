@@ -80,7 +80,8 @@ class DispendaController extends Controller
         $revenueByRegencyRows = $db->table('dwh.fact_tagihan')
             ->join('dwh.dim_wajib_pajak', 'dwh.fact_tagihan.wajib_pajak_key', '=', 'dwh.dim_wajib_pajak.wajib_pajak_key')
             // dim_wilayah stores one row per desa, without distinct() the SUM fans out
-            ->joinSub(
+            // leftJoin: id_kabupaten_kota kosong (608 tagihan Lunas) jangan terhapus dari peta/tabel
+            ->leftJoinSub(
                 $db->table('dwh.dim_wilayah')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
                 'wilayah',
                 'dwh.dim_wajib_pajak.id_kabupaten_kota',
@@ -96,14 +97,25 @@ class DispendaController extends Controller
             ->get();
 
         $totalRupiah = array_fill_keys(array_keys($revenueByRegency), 0);
+        $tanpaWilayah = 0;
 
         foreach ($revenueByRegencyRows as $row) {
             $name = str_replace(['Kabupaten ', 'Kota '], '', (string) $row->nama_kabupaten_kota);
-            if (array_key_exists($name, $revenueByRegency)) {
-                // peta pakai juta (bulat), tabel butuh rupiah penuh
-                $revenueByRegency[$name] += (int) ($row->total / 1_000_000);
-                $totalRupiah[$name] += (int) $row->total;
+            if (! array_key_exists($name, $revenueByRegency)) {
+                $tanpaWilayah += (int) $row->total;
+
+                continue;
             }
+            // peta pakai juta (bulat), tabel butuh rupiah penuh
+            $revenueByRegency[$name] += (int) ($row->total / 1_000_000);
+            $totalRupiah[$name] += (int) $row->total;
+        }
+
+        if ($tanpaWilayah > 0) {
+            // value 0: peta tak bisa mewarnai wilayah yang tidak dikenal, dan angka besar
+            // di sini akan mem-datar-kan colorScale. Uangnya tetap tercatat di tabel.
+            $revenueByRegency['Tidak Diketahui'] = 0;
+            $totalRupiah['Tidak Diketahui'] = $tanpaWilayah;
         }
 
         $revenueByRegency = array_map(
@@ -124,7 +136,7 @@ class DispendaController extends Controller
             // fact_tagihan tidak punya id_kabupaten_kota, ambil lewat wajib_pajak
             ->when(
                 $wilayahId !== 'all',
-                fn ($q) => $q->join('dwh.dim_wajib_pajak', 'dwh.fact_tagihan.wajib_pajak_key', '=', 'dwh.dim_wajib_pajak.wajib_pajak_key')
+                fn ($q) => $q->leftJoin('dwh.dim_wajib_pajak', 'dwh.fact_tagihan.wajib_pajak_key', '=', 'dwh.dim_wajib_pajak.wajib_pajak_key')
                     ->where('dwh.dim_wajib_pajak.id_kabupaten_kota', $wilayahId)
             )
             ->groupBy('bulan')
@@ -191,9 +203,11 @@ class DispendaController extends Controller
         $kabupaten = $request->input('kabupaten', 'Semua');
         $kategoriPajak = $request->input('kategori_pajak', 'Semua');
 
+        // leftJoin: 797 wajib_pajak punya id_kabupaten_kota kosong (termasuk seluruh
+        // Pajak Rokok) — inner join akan menghapus barisnya dari tabel sebelum filter apapun.
         $baseQuery = $db->table('dwh.fact_tagihan')
             ->join('dwh.dim_wajib_pajak', 'dwh.fact_tagihan.wajib_pajak_key', '=', 'dwh.dim_wajib_pajak.wajib_pajak_key')
-            ->joinSub(
+            ->leftJoinSub(
                 $db->table('dwh.dim_wilayah')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
                 'wilayah',
                 'dwh.dim_wajib_pajak.id_kabupaten_kota',
@@ -344,6 +358,8 @@ class DispendaController extends Controller
         $baseQuery = $db->table('dwh.dim_objek_pajak')
             ->join('dwh.dim_wajib_pajak', 'dwh.dim_objek_pajak.nik_wp', '=', 'dwh.dim_wajib_pajak.nik_wp')
             ->join('dwh.dim_kategori_pajak', 'dwh.dim_objek_pajak.id_kategori', '=', 'dwh.dim_kategori_pajak.id_kategori')
+            // leftJoin: 797 wajib_pajak kosong id_kabupaten_kota-nya; inner join membuang
+            // setengah baris objek dari tabel, statistik, dan chart komposisi.
             ->leftJoinSub(
                 $db->table('dwh.dim_wilayah')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
                 'wilayah',

@@ -168,11 +168,11 @@
                                 <tr>
                                     <td class="ps-3 font-monospace fw-medium" style="font-size: .875rem; color: #111827;">{{ $row->id_tagihan }}</td>
                                     <td style="font-size: .875rem; color: #111827;">{{ $row->nama_wp }}</td>
-                                    <td style="font-size: .875rem; color: #111827;">{{ $strip($row->nama_kabupaten_kota) }}</td>
+                                    <td style="font-size: .875rem; color: #111827;">{{ $strip($row->nama_kabupaten_kota) ?: '-' }}</td>
                                     <td class="text-end fw-medium" style="font-size: .875rem; color: #111827;">{{ $rp($row->nominal_tagihan) }}</td>
                                     <td style="font-size: .875rem; color: #111827;">{{ $row->tanggal_jatuh_tempo ? \Illuminate\Support\Carbon::parse($row->tanggal_jatuh_tempo)->translatedFormat('j M Y') : '-' }}</td>
                                     <td>
-                                        @if ($row->status_tagihan === 'Lunas')
+                                        @if (strtolower(trim((string) $row->status_tagihan)) === 'lunas')
                                             <span class="badge rounded-pill badge-lunas">{{ $row->status_tagihan }}</span>
                                         @else
                                             <span class="badge rounded-pill badge-belum">{{ $row->status_tagihan }}</span>

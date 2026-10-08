@@ -52,7 +52,9 @@
 
         let badge = '';
         if (section.status) {
-            const ok = detail[section.status.key] === section.status.ok;
+            // pengecekan case-insensitive: kolom di DWH berisi 'LUNAS' dan 'Lunas'
+            const ok = String(detail[section.status.key] ?? '').trim().toLowerCase()
+                === String(section.status.ok ?? '').trim().toLowerCase();
             badge = '<span class="badge rounded-pill ' + (ok ? 'badge-lunas' : 'badge-belum') + '">'
                 + esc(detail[section.status.key] ?? '') + '</span>';
         } else if (section.statusText) {
