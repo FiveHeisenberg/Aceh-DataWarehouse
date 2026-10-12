@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DimWilayah extends Model
 {
-    protected $table = 'dim_wilayah';
+    protected $table = 'dim_wilayah_penduduk';
 
     protected $primaryKey = 'wilayah_key';
 

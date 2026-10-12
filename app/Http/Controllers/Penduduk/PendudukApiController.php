@@ -65,7 +65,7 @@ class PendudukApiController extends Controller
 
             $current = DB::table('fact_penduduk as fp')
                 ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
-                ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
                 ->select(
                     'dw.id_kabupaten_kota as kode',
                     'dw.nama_kabupaten_kota as nama',
@@ -78,7 +78,7 @@ class PendudukApiController extends Controller
 
             $prev = DB::table('fact_penduduk as fp')
                 ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
-                ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
                 ->select('dw.id_kabupaten_kota as kode', DB::raw('COUNT(fp.jumlah_penduduk) as jumlah'))
                 ->where('wt.tahun', $tahun - 1)
                 ->groupBy('dw.id_kabupaten_kota')
@@ -129,7 +129,7 @@ class PendudukApiController extends Controller
 
             if (! $wilayah) {
                 $kabupaten = DB::table('fact_penduduk as fp')
-                    ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                    ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
                     ->select('dw.nama_kabupaten_kota as nama', DB::raw('COUNT(fp.jumlah_penduduk) as jumlah'))
                     ->groupBy('dw.nama_kabupaten_kota')
                     ->orderBy('dw.nama_kabupaten_kota')
@@ -146,7 +146,7 @@ class PendudukApiController extends Controller
 
             $tren = DB::table('fact_penduduk as fp')
                 ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
-                ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
                 ->select('wt.tahun', DB::raw('COUNT(fp.jumlah_penduduk) as jumlah'))
                 ->where('dw.nama_kabupaten_kota', $wilayah)
                 ->groupBy('wt.tahun')
@@ -185,7 +185,7 @@ class PendudukApiController extends Controller
         try {
             $query = DB::table('fact_penduduk as fp')
                 ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
-                ->join('dim_wilayah as dww', 'fp.wilayah_key', '=', 'dww.wilayah_key')
+                ->join('dim_wilayah_penduduk as dww', 'fp.wilayah_key', '=', 'dww.wilayah_key')
                 ->select(
                     'dww.nama_kabupaten_kota',
                     'dw.tahun',
@@ -235,7 +235,7 @@ class PendudukApiController extends Controller
 
             $perWilayah = DB::table('fact_penduduk as fp')
                 ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
-                ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
                 ->select('dw.nama_kabupaten_kota as nama', DB::raw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah'))
                 ->whereNotNull('fp.kartu_keluarga_key')
                 ->where('wt.tahun', $tahun)
@@ -322,7 +322,7 @@ class PendudukApiController extends Controller
 
             $data = DB::table('fact_penduduk as fp')
                 ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
-                ->join('dim_wilayah as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
                 ->select('dw.nama_kabupaten_kota as nama', DB::raw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah'))
                 ->whereNotNull('fp.kartu_keluarga_key')
                 ->where('wt.tahun', $tahun)

@@ -35,7 +35,7 @@ class DispendaController extends Controller
         }
 
         // dim_wilayah satu baris per desa, collapse dulu supaya tidak ada duplikat opsi
-        $wilayahOptions = $db->table('dwh.dim_wilayah')
+        $wilayahOptions = $db->table('dwh.dim_wilayah_penduduk')
             ->select('id_kabupaten_kota', 'nama_kabupaten_kota')
             ->distinct()
             ->orderBy('nama_kabupaten_kota')
@@ -81,7 +81,7 @@ class DispendaController extends Controller
             ->join('dwh.dim_wajib_pajak', 'dwh.fact_tagihan.wajib_pajak_key', '=', 'dwh.dim_wajib_pajak.wajib_pajak_key')
             // dim_wilayah stores one row per desa, without distinct() the SUM fans out
             ->joinSub(
-                $db->table('dwh.dim_wilayah')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
+                $db->table('dwh.dim_wilayah_penduduk')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
                 'wilayah',
                 'dwh.dim_wajib_pajak.id_kabupaten_kota',
                 '=',
@@ -169,7 +169,7 @@ class DispendaController extends Controller
             $availableYears = [(int) date('Y')];
         }
 
-        $wilayahOptions = $db->table('dwh.dim_wilayah')
+        $wilayahOptions = $db->table('dwh.dim_wilayah_penduduk')
             ->select('id_kabupaten_kota', 'nama_kabupaten_kota')
             ->distinct()
             ->orderBy('nama_kabupaten_kota')
@@ -194,7 +194,7 @@ class DispendaController extends Controller
         $baseQuery = $db->table('dwh.fact_tagihan')
             ->join('dwh.dim_wajib_pajak', 'dwh.fact_tagihan.wajib_pajak_key', '=', 'dwh.dim_wajib_pajak.wajib_pajak_key')
             ->joinSub(
-                $db->table('dwh.dim_wilayah')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
+                $db->table('dwh.dim_wilayah_penduduk')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
                 'wilayah',
                 'dwh.dim_wajib_pajak.id_kabupaten_kota',
                 '=',
@@ -270,7 +270,7 @@ class DispendaController extends Controller
             ->leftJoin('dwh.dim_objek_pajak', 'dwh.fact_tagihan.objek_pajak_key', '=', 'dwh.dim_objek_pajak.objek_pajak_key')
             ->leftJoin('dwh.dim_kategori_pajak', 'dwh.fact_tagihan.kategori_pajak_key', '=', 'dwh.dim_kategori_pajak.kategori_pajak_key')
             ->leftJoinSub(
-                $db->table('dwh.dim_wilayah')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
+                $db->table('dwh.dim_wilayah_penduduk')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
                 'wilayah',
                 'dwh.dim_wajib_pajak.id_kabupaten_kota',
                 '=',
@@ -328,7 +328,7 @@ class DispendaController extends Controller
             ->map(fn ($k) => ['id' => $k->kategori_pajak_key, 'name' => $k->nama_pajak])
             ->values();
 
-        $wilayahOptions = $db->table('dwh.dim_wilayah')
+        $wilayahOptions = $db->table('dwh.dim_wilayah_penduduk')
             ->select('id_kabupaten_kota', 'nama_kabupaten_kota')
             ->distinct()
             ->orderBy('nama_kabupaten_kota')
@@ -345,7 +345,7 @@ class DispendaController extends Controller
             ->join('dwh.dim_wajib_pajak', 'dwh.dim_objek_pajak.nik_wp', '=', 'dwh.dim_wajib_pajak.nik_wp')
             ->join('dwh.dim_kategori_pajak', 'dwh.dim_objek_pajak.id_kategori', '=', 'dwh.dim_kategori_pajak.id_kategori')
             ->leftJoinSub(
-                $db->table('dwh.dim_wilayah')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
+                $db->table('dwh.dim_wilayah_penduduk')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
                 'wilayah',
                 'dwh.dim_wajib_pajak.id_kabupaten_kota',
                 '=',
@@ -458,7 +458,7 @@ class DispendaController extends Controller
             ->join('dwh.dim_wajib_pajak', 'dwh.dim_objek_pajak.nik_wp', '=', 'dwh.dim_wajib_pajak.nik_wp')
             ->join('dwh.dim_kategori_pajak', 'dwh.dim_objek_pajak.id_kategori', '=', 'dwh.dim_kategori_pajak.id_kategori')
             ->leftJoinSub(
-                $db->table('dwh.dim_wilayah')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
+                $db->table('dwh.dim_wilayah_penduduk')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
                 'wilayah',
                 'dwh.dim_wajib_pajak.id_kabupaten_kota',
                 '=',

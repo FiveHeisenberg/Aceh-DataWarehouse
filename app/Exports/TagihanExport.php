@@ -41,7 +41,7 @@ class TagihanExport implements FromCollection, WithHeadings, WithMapping, WithSt
         $query = $db->table('dwh.fact_tagihan')
             ->join('dwh.dim_wajib_pajak', 'dwh.fact_tagihan.wajib_pajak_key', '=', 'dwh.dim_wajib_pajak.wajib_pajak_key')
             ->joinSub(
-                $db->table('dwh.dim_wilayah')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
+                $db->table('dwh.dim_wilayah_penduduk')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
                 'wilayah',
                 'dwh.dim_wajib_pajak.id_kabupaten_kota',
                 '=',

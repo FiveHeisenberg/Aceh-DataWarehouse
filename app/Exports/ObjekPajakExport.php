@@ -39,7 +39,7 @@ class ObjekPajakExport implements FromCollection, WithHeadings, WithMapping, Wit
             ->join('dwh.dim_wajib_pajak', 'dwh.dim_objek_pajak.nik_wp', '=', 'dwh.dim_wajib_pajak.nik_wp')
             ->join('dwh.dim_kategori_pajak', 'dwh.dim_objek_pajak.id_kategori', '=', 'dwh.dim_kategori_pajak.id_kategori')
             ->leftJoinSub(
-                $db->table('dwh.dim_wilayah')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
+                $db->table('dwh.dim_wilayah_penduduk')->select('id_kabupaten_kota', 'nama_kabupaten_kota')->distinct(),
                 'wilayah',
                 'dwh.dim_wajib_pajak.id_kabupaten_kota',
                 '=',
