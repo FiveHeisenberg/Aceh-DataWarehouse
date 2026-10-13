@@ -12,7 +12,7 @@ class PendudukApiController extends Controller
     public function getTahun(): JsonResponse
     {
         try {
-            $tahun = DB::table('fact_penduduk as fp')
+            $tahun = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
                 ->distinct()
                 ->orderBy('dw.tahun', 'desc')
@@ -33,7 +33,7 @@ class PendudukApiController extends Controller
     public function getJumlahPenduduk(): JsonResponse
     {
         try {
-            $data = DB::table('fact_penduduk as fp')
+            $data = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
                 ->select('dw.tahun', DB::raw('COUNT(fp.jumlah_penduduk) as jumlah'))
                 ->groupBy('dw.tahun')
@@ -58,12 +58,12 @@ class PendudukApiController extends Controller
             $tahun = $request->input('tahun');
 
             if (! $tahun) {
-                $tahun = DB::table('fact_penduduk as fp')
+                $tahun = DB::table('fact_dukcapil_penduduk as fp')
                     ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                     ->max('wt.tahun');
             }
 
-            $current = DB::table('fact_penduduk as fp')
+            $current = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                 ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
                 ->select(
@@ -76,7 +76,7 @@ class PendudukApiController extends Controller
                 ->orderBy('jumlah', 'desc')
                 ->get();
 
-            $prev = DB::table('fact_penduduk as fp')
+            $prev = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                 ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
                 ->select('dw.id_kabupaten_kota as kode', DB::raw('COUNT(fp.jumlah_penduduk) as jumlah'))
@@ -128,7 +128,7 @@ class PendudukApiController extends Controller
             $wilayah = $request->input('wilayah');
 
             if (! $wilayah) {
-                $kabupaten = DB::table('fact_penduduk as fp')
+                $kabupaten = DB::table('fact_dukcapil_penduduk as fp')
                     ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
                     ->select('dw.nama_kabupaten_kota as nama', DB::raw('COUNT(fp.jumlah_penduduk) as jumlah'))
                     ->groupBy('dw.nama_kabupaten_kota')
@@ -144,7 +144,7 @@ class PendudukApiController extends Controller
                 ], 200);
             }
 
-            $tren = DB::table('fact_penduduk as fp')
+            $tren = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                 ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
                 ->select('wt.tahun', DB::raw('COUNT(fp.jumlah_penduduk) as jumlah'))
@@ -183,7 +183,7 @@ class PendudukApiController extends Controller
     public function getDetailPenduduk(Request $request): JsonResponse
     {
         try {
-            $query = DB::table('fact_penduduk as fp')
+            $query = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
                 ->join('dim_wilayah_penduduk as dww', 'fp.wilayah_key', '=', 'dww.wilayah_key')
                 ->select(
@@ -228,12 +228,12 @@ class PendudukApiController extends Controller
             $tahun = $request->input('tahun');
 
             if (! $tahun) {
-                $tahun = DB::table('fact_penduduk as fp')
+                $tahun = DB::table('fact_dukcapil_penduduk as fp')
                     ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                     ->max('wt.tahun');
             }
 
-            $perWilayah = DB::table('fact_penduduk as fp')
+            $perWilayah = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                 ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
                 ->select('dw.nama_kabupaten_kota as nama', DB::raw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah'))
@@ -245,7 +245,7 @@ class PendudukApiController extends Controller
 
             $total = (int) $perWilayah->sum('jumlah');
 
-            $prevTotal = DB::table('fact_penduduk as fp')
+            $prevTotal = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                 ->whereNotNull('fp.kartu_keluarga_key')
                 ->where('wt.tahun', $tahun - 1)
@@ -284,7 +284,7 @@ class PendudukApiController extends Controller
     public function getKartuKeluargaTrend(): JsonResponse
     {
         try {
-            $data = DB::table('fact_penduduk as fp')
+            $data = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                 ->select('wt.tahun', DB::raw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah'))
                 ->whereNotNull('fp.kartu_keluarga_key')
@@ -315,12 +315,12 @@ class PendudukApiController extends Controller
             $tahun = $request->input('tahun');
 
             if (! $tahun) {
-                $tahun = DB::table('fact_penduduk as fp')
+                $tahun = DB::table('fact_dukcapil_penduduk as fp')
                     ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                     ->max('wt.tahun');
             }
 
-            $data = DB::table('fact_penduduk as fp')
+            $data = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                 ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
                 ->select('dw.nama_kabupaten_kota as nama', DB::raw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah'))
@@ -356,7 +356,7 @@ class PendudukApiController extends Controller
         try {
             $tahun = $request->input('tahun');
 
-            $query = DB::table('fact_penduduk as fp')
+            $query = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
                 ->selectRaw("
                     CASE
@@ -409,9 +409,9 @@ class PendudukApiController extends Controller
         try {
             $tahun = $request->input('tahun');
 
-            $query = DB::table('fact_penduduk as fp')
+            $query = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
-                ->join('dim_penduduk as dp', 'fp.penduduk_key', '=', 'dp.penduduk_key')
+                ->join('dim_dukcapil_penduduk as dp', 'fp.penduduk_key', '=', 'dp.penduduk_key')
                 ->whereNotNull('fp.umur')
                 ->selectRaw('
                     FLOOR(fp.umur/5) * 5 AS bucket_start,
@@ -473,9 +473,9 @@ class PendudukApiController extends Controller
         try {
             $tahun = $request->input('tahun');
 
-            $query = DB::table('fact_penduduk as fp')
+            $query = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
-                ->join('dim_status_perkawinan as dsp', 'fp.status_perkawinan_key', '=', 'dsp.status_perkawinan_key')
+                ->join('dim_dukcapil_status_perkawinan as dsp', 'fp.status_perkawinan_key', '=', 'dsp.status_perkawinan_key')
                 ->select('dsp.status_perkawinan', DB::raw('count(fp.jumlah_penduduk) as jumlah'))
                 ->groupBy('dsp.status_perkawinan');
 
@@ -506,9 +506,9 @@ class PendudukApiController extends Controller
         try {
             $tahun = $request->input('tahun');
 
-            $query = DB::table('fact_penduduk as fp')
+            $query = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as dw', 'fp.waktu_key', '=', 'dw.waktu_key')
-                ->join('dim_agama as da', 'fp.agama_key', '=', 'da.agama_key')
+                ->join('dim_dukcapil_agama as da', 'fp.agama_key', '=', 'da.agama_key')
                 ->select('da.nama_agama', DB::raw('count(fp.jumlah_penduduk) as jumlah'))
                 ->groupBy('da.nama_agama');
 
@@ -541,12 +541,12 @@ class PendudukApiController extends Controller
             $tahun = $request->input('tahun');
 
             if (! $tahun) {
-                $tahun = DB::table('fact_penduduk as fp')
+                $tahun = DB::table('fact_dukcapil_penduduk as fp')
                     ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                     ->max('wt.tahun');
             }
 
-            $total = DB::table('fact_penduduk as fp')
+            $total = DB::table('fact_dukcapil_penduduk as fp')
                 ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
                 ->selectRaw('COUNT(DISTINCT fp.kartu_keluarga_key) as jumlah_kk')
                 ->where('wt.tahun', $tahun)
