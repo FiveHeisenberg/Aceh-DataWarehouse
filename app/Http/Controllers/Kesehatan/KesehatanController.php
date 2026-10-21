@@ -6,9 +6,18 @@ use App\Http\Controllers\Controller;
 
 class KesehatanController extends Controller
 {
-    public function index()
+    public function rumahSakit()
     {
-        // Ini akan memanggil file jumlah_puskesmas.blade.php milikmu
-        return view('Kesehatan.jumlah_puskesmas');
+        return view('Kesehatan.rumah-sakit');
+    }
+
+    public function penyakit()
+    {
+        return view('Kesehatan.penyakit');
+    }
+
+    public function tenagaMedis()
+    {
+        return view('Kesehatan.tenaga-medis');
     }
 }

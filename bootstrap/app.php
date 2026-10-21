@@ -10,6 +10,7 @@ return Application::configure(basePath: dirname(__DIR__))
             __DIR__.'/../routes/web.php',
             __DIR__.'/../routes/penduduk/web.php',
             __DIR__.'/../routes/pendapatan_daerah/web.php',
+            __DIR__.'/../routes/Kesehatan/web.php',
 
             // ðŸ“Œ NANTI TAMBAHKAN MODUL LAIN DI SINI (WEB)
             // __DIR__.'/../routes/sosial/web.php',
