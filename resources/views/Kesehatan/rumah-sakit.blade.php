@@ -40,6 +40,12 @@
             padding: .12rem .5rem .12rem 0; white-space: nowrap; vertical-align: top;
         }
         .rs-popup td { padding: .12rem 0; color: #0f172a; }
+
+        /* @media (min-width: 768px) {
+            .w-md-auto {
+                width: 320px !important;
+            }
+        } */
     </style>
 @endpush
 
@@ -204,8 +210,27 @@
 
     {{-- Tabel list rumah sakit --}}
     <div class="dw-card p-3">
-        <h3 class="text-center fw-normal mb-0">List Rumah Sakit</h3>
-        <div class="text-center text-muted small mb-3"><span id="jumlahTampil">{{ count($daftarRs) }}</span> RS</div>
+        <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-3">
+            <div>
+                <h3 class="fw-normal mb-1">List Rumah Sakit</h3>
+                <div class="text-muted small">
+                    <span id="jumlahTampil">{{ count($daftarRs) }}</span> RS
+                </div>
+            </div>
+
+            <div class="w-100 w-md-auto">
+                <label for="searchRs" class="form-label small fw-semibold mb-1">
+                    Cari Rumah Sakit
+                </label>
+                <input
+                    type="search"
+                    id="searchRs"
+                    class="form-control form-control-sm"
+                    placeholder="Nama RS atau kabupaten/kota..."
+                    autocomplete="off"
+                >
+            </div>
+        </div>
 
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="tabelRs">
@@ -398,15 +423,24 @@
         const fPemilik = document.getElementById('filterPemilik');
         const fKelas   = document.getElementById('filterKelas');
         const fJenis   = document.getElementById('filterJenis');
+        const searchRs = document.getElementById('searchRs');
 
         function applyFilter() {
             stateFilter.pemilik = fPemilik.value;
             stateFilter.kelas   = fKelas.value;
             stateFilter.jenis   = fJenis.value;
 
+            // UNTUK FITUR SEARCH
+            const keyword = searchRs.value.trim().toLowerCase();
+
             let tampil = 0;
             document.querySelectorAll('#tabelRs tbody tr').forEach(tr => {
-                const ok = cocokDenganFilter({
+                const namaRs = tr.cells[0]?.textContent.toLowerCase() || '';
+                const kabKota = tr.cells[1]?.textContent.toLowerCase() || '';
+
+                const cocokSearch = !keyword || namaRs.includes(keyword) || kabKota.includes(keyword);
+                
+                const ok = cocokSearch && cocokDenganFilter({
                     pemilik: tr.dataset.pemilik,
                     kelas: tr.dataset.kelas,
                     jenis: tr.dataset.jenis,
@@ -429,6 +463,19 @@
         }
 
         [fPemilik, fKelas, fJenis].forEach(el => el.addEventListener('change', applyFilter));
+
+        searchRs.addEventListener('input', function () {
+            if (this.value.trim() === '') {
+                applyFilter();
+            }
+        })
+
+        searchRs.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                applyFilter();
+            }
+        });
 
         document.querySelectorAll('.btn-reset').forEach(a => {
             a.addEventListener('click', function (e) {
