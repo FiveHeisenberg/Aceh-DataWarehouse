@@ -5,7 +5,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
         #map { height: 420px; background: #f8fafc; border-radius: .5rem; }
-
+        #map .leaflet-interactive:focus,
+        #map path.leaflet-interactive:focus {
+            outline: none;
+        }
         /* Leaflet membuat container peta focusable (container.tabIndex = '0'),
            sehingga browser menggambar focus ring hitam saat area peta diklik. */
         #map:focus,
@@ -246,92 +249,136 @@
         const dataKelas   = @json($kelas);
         const dataPemilik = @json($pemilik);
         const dataJenis   = @json($jenis);
+        const semuaRs     = @json($daftarRs);
         const total       = {{ $totalRs }};
+        const stateFilter = { kelas: '', pemilik: '', jenis: '' };
 
-        // ---------- Donut kelas ----------
-        const eventsKelas ={
-            dataPointSelection: function (e, char, cfg) {
-                const label = dataKelas[cfg.dataPointIndex].label;
-                const select = document.getElementById('filterKelas');
-                select.value = select.value === label ? '' : label;
-                applyFilter();
-            }
-        };
-
-        new ApexCharts(document.querySelector('#chartKelas'), {
-            chart: { type: 'donut', height: 300, events: eventsKelas },
-            series: dataKelas.map(d => d.jumlah),
-            labels: dataKelas.map(d => d.label),
-            colors: dataKelas.map(d => d.warna),
-            legend: { position: 'bottom', fontSize: '11px' },
-            dataLabels: { enabled: true, formatter: (v, o) => o.w.config.series[o.seriesIndex] },
-            plotOptions: {
-                pie: { donut: { size: '62%', labels: {
-                    show: true,
-                    total: { show: true, label: 'Total RS', formatter: () => total }
-                } } }
-            }
-        }).render();
-
-        // ---------- Chart pemilik & jenis (bisa ganti tipe) ----------
-        function buildOptions(type, data) {
-            const labels = data.map(d => d.label);
-            const values = data.map(d => d.jumlah);
-
-            if (type === 'donut') {
-                return {
-                    chart: { type: 'donut', height: 360, events: chartEvents },
-                    series: values,
-                    labels: labels,
-                    colors: palette,
-                    legend: { position: 'bottom', fontSize: '11px' }
-                };
-            }
-
-            return {
-                chart: { type: 'bar', height: 360, toolbar: { show: true }, events: chartEvents },
-                series: [{ name: 'Jumlah RS', data: values }],
-                xaxis: { categories: labels, title: { text: type === 'bar' ? 'Jumlah RS' : undefined } },
-                yaxis: { title: { text: type === 'column' ? 'Jumlah RS' : undefined } },
-                plotOptions: { bar: { horizontal: type === 'bar', distributed: true, borderRadius: 4, columnWidth: '55%' } },
-                colors: palette,
-                legend: { show: false },
-                dataLabels: { enabled: true, style: { colors: ['#0f172a'] }, offsetX: type === 'bar' ? 20 : 0 }
-            };
+        function cocokDenganFilter(rs) {
+            return (!stateFilter.kelas || rs.kelas === stateFilter.kelas)
+                && (!stateFilter.pemilik || rs.pemilik === stateFilter.pemilik)
+                && (!stateFilter.jenis || rs.jenis === stateFilter.jenis);
         }
 
-        // event klik: set filter pada select tabel
-        let chartEvents = {};
-        function makeCharts(selector, data, initialType, selectId) {
-            chartEvents = {
+        function rekap(data, field) {
+            const hasil = new Map();
+
+            data.filter(cocokDenganFilter).forEach(rs => {
+                const label = rs[field] || '-';
+                hasil.set(label, (hasil.get(label) || 0) + 1);
+            });
+
+            return Array.from(hasil, ([label, jumlah]) => ({ label, jumlah }))
+                .sort((a, b) => {
+                    if (b.jumlah !== a.jumlah) {
+                        return b.jumlah - a.jumlah;
+                    }
+
+                    return a.label.localeCompare(b.label, 'id');
+                });
+        }
+
+        function warnaKelas(label) {
+            const item = dataKelas.find(kelas => kelas.label === label);
+            return item ? item.warna : '#64748b';
+        }
+
+        function buildOptions(type, data, selectId) {
+            const labels = data.map(d => d.label);
+            const values = data.map(d => d.jumlah);
+            const colors = selectId === 'filterKelas' ? data.map(d => warnaKelas(d.label)) : palette;
+            const events = {
                 dataPointSelection: function (e, chart, cfg) {
-                    const label = data[cfg.dataPointIndex].label;
+                    const label = data[cfg.dataPointIndex]?.label;
+                    if (!label) return;
                     const select = document.getElementById(selectId);
                     select.value = select.value === label ? '' : label;
                     applyFilter();
                 }
             };
-            let chart = new ApexCharts(document.querySelector(selector), buildOptions(initialType, data));
+
+            if (type === 'donut') {
+                return {
+                    chart: {
+                        type: 'donut',
+                        height: 360,
+                        events
+                    },
+                    series: values.length ? values : [0],
+                    labels: labels.length ? labels : ['Tidak ada data'],
+                    colors: colors.length ? colors : ['#cbd5e1'],
+                    legend: {
+                        position: 'bottom',
+                        fontSize: '11px'
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        formatter: (value, options) => {
+                            return options.w.config.series[options.seriesIndex];
+                        }
+                    },
+                    plotOptions: {
+                        pie: {
+                            donut: {
+                                size: '62%',
+                                labels: {
+                                    show: true,
+                                    total: {
+                                        show: true,
+                                        label: 'Total RS',
+                                        formatter: () => values.reduce((sum, value) => sum + value, 0)
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    noData: {
+                        text: 'Tidak ada data'
+                    }
+                };
+            }
+
+            return {
+                chart: { type: 'bar', height: selectId === 'filterKelas' ? 300 : 360, toolbar: { show: true }, events },
+                series: [{ name: 'Jumlah RS', data: values }],
+                xaxis: { categories: labels, title: { text: type === 'bar' ? 'Jumlah RS' : undefined } },
+                yaxis: { title: { text: type === 'column' ? 'Jumlah RS' : undefined } },
+                plotOptions: { bar: { horizontal: type === 'bar', distributed: true, borderRadius: 4, columnWidth: '55%' } },
+                colors,
+                legend: { show: false },
+                dataLabels: { enabled: true, style: { colors: ['#0f172a'] }, offsetX: type === 'bar' ? 20 : 0 }
+            };
+        }
+
+        function makeCharts(selector, data, initialType, selectId) {
+            let currentData = data;
+            let currentType = initialType;
+            let chart = new ApexCharts(document.querySelector(selector), buildOptions(currentType, currentData, selectId));
             chart.render();
             return {
                 switchType(type) {
-                    chartEvents = {
-                        dataPointSelection: function (e, c, cfg) {
-                            const label = data[cfg.dataPointIndex].label;
-                            const select = document.getElementById(selectId);
-                            select.value = select.value === label ? '' : label;
-                            applyFilter();
-                        }
-                    };
+                    currentType = type;
                     chart.destroy();
-                    chart = new ApexCharts(document.querySelector(selector), buildOptions(type, data));
+                    chart = new ApexCharts(document.querySelector(selector), buildOptions(currentType, currentData, selectId));
+                    chart.render();
+                },
+                updateData(nextData) {
+                    currentData = nextData;
+                    chart.destroy();
+                    chart = new ApexCharts(document.querySelector(selector), buildOptions(currentType, currentData, selectId));
                     chart.render();
                 }
             };
         }
 
-        const chartPemilik = makeCharts('#chartPemilik', dataPemilik, 'bar', 'filterPemilik');
+        const chartKelas   = makeCharts('#chartKelas',   dataKelas,   'donut',  'filterKelas');
+        const chartPemilik = makeCharts('#chartPemilik', dataPemilik, 'bar',    'filterPemilik');
         const chartJenis   = makeCharts('#chartJenis',   dataJenis,   'column', 'filterJenis');
+
+        function updateAllCharts() {
+            chartKelas.updateData(rekap(semuaRs, 'kelas'));
+            chartPemilik.updateData(rekap(semuaRs, 'pemilik'));
+            chartJenis.updateData(rekap(semuaRs, 'jenis'));
+        }
 
         function bindToggle(groupId, chartObj) {
             document.querySelectorAll('#' + groupId + ' button').forEach(btn => {
@@ -351,15 +398,23 @@
         const fJenis   = document.getElementById('filterJenis');
 
         function applyFilter() {
+            stateFilter.pemilik = fPemilik.value;
+            stateFilter.kelas   = fKelas.value;
+            stateFilter.jenis   = fJenis.value;
+
             let tampil = 0;
             document.querySelectorAll('#tabelRs tbody tr').forEach(tr => {
-                const ok = (!fPemilik.value || tr.dataset.pemilik === fPemilik.value)
-                        && (!fKelas.value   || tr.dataset.kelas   === fKelas.value)
-                        && (!fJenis.value   || tr.dataset.jenis   === fJenis.value);
+                const ok = cocokDenganFilter({
+                    pemilik: tr.dataset.pemilik,
+                    kelas: tr.dataset.kelas,
+                    jenis: tr.dataset.jenis,
+                });
                 tr.style.display = ok ? '' : 'none';
                 if (ok) tampil++;
             });
             document.getElementById('jumlahTampil').textContent = tampil;
+
+            updateAllCharts();
 
             // Terusan state filter ke peta Leaflet
             document.dispatchEvent(new CustomEvent('rs:filter', {
