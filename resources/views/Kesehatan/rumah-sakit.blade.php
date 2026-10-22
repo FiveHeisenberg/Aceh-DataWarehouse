@@ -1,54 +1,46 @@
 @extends('layouts.app')
 
+@push('styles')
+    <meta name="geojson-url" content="{{ asset('aceh-regencies.json') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+        #map { height: 420px; background: #f8fafc; border-radius: .5rem; }
+
+        /* Leaflet membuat container peta focusable (container.tabIndex = '0'),
+           sehingga browser menggambar focus ring hitam saat area peta diklik. */
+        #map:focus,
+        .leaflet-container:focus,
+        .leaflet-container:focus-visible {
+            outline: none;
+        }
+        .map-tip { font-size: .75rem; }
+        .rs-map-legend {
+            background: rgba(255, 255, 255, .94); border: 1px solid #e5e7eb;
+            border-radius: .5rem; padding: .5rem .65rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, .1); font-size: .7rem;
+        }
+        .rs-map-legend-title {
+            font-weight: 700; font-size: .68rem; text-transform: uppercase;
+            letter-spacing: .03em; color: #64748b; margin-bottom: .3rem;
+        }
+        .rs-map-legend-item { display: flex; align-items: center; gap: .4rem; color: #334155; line-height: 1.6; }
+        .rs-map-legend-item b { margin-left: auto; color: #0f172a; }
+        .rs-dot {
+            display: inline-block; width: .6rem; height: .6rem; border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, .15);
+        }
+        .rs-popup { font-size: .78rem; }
+        .rs-popup-title { font-weight: 700; color: #0f172a; margin-bottom: .35rem; }
+        .rs-popup table { border-collapse: collapse; width: 100%; }
+        .rs-popup th {
+            text-align: left; color: #64748b; font-weight: 600;
+            padding: .12rem .5rem .12rem 0; white-space: nowrap; vertical-align: top;
+        }
+        .rs-popup td { padding: .12rem 0; color: #0f172a; }
+    </style>
+@endpush
+
 @section('content')
-@php
-    // ====== DATA STATIS ======
-    $totalRs = 85;
-
-    $kelas = [
-        ['label' => 'A',                 'jumlah' => 1,  'warna' => '#3b82f6'],
-        ['label' => 'B',                 'jumlah' => 13, 'warna' => '#14b8a6'],
-        ['label' => 'C',                 'jumlah' => 39, 'warna' => '#f59e0b'],
-        ['label' => 'D',                 'jumlah' => 28, 'warna' => '#8b5cf6'],
-        ['label' => 'D PRATAMA',         'jumlah' => 2,  'warna' => '#ef4444'],
-        ['label' => 'Belum Ditetapkan',  'jumlah' => 2,  'warna' => '#06b6d4'],
-    ];
-
-    $pemilik = [
-        ['label' => 'SWASTA/LAINNYA',  'jumlah' => 28],
-        ['label' => 'Pemkab',          'jumlah' => 22],
-        ['label' => 'Organisasi Sosial','jumlah' => 9],
-        ['label' => 'Perusahaan',      'jumlah' => 7],
-        ['label' => 'Pemkot',          'jumlah' => 4],
-        ['label' => 'Pemprop',         'jumlah' => 3],
-        ['label' => 'Perorangan',      'jumlah' => 3],
-        ['label' => 'TNI AD',          'jumlah' => 3],
-        ['label' => 'BUMN',            'jumlah' => 2],
-        ['label' => 'Kementerian Lain','jumlah' => 2],
-        ['label' => 'TNI AL',          'jumlah' => 1],
-        ['label' => 'POLRI',           'jumlah' => 1],
-    ];
-
-    $jenis = [
-        ['label' => 'RSU',       'jumlah' => 75],
-        ['label' => 'RSIA',      'jumlah' => 6],
-        ['label' => 'RSK Mata',  'jumlah' => 1],
-        ['label' => 'RSK Bedah', 'jumlah' => 1],
-        ['label' => 'RSK Jiwa',  'jumlah' => 1],
-        ['label' => 'RSK GM',    'jumlah' => 1],
-    ];
-
-    $daftarRs = [
-        ['nama' => 'RS Al Sabang',                 'provinsi' => 'Aceh', 'kota' => 'Kota Sabang',      'alamat' => 'Jl. Teuku Chik Ditiro',                          'telp' => '0852-0000-0001', 'pemilik' => 'Pemkot',         'kelas' => 'D',        'jenis' => 'RSU'],
-        ['nama' => 'RS Arun Lhokseumawe',          'provinsi' => 'Aceh', 'kota' => 'Kota Lhokseumawe', 'alamat' => 'Jalan Plaju Ex Komplek Perumahan Arun',          'telp' => '0645-0000002',   'pemilik' => 'Perusahaan',     'kelas' => 'C',        'jenis' => 'RSU'],
-        ['nama' => 'RS Bhayangkara Banda Aceh',    'provinsi' => 'Aceh', 'kota' => 'Kota Banda Aceh',  'alamat' => 'Jl. Cut Nyak Dhien No. 23',                      'telp' => '0651-0000003',   'pemilik' => 'POLRI',          'kelas' => 'C',        'jenis' => 'RSU'],
-        ['nama' => 'RS Cahaya Sehat',              'provinsi' => 'Aceh', 'kota' => 'Aceh Selatan',     'alamat' => 'Jl. Panglima Raja Lelo, No. 10',                 'telp' => '(0656) 000004',  'pemilik' => 'SWASTA/LAINNYA', 'kelas' => 'D',        'jenis' => 'RSU'],
-        ['nama' => 'RS Cut Nyak Dhien Langsa',     'provinsi' => 'Aceh', 'kota' => 'Kota Langsa',      'alamat' => 'Jl. T.M. Bachrun No.1. Kabupaten Kota Langsa Provinsi Aceh', 'telp' => '0641-0000005', 'pemilik' => 'Pemkot', 'kelas' => 'C', 'jenis' => 'RSU'],
-        ['nama' => 'RS Gayo Medical Centre',       'provinsi' => 'Aceh', 'kota' => 'Aceh Tengah',      'alamat' => 'Jalan Paya Tumpi Mendale nomor 126',             'telp' => '0821-0000-0006', 'pemilik' => 'SWASTA/LAINNYA', 'kelas' => 'D',        'jenis' => 'RSU'],
-        ['nama' => 'RS Gigi Mulut Universitas Syiah Kuala', 'provinsi' => 'Aceh', 'kota' => 'Kota Banda Aceh', 'alamat' => 'Jl. Prof A. Madjid Ibrahim I No. 5', 'telp' => '0651-0000007',   'pemilik' => 'Pemprop',        'kelas' => 'Belum Ditetapkan', 'jenis' => 'RSK GM'],
-        ['nama' => 'RS Hermina Aceh',              'provinsi' => 'Aceh', 'kota' => 'Aceh Besar',       'alamat' => 'Jl. Soekarno Hatta',                             'telp' => '0821-0000-0008', 'pemilik' => 'SWASTA/LAINNYA', 'kelas' => 'C',        'jenis' => 'RSU'],
-    ];
-@endphp
 
 <style>
     .dw-card { border: 1px solid #e5e7eb; border-radius: .75rem; background: #fff; }
@@ -61,7 +53,6 @@
     .dw-stat.s3 { background: #fff8ee; }
     .dw-chart-panel { background: #f1f5f9; border-radius: .75rem; padding: .75rem; }
     .dw-chart-inner { background: #fff; border: 1px solid #e5e7eb; border-radius: .6rem; padding: .5rem; }
-    #map { height: 300px; background: #f8fafc; }
     .table thead th { font-size: .85rem; white-space: nowrap; }
     .table tbody td { font-size: .85rem; vertical-align: middle; padding-top: .9rem; padding-bottom: .9rem; }
 </style>
@@ -76,23 +67,6 @@
             <li class="breadcrumb-item active" aria-current="page">Rumah Sakit</li>
         </ol>
     </nav>
-
-    {{-- Peta + Donut kelas --}}
-    <div class="row g-3 mb-3">
-        <div class="col-lg-8">
-            <div class="dw-card p-3 h-100">
-                <h5 class="fw-bold mb-3">Peta Persebaran Rumah Sakit</h5>
-                {{-- Bagian peta dikosongkan (siapkan untuk Leaflet) --}}
-                <div id="map"></div>
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="dw-card p-3 h-100">
-                <h6 class="text-center fw-semibold mb-2">Rekapulasi RS Per Kelas</h6>
-                <div id="chartKelas"></div>
-            </div>
-        </div>
-    </div>
 
     {{-- Kartu statistik --}}
     <div class="row g-3 mb-3">
@@ -115,6 +89,68 @@
                 <div class="label">Jenis Terbanyak</div>
                 <div class="value">{{ $jenis[0]['jumlah'] }}</div>
                 <div class="desc">{{ $jenis[0]['label'] }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="dw-chart-panel">
+                <div class="d-flex justify-content-between small fw-bold mb-1">
+                    <span>Filter kepemilikan</span>
+                    <a href="#" class="small text-decoration-none btn-reset" data-target="filterPemilik">Reset</a>
+                </div>
+                <select id="filterPemilik" class="form-select form-select-sm">
+                    <option value="">Pilih kepemilikan</option>
+                    @foreach ($pemilik as $p)
+                        <option value="{{ $p['label'] }}">{{ $p['label'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="dw-chart-panel">
+                <div class="d-flex justify-content-between small fw-bold mb-1">
+                    <span>Filter kelas</span>
+                    <a href="#" class="small text-decoration-none btn-reset" data-target="filterKelas">Reset</a>
+                </div>
+                <select id="filterKelas" class="form-select form-select-sm">
+                    <option value="">Pilih kelas</option>
+                    @foreach ($kelas as $k)
+                        <option value="{{ $k['label'] }}">{{ $k['label'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="dw-chart-panel">
+                <div class="d-flex justify-content-between small fw-bold mb-1">
+                    <span>Filter jenis</span>
+                    <a href="#" class="small text-decoration-none btn-reset" data-target="filterJenis">Reset</a>
+                </div>
+                <select id="filterJenis" class="form-select form-select-sm">
+                    <option value="">Pilih jenis</option>
+                    @foreach ($jenis as $j)
+                        <option value="{{ $j['label'] }}">{{ $j['label'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+    </div>
+
+    {{-- Peta + Donut kelas --}}
+    <div class="row g-3 mb-3">
+        <div class="col-lg-8">
+            <div class="dw-card p-3 h-100">
+                <h5 class="fw-bold mb-3">Peta Persebaran Rumah Sakit</h5>
+                {{-- Bagian peta dikosongkan (siapkan untuk Leaflet) --}}
+                <div id="map"></div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="dw-card p-3 h-100">
+                <h6 class="text-center fw-semibold mb-2">Rekapulasi RS Per Kelas</h6>
+                <div id="chartKelas"></div>
             </div>
         </div>
     </div>
@@ -168,70 +204,31 @@
         <h3 class="text-center fw-normal mb-0">List Rumah Sakit</h3>
         <div class="text-center text-muted small mb-3"><span id="jumlahTampil">{{ count($daftarRs) }}</span> RS</div>
 
-        <div class="row g-3 mb-3">
-            <div class="col-md-4">
-                <div class="dw-chart-panel">
-                    <div class="d-flex justify-content-between small fw-bold mb-1">
-                        <span>Filter kepemilikan</span>
-                        <a href="#" class="small text-decoration-none btn-reset" data-target="filterPemilik">Reset</a>
-                    </div>
-                    <select id="filterPemilik" class="form-select form-select-sm">
-                        <option value="">Pilih kepemilikan</option>
-                        @foreach ($pemilik as $p)
-                            <option value="{{ $p['label'] }}">{{ $p['label'] }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="dw-chart-panel">
-                    <div class="d-flex justify-content-between small fw-bold mb-1">
-                        <span>Filter kelas</span>
-                        <a href="#" class="small text-decoration-none btn-reset" data-target="filterKelas">Reset</a>
-                    </div>
-                    <select id="filterKelas" class="form-select form-select-sm">
-                        <option value="">Pilih kelas</option>
-                        @foreach ($kelas as $k)
-                            <option value="{{ $k['label'] }}">{{ $k['label'] }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="dw-chart-panel">
-                    <div class="d-flex justify-content-between small fw-bold mb-1">
-                        <span>Filter jenis</span>
-                        <a href="#" class="small text-decoration-none btn-reset" data-target="filterJenis">Reset</a>
-                    </div>
-                    <select id="filterJenis" class="form-select form-select-sm">
-                        <option value="">Pilih jenis</option>
-                        @foreach ($jenis as $j)
-                            <option value="{{ $j['label'] }}">{{ $j['label'] }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-        </div>
-
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" id="tabelRs">
                 <thead>
                     <tr>
                         <th>Rumah Sakit</th>
-                        <th>Provinsi</th>
                         <th>Kab/Kota</th>
                         <th>Alamat</th>
                         <th>Telp</th>
+                        <th>Pemilik</th>
+                        <th>Kelas</th>
+                        <th>Jenis</th>
+                        <th>Detail</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($daftarRs as $rs)
                         <tr data-pemilik="{{ $rs['pemilik'] }}" data-kelas="{{ $rs['kelas'] }}" data-jenis="{{ $rs['jenis'] }}">
                             <td>{{ $rs['nama'] }}</td>
-                            <td>{{ $rs['provinsi'] }}</td>
                             <td>{{ $rs['kota'] }}</td>
                             <td>{{ $rs['alamat'] }}</td>
                             <td>{{ $rs['telp'] }}</td>
+                            <td>{{ $rs['pemilik'] }}</td>
+                            <td>{{ $rs['kelas'] }}</td>
+                            <td>{{ $rs['jenis'] }}</td>
+                            <td><Button>Profile</Button></td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -252,8 +249,17 @@
         const total       = {{ $totalRs }};
 
         // ---------- Donut kelas ----------
+        const eventsKelas ={
+            dataPointSelection: function (e, char, cfg) {
+                const label = dataKelas[cfg.dataPointIndex].label;
+                const select = document.getElementById('filterKelas');
+                select.value = select.value === label ? '' : label;
+                applyFilter();
+            }
+        };
+
         new ApexCharts(document.querySelector('#chartKelas'), {
-            chart: { type: 'donut', height: 300 },
+            chart: { type: 'donut', height: 300, events: eventsKelas },
             series: dataKelas.map(d => d.jumlah),
             labels: dataKelas.map(d => d.label),
             colors: dataKelas.map(d => d.warna),
@@ -354,6 +360,15 @@
                 if (ok) tampil++;
             });
             document.getElementById('jumlahTampil').textContent = tampil;
+
+            // Terusan state filter ke peta Leaflet
+            document.dispatchEvent(new CustomEvent('rs:filter', {
+                detail: {
+                    pemilik: fPemilik.value,
+                    kelas: fKelas.value,
+                    jenis: fJenis.value,
+                }
+            }));
         }
 
         [fPemilik, fKelas, fJenis].forEach(el => el.addEventListener('change', applyFilter));
@@ -368,3 +383,11 @@
     });
 </script>
 @endsection
+
+@push('scripts')
+    <script type="application/json" id="data-rs">@json($daftarRs)</script>
+    <script type="application/json" id="data-kelas">@json($kelas)</script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ asset('js/Kesehatan/rumah-sakit-map.js') }}"></script>
+@endpush
