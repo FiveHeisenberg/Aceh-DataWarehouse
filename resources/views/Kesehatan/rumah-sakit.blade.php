@@ -57,10 +57,10 @@
     .dw-stat .label { font-size: .65rem; font-weight: 700; letter-spacing: .03em; color: #64748b; text-transform: uppercase; }
     .dw-stat .value { font-size: 1.6rem; font-weight: 700; color: #0f172a; line-height: 1.2; }
     .dw-stat .desc { font-size: .75rem; color: #64748b; }
-    .dw-stat.s1 { background: #f0f7ff; }
-    .dw-stat.s2 { background: #f0fdf9; }
-    .dw-stat.s3 { background: #fff8ee; }
-    .dw-chart-panel { background: #f1f5f9; border-radius: .75rem; padding: .75rem; }
+    .dw-stat.s1 { background: #fff; }
+    .dw-stat.s2 { background: #fff; }
+    .dw-stat.s3 { background: #fff; }
+    .dw-chart-panel { background: #fff; border-radius: .75rem; padding: .75rem; }
     .dw-chart-inner { background: #fff; border: 1px solid #e5e7eb; border-radius: .6rem; padding: .5rem; }
     .table thead th { font-size: .85rem; white-space: nowrap; }
     .table tbody td { font-size: .85rem; vertical-align: middle; padding-top: .9rem; padding-bottom: .9rem; }
