@@ -14,4 +14,7 @@ Route::prefix('Kesehatan')->name('kesehatan.')->group(function () {
     Route::get('/tenaga-medis', [KesehatanController::class, 'tenagaMedis'])
         ->name('tenaga-medis');
 
+    Route::get('/rumah-sakit/{rs}/data', [KesehatanController::class, 'dataRs'])
+        ->name('data-rs');
+
 });

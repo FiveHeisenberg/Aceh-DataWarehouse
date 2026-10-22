@@ -231,7 +231,9 @@
                             <td>{{ $rs['pemilik'] }}</td>
                             <td>{{ $rs['kelas'] }}</td>
                             <td>{{ $rs['jenis'] }}</td>
-                            <td><Button>Profile</Button></td>
+                            <td>
+                                <a href="{{ route('kesehatan.data-rs', ['rs' => $rs['id']]) }}" class="btn btn-sm btn-primary">Profile</a>
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>

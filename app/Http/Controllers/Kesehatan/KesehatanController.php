@@ -97,4 +97,10 @@ class KesehatanController extends Controller
         return $pos === false ? PHP_INT_MAX : $pos;
     }
 
+    public function dataRs(int $rs)
+    {
+        return view('Kesehatan.data-rs', [
+            'rsId' => $rs,
+        ]);
+    }
 }

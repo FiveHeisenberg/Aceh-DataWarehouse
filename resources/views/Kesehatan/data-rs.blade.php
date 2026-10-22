@@ -94,76 +94,87 @@
 @endphp
 
 <style>
-    .rs-box { border: 2px solid #111827; border-radius: 1.5rem; padding: 1.5rem; background: #fff; }
-    .rs-photo { width: 100%; aspect-ratio: 1 / 0.88; border: 2px solid #111827; border-radius: 1.5rem; overflow: hidden; background: #fff; }
+    .rs-card { border-radius: 1.5rem; overflow: hidden; }
+    .rs-photo { aspect-ratio: 1 / .88; overflow: hidden; background: #f8fafc; border-radius: 1.5rem; }
     .rs-photo img { width: 100%; height: 100%; object-fit: cover; }
-    .rs-info dt { font-weight: 700; font-size: .95rem; }
-    .rs-info dd { margin-bottom: 1.1rem; }
-    .btn-tab { border: 2px solid #111827; border-radius: 1rem; font-weight: 700; padding: .55rem 1rem; background: #fff; color: #111827; min-width: 130px; }
-    .btn-tab:hover { background: #f3f4f6; }
-    .btn-tab.active { background: #bdbdbd; color: #111827; }
-    .tbl-rs thead th { background: #e7efff; font-size: .85rem; cursor: pointer; user-select: none; white-space: nowrap; }
-    .tbl-rs thead th .sort { color: #9ca3af; font-size: .7rem; margin-left: .35rem; }
-    .tbl-rs tbody td { font-size: .85rem; padding-top: .8rem; padding-bottom: .8rem; }
-    .tbl-rs tbody tr:nth-child(even) { background: #fafbff; }
+    .rs-info dt { color: #64748b; font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+    .rs-info dd { margin-bottom: 1rem; }
+    .btn-tab { min-width: 130px; }
+    .tbl-rs thead th { background: #f1f5f9; cursor: pointer; font-size: .85rem; user-select: none; white-space: nowrap; }
+    .tbl-rs thead th .sort { color: #94a3b8; font-size: .7rem; margin-left: .35rem; }
+    .tbl-rs tbody td { font-size: .85rem; padding-bottom: .8rem; padding-top: .8rem; }
     .tbl-rs td.no { text-align: right; width: 90px; }
 </style>
 
 <div class="container-fluid py-3">
-    <h3 class="fw-bold mb-3">Profile Rumah Sakit</h3>
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h3 class="fw-bold mb-1">Profil Rumah Sakit</h3>
+            <div class="text-muted small">Informasi profil, layanan, fasilitas, dan tenaga medis</div>
+        </div>
+    </div>
 
-    <div class="row g-4">
+    <div class="row g-3">
         {{-- Kartu profil --}}
         <div class="col-lg-4">
-            <div class="rs-box h-100">
-                <div class="rs-photo mb-3">
-                    @if ($rs['foto'])
-                        <img src="{{ $rs['foto'] }}" alt="{{ $rs['nama'] }}">
-                    @endif
+            <div class="card rs-card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="rs-photo rounded-3 mb-3">
+                        @if ($rs['foto'])
+                            <img src="{{ $rs['foto'] }}" alt="{{ $rs['nama'] }}">
+                        @else
+                            <div class="d-flex h-100 align-items-center justify-content-center text-muted small">
+                                Foto belum tersedia
+                            </div>
+                        @endif
+                    </div>
+
+                    <h4 class="fw-bold text-center mb-4">{{ $rs['nama'] }}</h4>
+
+                    <dl class="rs-info mb-0">
+                        <dt>Alamat</dt>
+                        <dd>{{ $rs['alamat'] }}</dd>
+
+                        <dt>Telepon</dt>
+                        <dd>{{ $rs['telepon'] }}</dd>
+
+                        <dt>Jenis Rumah Sakit</dt>
+                        <dd>{{ $rs['jenis'] }}</dd>
+
+                        <dt>Kelas Rumah Sakit</dt>
+                        <dd>{{ $rs['kelas'] }}</dd>
+
+                        <dt>Kepemilikan</dt>
+                        <dd class="mb-0">{{ $rs['kepemilikan'] }}</dd>
+                    </dl>
                 </div>
-
-                <h4 class="fw-bold text-center mb-4">{{ $rs['nama'] }}</h4>
-
-                <dl class="rs-info mb-0">
-                    <dt>Alamat:</dt>
-                    <dd>{{ $rs['alamat'] }}</dd>
-
-                    <dt>Telepon:</dt>
-                    <dd>{{ $rs['telepon'] }}</dd>
-
-                    <dt>Jenis Rumah Sakit:</dt>
-                    <dd>{{ $rs['jenis'] }}</dd>
-
-                    <dt>Kelas Rumah Sakit:</dt>
-                    <dd>{{ $rs['kelas'] }}</dd>
-
-                    <dt>Kepemilikan:</dt>
-                    <dd class="mb-0">{{ $rs['kepemilikan'] }}</dd>
-                </dl>
             </div>
         </div>
 
         {{-- Tab + tabel --}}
         <div class="col-lg-8">
-            <div class="rs-box h-100">
-                <div class="d-flex flex-wrap gap-3 mb-4" id="tabButtons">
-                    <button type="button" class="btn-tab" data-tab="fasilitas">Fasilitas</button>
-                    <button type="button" class="btn-tab active" data-tab="layanan">Layanan</button>
-                    <button type="button" class="btn-tab" data-tab="tenaga">Tenaga Medis</button>
+            <div class="card rs-card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-0 p-3">
+                    <div class="d-flex flex-wrap gap-2 pt-3" id="tabButtons">
+                        <button type="button" class="btn btn-outline-primary btn-sm btn-tab" data-tab="fasilitas">Fasilitas</button>
+                        <button type="button" class="btn btn-primary btn-sm btn-tab active" data-tab="layanan">Layanan</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm btn-tab" data-tab="tenaga">Tenaga Medis</button>
+                    </div>
                 </div>
+                <div class="card-body p-3">
+                    <div class="table-responsive rounded border">
+                        <table class="table table-hover align-middle tbl-rs mb-0">
+                            <thead><tr id="theadRow"></tr></thead>
+                            <tbody id="tbodyRows"></tbody>
+                        </table>
+                    </div>
 
-                <div class="table-responsive border">
-                    <table class="table tbl-rs mb-0">
-                        <thead><tr id="theadRow"></tr></thead>
-                        <tbody id="tbodyRows"></tbody>
-                    </table>
-                </div>
-
-                <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
-                    <div class="small" id="infoEntries"></div>
-                    <nav>
-                        <ul class="pagination pagination-sm mb-0" id="pagination"></ul>
-                    </nav>
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mt-3 gap-2">
+                        <div class="small text-muted" id="infoEntries"></div>
+                        <nav aria-label="Navigasi tabel">
+                            <ul class="pagination pagination-sm mb-0" id="pagination"></ul>
+                        </nav>
+                    </div>
                 </div>
             </div>
         </div>
@@ -278,14 +289,18 @@
         }
 
         // ganti tab
-        document.querySelectorAll('#tabButtons .btn-tab').forEach(btn => {
-            btn.addEventListener('click', function () {
-                document.querySelectorAll('#tabButtons .btn-tab').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                tabAktif = this.dataset.tab;
-                render();
+            document.querySelectorAll('#tabButtons .btn-tab').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('#tabButtons .btn-tab').forEach(b => {
+                        b.classList.remove('active', 'btn-primary');
+                        b.classList.add('btn-outline-primary');
+                    });
+                    this.classList.remove('btn-outline-primary');
+                    this.classList.add('active', 'btn-primary');
+                    tabAktif = this.dataset.tab;
+                    render();
+                });
             });
-        });
 
         render();
     });
