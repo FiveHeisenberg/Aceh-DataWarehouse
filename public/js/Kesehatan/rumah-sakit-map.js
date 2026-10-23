@@ -102,7 +102,7 @@
             const hitungan = hitungRsPerWilayah();
             geoLayer.eachLayer((layer) => {
                 const props = (layer.feature && layer.feature.properties) || {};
-                layer.setTooltipContent(teksTooltip(props.name || '-', hitungan));
+                layer.setTooltipContent(teksTooltip(props.nama || '-', hitungan));
             });
         }
 
@@ -120,7 +120,7 @@
                             fillOpacity: 0.04,
                         },
                         onEachFeature: (feature, layer) => {
-                            const nama = feature.properties.name || '-';
+                            const nama = feature.properties.nama || '-';
                             layer.bindTooltip(teksTooltip(nama, hitungan), {
                                 sticky: true,
                                 className: 'map-tip',
