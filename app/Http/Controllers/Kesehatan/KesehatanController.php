@@ -206,67 +206,227 @@ class KesehatanController extends Controller
 
         $tahunList = $db->table('dwh.fact_kesehatan_kasus_penyakit as fk')
             ->join('dwh.dim_waktu as dw', 'fk.waktu_key', '=', 'dw.waktu_key')
+            ->select('dw.tahun')
             ->distinct()
             ->orderByDesc('dw.tahun')
             ->pluck('dw.tahun')
             ->map(fn ($tahun) => (int) $tahun)
             ->values()
             ->all();
-        
-        $tahunAktif = (int) ($request->input('tahun') ?: ($tahunList[0] ?? date('Y')));
 
-        if (! in_array($tahunAktif, $tahunList, true)) {
-            abort(404);
-        }
+        $tahunAktif = (int) ($request->input('tahun') ?: ($tahunList[0] ?? date('Y')));
 
         $base = $db->table('dwh.fact_kesehatan_kasus_penyakit as fk')
             ->join('dwh.dim_waktu as dw', 'fk.waktu_key', '=', 'dw.waktu_key')
             ->where('dw.tahun', $tahunAktif);
 
-        $totalKasus = (int) (clone $base)->sum('fk.jumlah_kasus');
+        $totalKasus = (int) (clone $base)
+            ->sum('fk.jumlah_kasus');
 
         $penyakit = (clone $base)
-            ->join('dwh.dim_penyakit as dp', 'fk.penyakit_key', '=', 'dp.penyakit_key')
-            ->select('dp.nama_penyakit as nama', DB::raw('SUM(fk.jumlah_kasus) as jumlah'))
+            ->join(
+                'dwh.dim_kesehatan_penyakit as dp',
+                'fk.penyakit_key',
+                '=',
+                'dp.penyakit_key'
+            )
+            ->select(
+                'dp.nama_penyakit as nama',
+                DB::raw('SUM(fk.jumlah_kasus) as jumlah')
+            )
             ->groupBy('dp.nama_penyakit')
             ->orderByDesc('jumlah')
+            ->limit(10)
             ->get()
-            ->map(fn ($row) => [
-                'nama' => $row->nama ?: '-',
-                'jumlah' => (int) $row->jumlah,
-                'kabupaten' => '-',
+            ->map(fn ($item) => [
+                'nama' => $item->nama ?: '-',
+                'jumlah' => (int) $item->jumlah,
             ])
             ->all();
-
+        
         $kabupaten = (clone $base)
-            ->join('dwh.dim_wilayah as wilayah', 'fk.kabupaten_kota_key', '=', 'wilayah.kabupaten_kota_key')
-            ->select('wilayah.nama_kabupaten_kota as nama', DB::raw('SUM(fk.jumlah_kasus) as jumlah'))
-            ->groupBy('wilayah.nama_kabupaten_kota')
+            ->leftJoin(
+                'dwh.dim_kesehatan_rs as rs',
+                'fk.rs_key',
+                '=',
+                'rs.rs_key'
+            )
+            ->select(
+                'rs.nama_kabupaten_kota as nama',
+                DB::raw('SUM(fk.jumlah_kasus) as jumlah')
+            )
+            ->whereNotNull('rs.nama_kabupaten_kota')
+            ->groupBy('rs.nama_kabupaten_kota')
             ->orderByDesc('jumlah')
+            ->limit(10)
             ->get()
-            ->map(fn ($row) => [
-                'nama' => $row->nama ?: '-',
-                'jumlah' => (int) $row->jumlah,
+            ->map(fn ($item) => [
+                'nama' => $item->nama ?: '-',
+                'jumlah' => (int) $item->jumlah,
+            ])
+            ->all();
+        
+        $maxPenyakit = max(array_column($penyakit, 'jumlah') ?: [1]);
+        $maxKabupaten = max(array_column($kabupaten, 'jumlah') ?: [1]);
+
+        $penyakitTerbanyak = (clone $base)
+            ->join('dwh.dim_kesehatan_penyakit as dp', 'fk.penyakit_key', '=', 'dp.penyakit_key')
+            ->select(
+                'dp.nama_penyakit as nama',
+                DB::raw('SUM(fk.jumlah_kasus) as jumlah')
+            )
+            ->groupBy('dp.nama_penyakit')
+            ->orderByDesc('jumlah')
+            ->first();
+
+        $kabupatenTerbanyak = (clone $base)
+            ->leftJoin('dwh.dim_kesehatan_rs as rs', 'fk.rs_key', '=', 'rs.rs_key')
+            ->select(
+                'rs.nama_kabupaten_kota as nama',
+                DB::raw('SUM(fk.jumlah_kasus) as jumlah')
+            )
+            ->groupBy('rs.nama_kabupaten_kota')
+            ->orderByDesc('jumlah')
+            ->first();
+        
+        $usia = (clone $base)
+            ->selectRaw("
+                    CASE
+                        WHEN fk.umur BETWEEN 0 AND 14 THEN '0 – 14 tahun'
+                        WHEN fk.umur BETWEEN 15 AND 29 THEN '15 – 29 tahun'
+                        WHEN fk.umur BETWEEN 30 AND 44 THEN '30 – 44 tahun'
+                        WHEN fk.umur BETWEEN 45 AND 59 THEN '45 – 59 tahun'
+                        WHEN fk.umur >= 60 THEN '60+ tahun'
+                        ELSE 'Tidak diketahui'
+                    END AS label,
+                    SUM(fk.jumlah_kasus) AS jumlah
+                ")
+                ->groupByRaw("
+                    CASE
+                        WHEN fk.umur BETWEEN 0 AND 14 THEN '0 – 14 tahun'
+                        WHEN fk.umur BETWEEN 15 AND 29 THEN '15 – 29 tahun'
+                        WHEN fk.umur BETWEEN 30 AND 44 THEN '30 – 44 tahun'
+                        WHEN fk.umur BETWEEN 45 AND 59 THEN '45 – 59 tahun'
+                        WHEN fk.umur >= 60 THEN '60+ tahun'
+                        ELSE 'Tidak diketahui'
+                    END
+                ")
+            ->get()
+            ->map(fn ($item) => [
+                'label' => $item->label,
+                'jumlah' => (int) $item->jumlah,
+                'persen' => $totalKasus > 0
+                    ? number_format(($item->jumlah / $totalKasus) * 100, 1, ',', '.') . '%'
+                    : '0%',
+                'warna' => match ($item->label) {
+                    '0 – 14 tahun' => '#3b82f6',
+                    '15 – 29 tahun' => '#22a06b',
+                    '30 – 44 tahun' => '#f5b82e',
+                    '45 – 59 tahun' => '#e8895a',
+                    '60+ tahun' => '#8b7fd6',
+                    default => '#94a3b8',
+                },
             ])
             ->all();
 
-        $ringkasan = array_slice($penyakit, 0, 4);
+        $genderRows = (clone $base)
+            ->join(
+                'dwh.dim_dukcapil_penduduk as pd',
+                'fk.penduduk_key',
+                '=',
+                'pd.penduduk_key'
+            )
+            ->select(
+                'pd.jenis_kelamin',
+                DB::raw('SUM(fk.jumlah_kasus) AS jumlah')
+            )
+            ->whereIn('pd.jenis_kelamin', ['L', 'P'])
+            ->groupBy('pd.jenis_kelamin')
+            ->get()
+            ->keyBy('jenis_kelamin');
 
-        $maxPenyakit = max(array_column($penyakit, 'jumlah') ?: [0]);
-        $maxKabupaten = max(array_column($kabupaten, 'jumlah') ?: [0]);
+        $laki = (int) ($genderRows->get('L')->jumlah ?? 0);
+        $perempuan = (int) ($genderRows->get('P')->jumlah ?? 0);
+        $totalGender = $laki + $perempuan;
 
-        $fmt = fn ($n) => number_format($n, 0, ',', '.');
+        $gender = [
+            'laki' => [
+                'jumlah' => $laki,
+                'persen' => $totalGender > 0
+                    ? number_format(($laki / $totalGender) * 100, 1, ',', '.') . '%'
+                    : '0%',
+            ],
+            'perempuan' => [
+                'jumlah' => $perempuan,
+                'persen' => $totalGender > 0
+                    ? number_format(($perempuan / $totalGender) * 100, 1, ',', '.') . '%'
+                    : '0%',
+            ],
+        ];
+        
+        $petaKasus = (clone $base)
+            ->join(
+                'dwh.dim_kesehatan_rs as rs',
+                'fk.rs_key',
+                '=',
+                'rs.rs_key'
+            )
+            ->join(
+                'dwh.dim_kesehatan_penyakit as dp',
+                'fk.penyakit_key',
+                '=',
+                'dp.penyakit_key'
+            )
+            ->whereNotNull('rs.nama_kabupaten_kota')
+            ->select(
+                'rs.nama_kabupaten_kota as kabupaten', 'dp.nama_penyakit',
+                DB::raw('SUM(fk.jumlah_kasus) as jumlah_penyakit')
+            )
+            ->groupBy(
+                'rs.nama_kabupaten_kota',
+                'dp.nama_penyakit'
+            )
+            ->get()
+            ->groupBy('kabupaten')
+            ->map(function ($items, $kabupaten) {
+                $items = $items
+                    ->sortByDesc('jumlah_penyakit')
+                    ->values();
 
-        return view('Kesehatan.penyakit', compact(
-            'tahunList',
-            'tahunAktif',
-            'totalKasus',
-            'penyakit',
-            'kabupaten',
-            'ringkasan',
-            'maxPenyakit',
-            'maxKabupaten',
-            'fmt'
-        ));
+                $penyakitTertinggi = $items->first();
+
+                return [
+                    'kabupaten' => $kabupaten,
+                    'jumlah' => (int) $items->sum('jumlah_penyakit'),
+                    'penyakit_tertinggi' => $penyakitTertinggi->nama_penyakit ?? '-',
+                    'jumlah_penyakit_tertinggi' => (int) ($penyakitTertinggi->jumlah_penyakit ?? 0),
+                ];
+            })
+            ->values()
+            ->all();
+
+        $ringkasan = collect($petaKasus)
+            ->sortByDesc('jumlah')
+            ->take(23)
+            ->values()
+            ->all();
+
+        return view('Kesehatan.penyakit', [
+            'tahunList' => $tahunList,
+            'tahunAktif' => $tahunAktif,
+            'totalKasus' => $totalKasus,
+            'penyakit' => $penyakit,
+            'kabupaten' => $kabupaten,
+            'usia' => $usia,
+            'gender' => $gender,
+            'ringkasan' => $ringkasan,
+            'maxPenyakit' => $maxPenyakit,
+            'maxKabupaten' => $maxKabupaten,
+            'penyakitTerbanyak' => $penyakitTerbanyak,
+            'kabupatenTerbanyak' => $kabupatenTerbanyak,
+            'petaKasus' => $petaKasus,
+        ]);
     }
+
+    
 }
