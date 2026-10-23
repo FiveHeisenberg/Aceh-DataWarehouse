@@ -3,8 +3,6 @@
 @section('content')
 @php
     // ====== DATA STATIS ======
-    $tahunList  = [2023, 2022, 2021];
-    $tahunAktif = 2023;
 
     $totalKasus = 12482;
 
@@ -90,11 +88,21 @@
                 <li class="breadcrumb-item active" aria-current="page">Penyakit</li>
             </ol>
         </nav>
-        <select id="filterTahun" class="form-select form-select-sm w-auto">
-            @foreach ($tahunList as $t)
-                <option value="{{ $t }}" {{ $t == $tahunAktif ? 'selected' : '' }}>{{ $t }}</option>
-            @endforeach
-        </select>
+        <form method="GET" action="{{ route('kesehatan.penyakit') }}">
+            <label for="filterTahun" class="visually-hidden">Pilih tahun</label>
+            <select
+                id="filterTahun"
+                name="tahun"
+                class="form-select form-select-sm w-auto"
+                onchange="this.form.submit()"
+            >
+                @foreach ($tahunList as $tahun)
+                    <option value="{{ $tahun }}" @selected($tahun === $tahunAktif)>
+                        {{ $tahun }}
+                    </option>
+                @endforeach
+            </select>
+        </form>
     </div>
 
     <h2 class="fw-bold mb-0">Analisis Penyakit</h2>

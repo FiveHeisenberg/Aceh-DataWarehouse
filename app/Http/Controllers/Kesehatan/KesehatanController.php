@@ -4,13 +4,10 @@ namespace App\Http\Controllers\Kesehatan;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class KesehatanController extends Controller
 {
-    public function penyakit()
-    {
-        return view('Kesehatan.penyakit');
-    }
 
     public function tenagaMedis()
     {
@@ -185,21 +182,91 @@ class KesehatanController extends Controller
             'foto'         => null,
         ];
 
-    $tabs = [
-        'fasilitas' => [
-            'kolom' => ['Fasilitas', 'Jumlah'],
-            'baris' => $fasilitas,
-        ],
-        'layanan' => [
-            'kolom' => ['Pelayanan'],
-            'baris' => $layanan,
-        ],
-        'tenaga' => [
-            'kolom' => ['Nama Tenaga Medis', 'Jenis Tenaga Medis', 'Jumlah'],
-            'baris' => $tenagaMedis,
-        ],
-    ];
+        $tabs = [
+            'fasilitas' => [
+                'kolom' => ['Fasilitas', 'Jumlah'],
+                'baris' => $fasilitas,
+            ],
+            'layanan' => [
+                'kolom' => ['Pelayanan'],
+                'baris' => $layanan,
+            ],
+            'tenaga' => [
+                'kolom' => ['Nama Tenaga Medis', 'Jenis Tenaga Medis', 'Jumlah'],
+                'baris' => $tenagaMedis,
+            ],
+        ];
 
-        return view('kesehatan.data-rs', compact('rs', 'tabs'));
+            return view('kesehatan.data-rs', compact('rs', 'tabs'));
+    }
+
+    public function penyakit(Request $request)
+    {
+        $db = DB::connection('mysql');
+
+        $tahunList = $db->table('dwh.fact_kesehatan_kasus_penyakit as fk')
+            ->join('dwh.dim_waktu as dw', 'fk.waktu_key', '=', 'dw.waktu_key')
+            ->distinct()
+            ->orderByDesc('dw.tahun')
+            ->pluck('dw.tahun')
+            ->map(fn ($tahun) => (int) $tahun)
+            ->values()
+            ->all();
+        
+        $tahunAktif = (int) ($request->input('tahun') ?: ($tahunList[0] ?? date('Y')));
+
+        if (! in_array($tahunAktif, $tahunList, true)) {
+            abort(404);
+        }
+
+        $base = $db->table('dwh.fact_kesehatan_kasus_penyakit as fk')
+            ->join('dwh.dim_waktu as dw', 'fk.waktu_key', '=', 'dw.waktu_key')
+            ->where('dw.tahun', $tahunAktif);
+
+        $totalKasus = (int) (clone $base)->sum('fk.jumlah_kasus');
+
+        $penyakit = (clone $base)
+            ->join('dwh.dim_penyakit as dp', 'fk.penyakit_key', '=', 'dp.penyakit_key')
+            ->select('dp.nama_penyakit as nama', DB::raw('SUM(fk.jumlah_kasus) as jumlah'))
+            ->groupBy('dp.nama_penyakit')
+            ->orderByDesc('jumlah')
+            ->get()
+            ->map(fn ($row) => [
+                'nama' => $row->nama ?: '-',
+                'jumlah' => (int) $row->jumlah,
+                'kabupaten' => '-',
+            ])
+            ->all();
+
+        $kabupaten = (clone $base)
+            ->join('dwh.dim_wilayah as wilayah', 'fk.kabupaten_kota_key', '=', 'wilayah.kabupaten_kota_key')
+            ->select('wilayah.nama_kabupaten_kota as nama', DB::raw('SUM(fk.jumlah_kasus) as jumlah'))
+            ->groupBy('wilayah.nama_kabupaten_kota')
+            ->orderByDesc('jumlah')
+            ->get()
+            ->map(fn ($row) => [
+                'nama' => $row->nama ?: '-',
+                'jumlah' => (int) $row->jumlah,
+            ])
+            ->all();
+
+        $ringkasan = array_slice($penyakit, 0, 4);
+
+        $maxPenyakit = max(array_column($penyakit, 'jumlah') ?: [0]);
+        $maxKabupaten = max(array_column($kabupaten, 'jumlah') ?: [0]);
+
+        $fmt = fn ($n) => number_format($n, 0, ',', '.');
+
+        return view('Kesehatan.penyakit', compact(
+            'tahunList',
+            'tahunAktif',
+            'totalKasus',
+            'penyakit',
+            'kabupaten',
+            'ringkasan',
+            'maxPenyakit',
+            'maxKabupaten',
+            'fmt'
+        ));
     }
 }
