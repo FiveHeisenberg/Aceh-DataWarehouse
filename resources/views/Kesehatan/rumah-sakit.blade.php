@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @push('styles')
-    <meta name="geojson-url" content="{{ asset('aceh-regencies.json') }}">
+    <meta name="geojson-url" content="{{ asset('js/Penduduk/aceh-kabupaten.geojson') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <style>
         #map { height: 420px; background: #f8fafc; border-radius: .5rem; }
@@ -83,21 +83,21 @@
             <div class="dw-stat s1">
                 <div class="label">Total Rumah Sakit</div>
                 <div class="value">{{ $totalRs }}</div>
-                <div class="desc">RS aktif, selain RS Darurat</div>
+                <div class="desc">RS Aktif di Provinsi Aceh</div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="dw-stat s2">
                 <div class="label">Pemilik Terbanyak</div>
-                <div class="value">{{ $pemilik[0]['jumlah'] }}</div>
-                <div class="desc">{{ $pemilik[0]['label'] }}</div>
+                <div class="value">{{ $pemilik[0]['jumlah'] ?? 0 }}</div>
+                <div class="desc">{{ $pemilik[0]['label'] ?? 0 }}</div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="dw-stat s3">
                 <div class="label">Jenis Terbanyak</div>
-                <div class="value">{{ $jenis[0]['jumlah'] }}</div>
-                <div class="desc">{{ $jenis[0]['label'] }}</div>
+                <div class="value">{{ $jenis[0]['jumlah'] ?? 0 }}</div>
+                <div class="desc">{{ $jenis[0]['label'] ?? '-' }}</div>
             </div>
         </div>
     </div>
@@ -172,7 +172,7 @@
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div>
                             <div class="fw-semibold small">Rekap RS Per Pemilik (Propinsi:ACEH)</div>
-                            <div class="text-muted" style="font-size:.7rem">Klik batang untuk filter daftar <RS></RS>.</div>
+                            <div class="text-muted" style="font-size:.7rem">Klik batang untuk filter daftar</div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <span class="badge rounded-pill text-primary bg-primary-subtle">{{ $totalRs }} RS</span>

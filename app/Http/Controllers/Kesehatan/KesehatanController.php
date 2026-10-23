@@ -9,11 +9,6 @@ use Illuminate\Http\Request;
 class KesehatanController extends Controller
 {
 
-    public function tenagaMedis()
-    {
-        return view('Kesehatan.tenaga-medis');
-    }
-
     // UNTUK DIAGRAM REKAPULASI RS PER KELAS
     private const URUT_KELAS = ['KR01', 'KR02', 'KR03', 'KR04', 'KR05', 'KR06'];
 
@@ -428,5 +423,226 @@ class KesehatanController extends Controller
         ]);
     }
 
-    
+    public function tenagaMedis(Request $request)
+    {
+        $db = DB::connection('mysql');
+
+        $tahunList = $db->table('dwh.fact_kesehatan_tenaga_medis as ftm')
+            ->join('dwh.dim_waktu as dw', 'ftm.waktu_key', '=', 'dw.waktu_key')
+            ->select('dw.tahun')
+            ->distinct()
+            ->orderByDesc('dw.tahun')
+            ->pluck('dw.tahun')
+            ->map(fn ($tahun) => (int) $tahun)
+            ->values()
+            ->all();
+
+        $tahunAktif = (int) ($request->input('tahun') ?: ($tahunList[0] ?? date('Y')));
+
+        if (! in_array($tahunAktif, $tahunList, true)) {
+            $tahunAktif = $tahunList[0] ?? date('Y');
+        }
+
+        $base = $db->table('dwh.fact_kesehatan_tenaga_medis as ftm')
+            ->join('dwh.dim_waktu as dw', 'ftm.waktu_key', '=', 'dw.waktu_key')
+            ->where('dw.tahun', $tahunAktif);
+
+        $totalTenaga = (int) (clone $base)
+            ->sum('ftm.jumlah_tenaga');
+
+        $jumlahKategori = (clone $base)
+            ->join(
+                'dwh.dim_kesehatan_tenaga_medis as tm',
+                'ftm.tenaga_key',
+                '=',
+                'tm.tenaga_key'
+            )
+            ->select(
+                'tm.kategori_profesi',
+                DB::raw('SUM(ftm.jumlah_tenaga) as jumlah')
+            )
+            ->groupBy('tm.kategori_profesi')
+            ->get()
+            ->keyBy('kategori_profesi');
+
+        $dokter = (int) ($jumlahKategori->get('Dokter')->jumlah ?? 0);
+        $perawat = (int) ($jumlahKategori->get('Perawat')->jumlah ?? 0);
+        $lainnya = (int) ($jumlahKategori->get('Lainnya')->jumlah ?? 0);
+
+        $kpi = [
+            [
+                'judul' => 'Total Tenaga Medis',
+                'nilai' => $totalTenaga,
+                'ikon' => 'bi-people-fill',
+                'warna' => '#3b82f6',
+                'bg' => '#e8f1ff',
+            ],
+            [
+                'judul' => 'Tenaga Medis Dokter',
+                'nilai' => $dokter,
+                'ikon' => 'bi-heart-pulse',
+                'warna' => '#22a06b',
+                'bg' => '#e6f6ee',
+            ],
+            [
+                'judul' => 'Tenaga Medis Perawat',
+                'nilai' => $perawat,
+                'ikon' => 'bi-person-heart',
+                'warna' => '#8b5cf6',
+                'bg' => '#f0eaff',
+            ],
+            [
+                'judul' => 'Tenaga Medis Lainnya',
+                'nilai' => $lainnya,
+                'ikon' => 'bi-person-badge',
+                'warna' => '#14b8a6',
+                'bg' => '#e3f7f4',
+            ],
+        ];
+
+        $warnaKelompok = [
+            'Perawat' => '#3b82f6',
+            'Dokter Spesialis' => '#22a06b',
+            'Dokter Umum' => '#8b7fd6',
+            'Tenaga Kefarmasian' => '#f5b82e',
+        ];
+
+        $kelompok = (clone $base)
+            ->join(
+                'dwh.dim_kesehatan_tenaga_medis as tm',
+                'ftm.tenaga_key',
+                '=',
+                'tm.tenaga_key'
+            )
+            ->select(
+                'tm.nama_kelompok as label',
+                DB::raw('SUM(ftm.jumlah_tenaga) as jumlah')
+            )
+            ->groupBy('tm.nama_kelompok')
+            ->orderByDesc('jumlah')
+            ->get()
+            ->map(fn ($item) => [
+                'label' => $item->label ?: '-',
+                'jumlah' => (int) $item->jumlah,
+                'warna' => $warnaKelompok[$item->label] ?? '#94a3b8',
+            ])
+            ->values()
+            ->all();
+
+        $jenis = (clone $base)
+            ->join(
+                'dwh.dim_kesehatan_tenaga_medis as tm',
+                'ftm.tenaga_key',
+                '=',
+                'tm.tenaga_key'
+            )
+            ->select(
+                'tm.nama_jenis_tenaga as nama',
+                DB::raw('SUM(ftm.jumlah_tenaga) as jumlah')
+            )
+            ->groupBy('tm.nama_jenis_tenaga')
+            ->orderByDesc('jumlah')
+            ->get()
+            ->map(fn ($item) => [
+                'nama' => $item->nama ?: '-',
+                'jumlah' => (int) $item->jumlah,
+            ])
+            ->values()
+            ->all();
+
+        $kabupaten = (clone $base)
+            ->join(
+                'dwh.dim_kesehatan_rs as rs',
+                'ftm.rs_key',
+                '=',
+                'rs.rs_key'
+            )
+            ->select(
+                'rs.nama_kabupaten_kota as nama',
+                DB::raw('SUM(ftm.jumlah_tenaga) as jumlah')
+            )
+            ->whereNotNull('rs.nama_kabupaten_kota')
+            ->groupBy('rs.nama_kabupaten_kota')
+            ->orderByDesc('jumlah')
+            ->get()
+            ->map(fn ($item) => [
+                'nama' => $item->nama ?: '-',
+                'jumlah' => (int) $item->jumlah,
+            ])
+            ->values()
+            ->all();
+
+        $maxJenis = max(array_column($jenis, 'jumlah') ?: [1]);
+        $maxKabupaten = max(array_column($kabupaten, 'jumlah') ?: [1]);
+
+        $profesiKabupaten = (clone $base)
+            ->join(
+                'dwh.dim_kesehatan_rs as rs',
+                'ftm.rs_key',
+                '=',
+                'rs.rs_key'
+            )
+            ->join(
+                'dwh.dim_kesehatan_tenaga_medis as tm',
+                'ftm.tenaga_key',
+                '=',
+                'tm.tenaga_key'
+            )
+            ->whereNotNull('rs.nama_kabupaten_kota')
+            ->select(
+                'rs.nama_kabupaten_kota as kabupaten',
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN tm.kategori_profesi = 'Dokter'
+                            THEN ftm.jumlah_tenaga
+                            ELSE 0
+                        END
+                    ) as dokter
+                "),
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN tm.kategori_profesi = 'Perawat'
+                            THEN ftm.jumlah_tenaga
+                            ELSE 0
+                        END
+                    ) as perawat
+                "),
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN tm.kategori_profesi = 'Lainnya'
+                            THEN ftm.jumlah_tenaga
+                            ELSE 0
+                        END
+                    ) as lainnya
+                ")
+            )
+            ->groupBy('rs.nama_kabupaten_kota')
+            ->orderByDesc(
+                DB::raw('SUM(ftm.jumlah_tenaga)')
+            )
+            ->get()
+            ->map(fn ($item) => [
+                'kabupaten' => $item->kabupaten ?: '-',
+                'dokter' => (int) $item->dokter,
+                'perawat' => (int) $item->perawat,
+                'lainnya' => (int) $item->lainnya,
+            ])
+            ->values()
+            ->all();
+
+        return view('Kesehatan.tenaga-medis', compact(
+            'tahunList',
+            'tahunAktif',
+            'kpi',
+            'kelompok',
+            'jenis',
+            'kabupaten',
+            'maxJenis',
+            'maxKabupaten',
+            'profesiKabupaten'
+        ));
+    }
 }

@@ -16,10 +16,14 @@
     
     // Inisialisasi Peta
     const map = L.map(mapEl, { scrollWheelZoom: false }).setView([4.7, 96.8], 8);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap',
-        maxZoom: 20,
-    }).addTo(map);
+    L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            {
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+                maxZoom: 19,
+                pane: 'overlayPane',
+            }
+    ).addTo(map);
 
     let geoLayer = null;
     let popByKode = new Map();

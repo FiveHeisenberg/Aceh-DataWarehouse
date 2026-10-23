@@ -244,7 +244,7 @@
                     <div class="collapse ms-4 mt-1 {{ request()->routeIs('dispenda.*') ? 'show' : '' }}" id="submenuKesehatan" data-bs-parent="#sidebarMenu">
                         <a href="{{ route('kesehatan.rumah-sakit') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('kesehatan.rumah-sakit') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Rumah Sakit</a>
                         <a href="{{ route('kesehatan.penyakit') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('kesehatan.penyakit') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Penyakit</a>
-                        <a href="{{ route('kesehatan.tenaga-medis') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('kesehatan.tenaga-medis') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Tenaga-Medis</a>
+                        <a href="{{ route('kesehatan.tenaga-medis') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('kesehatan.tenaga-medis') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Tenaga Medis</a>
                     </div>
                 </div>
             </div>

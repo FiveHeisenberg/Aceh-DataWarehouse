@@ -2,57 +2,6 @@
 
 @section('content')
 @php
-    // ====== DATA STATIS ======
-    $tahunList  = [2023, 2022, 2021];
-    $tahunAktif = 2023;
-
-    // Kartu ringkasan
-    $kpi = [
-        ['judul' => 'Total Tenaga Medis',   'nilai' => 12482, 'tren' => '+6,8%', 'ikon' => 'bi-people-fill',  'warna' => '#3b82f6', 'bg' => '#e8f1ff'],
-        ['judul' => 'Tenaga Medis Dokter',  'nilai' => 2843,  'tren' => '+7,2%', 'ikon' => 'bi-heart-pulse',  'warna' => '#22a06b', 'bg' => '#e6f6ee'],
-        ['judul' => 'Tenaga Medis Perawat', 'nilai' => 6521,  'tren' => '+5,9%', 'ikon' => 'bi-person-heart', 'warna' => '#8b5cf6', 'bg' => '#f0eaff'],
-        ['judul' => 'Tenaga Medis Lainnya', 'nilai' => 3118,  'tren' => '+6,1%', 'ikon' => 'bi-person-badge', 'warna' => '#14b8a6', 'bg' => '#e3f7f4'],
-    ];
-
-    // Jumlah per kelompok
-    $kelompok = [
-        ['label' => 'Tenaga Keperawatan',        'jumlah' => 6521, 'warna' => '#3b82f6'],
-        ['label' => 'Tenaga Kedokteran',         'jumlah' => 2843, 'warna' => '#22a06b'],
-        ['label' => 'Tenaga Kefarmasian',        'jumlah' => 1102, 'warna' => '#8b7fd6'],
-        ['label' => 'Tenaga Kesehatan Lainnya',  'jumlah' => 870,  'warna' => '#f5b82e'],
-    ];
-
-    // Distribusi per jenis
-    $jenis = [
-        ['nama' => 'Perawat',                   'jumlah' => 6521],
-        ['nama' => 'Dokter Spesialis',          'jumlah' => 1342],
-        ['nama' => 'Dokter Umum',               'jumlah' => 1201],
-        ['nama' => 'Bidan',                     'jumlah' => 980],
-        ['nama' => 'Apoteker',                  'jumlah' => 562],
-        ['nama' => 'Analis Kesehatan',          'jumlah' => 423],
-        ['nama' => 'Radiografer',               'jumlah' => 318],
-        ['nama' => 'Tenaga Gizi',               'jumlah' => 276],
-        ['nama' => 'Terapis',                   'jumlah' => 198],
-        ['nama' => 'Tenaga Kesehatan Lainnya',  'jumlah' => 362],
-    ];
-
-    // Sebaran per kabupaten/kota
-    $kabupaten = [
-        ['nama' => 'Banda Aceh',   'jumlah' => 2184],
-        ['nama' => 'Aceh Besar',   'jumlah' => 1762],
-        ['nama' => 'Lhokseumawe',  'jumlah' => 1245],
-        ['nama' => 'Langsa',       'jumlah' => 980],
-        ['nama' => 'Bireuen',      'jumlah' => 876],
-        ['nama' => 'Aceh Utara',   'jumlah' => 654],
-        ['nama' => 'Aceh Tamiang', 'jumlah' => 593],
-        ['nama' => 'Pidie',        'jumlah' => 521],
-        ['nama' => 'Aceh Barat',   'jumlah' => 412],
-        ['nama' => 'Sabang',       'jumlah' => 298],
-    ];
-
-    $maxJenis     = max(array_column($jenis, 'jumlah'));
-    $maxKabupaten = max(array_column($kabupaten, 'jumlah'));
-
     // helper format angka Indonesia (12.482)
     $fmt = fn($n) => number_format($n, 0, ',', '.');
 @endphp
@@ -73,6 +22,47 @@
     .bar-row .val { width: 46px; flex: 0 0 46px; text-align: right; color: #334155; font-variant-numeric: tabular-nums; }
     .table-medis thead th { background: #e5e7eb; text-align: center; font-weight: 600; }
     .table-medis tbody td { padding-top: .6rem; padding-bottom: .6rem; }
+
+    .chart-kelompok-card {
+        min-width: 0;        /* mencegah card melebar mengikuti isi */
+        max-width: 100%;
+        overflow: hidden;    /* isi yang lebar tidak keluar dari card */
+    }
+
+    #chartKelompok {
+        width: 100%;         /* lebar akhir diatur dari JavaScript */
+    }
+
+    .chart-kelompok-col {
+        min-width: 0;   /* kolom tidak boleh lebih lebar dari row */
+        max-width: 100%;
+    }
+
+    .chart-kelompok-scroll {
+        width: 100%;
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        contain: inline-size; /* lebar wrapper tidak dihitung dari isi chart yang lebar */
+        padding-bottom: .5rem;
+    }
+
+    .jenis-medis-scroll {
+        max-height: 280px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: .4rem;
+    }
+
+    .jenis-medis-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .jenis-medis-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+
 </style>
 
 <div class="container-fluid py-3">
@@ -86,11 +76,20 @@
                 <li class="breadcrumb-item active" aria-current="page">Tenaga Medis</li>
             </ol>
         </nav>
-        <select id="filterTahun" class="form-select form-select-sm w-auto">
-            @foreach ($tahunList as $t)
-                <option value="{{ $t }}" {{ $t == $tahunAktif ? 'selected' : '' }}>{{ $t }}</option>
-            @endforeach
-        </select>
+        <form method="GET" action="{{ route('kesehatan.tenaga-medis') }}">
+            <select
+                id="filterTahun"
+                name="tahun"
+                class="form-select form-select-sm w-auto"
+                onchange="this.form.submit()"
+            >
+                @foreach ($tahunList as $tahun)
+                    <option value="{{ $tahun }}" @selected($tahun === $tahunAktif)>
+                        {{ $tahun }}
+                    </option>
+                @endforeach
+            </select>
+        </form>
     </div>
 
     {{-- Kartu ringkasan --}}
@@ -104,66 +103,76 @@
                     <div>
                         <div class="title">{{ $k['judul'] }}</div>
                         <div class="value">{{ $fmt($k['nilai']) }}<span class="unit">orang</span></div>
-                        <div class="trend">
-                            <span class="up"><i class="bi bi-caret-up-fill"></i> {{ $k['tren'] }}</span>
-                            vs {{ $tahunAktif + 1 }}
-                        </div>
                     </div>
                 </div>
             </div>
         @endforeach
     </div>
 
-    {{-- Tiga grafik --}}
-    <div class="row g-3 mb-4">
-        <div class="col-xl-4">
-            <div class="dw-card p-3 h-100">
-                <h6 class="fw-bold mb-2">Jumlah Tenaga Medis per Kelompok</h6>
-                <div id="chartKelompok"></div>
-            </div>
-        </div>
-        <div class="col-xl-4">
+    {{-- Dua grafik --}}
+    <div class="row g-3 pb-3">
+        <div class="col-lg-6">
             <div class="dw-card p-3 h-100">
                 <h6 class="fw-bold mb-3">Distribusi Tenaga Medis per Jenis</h6>
-                @foreach ($jenis as $j)
-                    <div class="bar-row">
-                        <div class="name">{{ $j['nama'] }}</div>
-                        <div class="track"><div class="fill" style="width: {{ round($j['jumlah'] / $maxJenis * 100, 1) }}%"></div></div>
-                        <div class="val">{{ $fmt($j['jumlah']) }}</div>
-                    </div>
-                @endforeach
+                <div class="jenis-medis-scroll">
+                    @foreach ($jenis as $j)
+                        <div class="bar-row">
+                            <div class="name">{{ $j['nama'] }}</div>
+                            <div class="track"><div class="fill" style="width: {{ $maxJenis > 0 ? round(($j['jumlah'] / $maxJenis) * 100, 1) : 0 }}%"></div></div>
+                            <div class="val">{{ $fmt($j['jumlah']) }}</div>
+                        </div>
+                    @endforeach
+                </div>
             </div>
         </div>
-        <div class="col-xl-4">
+        <div class="col-lg-6">
             <div class="dw-card p-3 h-100">
                 <h6 class="fw-bold mb-3">Sebaran Tenaga Medis per Kabupaten/Kota</h6>
-                @foreach ($kabupaten as $k)
-                    <div class="bar-row">
-                        <div class="name">{{ $k['nama'] }}</div>
-                        <div class="track"><div class="fill" style="width: {{ round($k['jumlah'] / $maxKabupaten * 100, 1) }}%"></div></div>
-                        <div class="val">{{ $fmt($k['jumlah']) }}</div>
-                    </div>
-                @endforeach
+                <div class="jenis-medis-scroll">
+                    @foreach ($kabupaten as $k)
+                        <div class="bar-row">
+                            <div class="name">{{ $k['nama'] }}</div>
+                            <div class="track"><div class="fill" style="width: {{ $maxKabupaten > 0 ? round(($k['jumlah'] / $maxKabupaten) * 100, 1) : 0 }}%"></div></div>
+                            <div class="val">{{ $fmt($k['jumlah']) }}</div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 chart-kelompok-col">
+            <div class="dw-card p-3 h-100 chart-kelompok-card">
+                <h6 class="fw-bold mb-2">Jumlah Tenaga Medis per Kelompok</h6>
+                <div class="chart-kelompok-scroll">
+                    <div id="chartKelompok"></div>
+                </div>
             </div>
         </div>
     </div>
 
     {{-- Tabel --}}
+    <h4 class="fw-bold mb-3">Persebaran Tenaga Medis Berdasarkan Profesi</h4>
     <div class="table-responsive mb-4">
         <table class="table table-medis table-bordered border-start-0 border-end-0 align-middle mb-0">
             <thead>
                 <tr>
                     <th style="width: 80px">No</th>
-                    <th>Jenis Tenaga Medis</th>
-                    <th style="width: 220px">Jumlah</th>
+                    <th>Kabupaten/Kota</th>
+                    <th>Dokter</th>
+                    <th>Perawat</th>
+                    <th>Lainnya</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach ($jenis as $i => $j)
+                @foreach ($profesiKabupaten as $i => $j)
                     <tr>
                         <td class="text-center">{{ $i + 1 }}</td>
-                        <td>{{ $j['nama'] }}</td>
-                        <td class="text-center">{{ $fmt($j['jumlah']) }}</td>
+                        <td>{{ $j['kabupaten'] }}</td>
+                        <td class="text-center">{{ $fmt($j['dokter']) }}</td>
+                        <td class="text-center">{{ $fmt($j['perawat']) }}</td>
+                        <td class="text-center">{{ $fmt($j['lainnya']) }}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -178,20 +187,51 @@
     document.addEventListener('DOMContentLoaded', function () {
         const dataKelompok = @json($kelompok);
         const rupiah = n => n.toLocaleString('id-ID');
+        const kelompokValues = dataKelompok.map(item => item.jumlah);
+        const kelompokMax = Math.max(...kelompokValues, 0);
+        const kelompokAxisMax = kelompokMax > 0 ? Math.ceil(kelompokMax * 1.2 / 1000) * 1000 : 1000;
 
-        // ---------- Kolom jumlah per kelompok ----------
-        new ApexCharts(document.querySelector('#chartKelompok'), {
-            chart: { type: 'bar', height: 260, toolbar: { show: false } },
-            series: [{ name: 'Jumlah', data: dataKelompok.map(d => d.jumlah) }],
+        // Lebar chart mengikuti jumlah kelompok, minimal 850px
+        const lebarMinimal = 850;
+        const lebarPerKelompok = 80;
+        const lebarChart = Math.max(lebarMinimal, dataKelompok.length * lebarPerKelompok);
+
+        const elChart = document.querySelector('#chartKelompok');
+        elChart.style.width = lebarChart + 'px';
+
+        new ApexCharts(elChart, {
+            chart: {
+                type: 'bar',
+                height: 260,
+                width: lebarChart,   // lebar eksplisit agar ApexCharts tidak mengecilkan batang
+                toolbar: { show: false }
+            },
+            series: [{ name: 'Jumlah', data: kelompokValues }],
             xaxis: {
                 categories: dataKelompok.map(d => d.label),
-                labels: { style: { fontSize: '10px' }, trim: true, rotate: 0, hideOverlappingLabels: false }
+                labels: { 
+                    style: { fontSize: '10px' }, 
+                    trim: false, 
+                    rotate: -50,
+                    rotateAlways: true, 
+                    hideOverlappingLabels: false 
+                }
             },
-            yaxis: { min: 0, max: 8000, tickAmount: 4, labels: { formatter: v => rupiah(v) } },
+            yaxis: {
+                min: 0,
+                max: kelompokAxisMax,
+                tickAmount: 4,
+                labels: { formatter: v => rupiah(v) }
+            },
             plotOptions: { bar: { distributed: true, borderRadius: 4, columnWidth: '50%' } },
             colors: dataKelompok.map(d => d.warna),
             legend: { show: false },
-            dataLabels: { enabled: true, formatter: v => rupiah(v), offsetY: -18, style: { fontSize: '11px', colors: ['#0f172a'] } },
+            dataLabels: {
+                enabled: true,
+                formatter: v => rupiah(v),
+                offsetY: -18,
+                style: { fontSize: '11px', colors: ['#0f172a'] }
+            },
             tooltip: { y: { formatter: v => rupiah(v) + ' orang' } }
         }).render();
     });
