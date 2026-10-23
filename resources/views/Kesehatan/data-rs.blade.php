@@ -1,97 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-@php
-    // ====== DATA STATIS ======
-    $rs = [
-        'nama'       => 'RS Zainal Abidin',
-        'alamat'     => 'jln. H, Abdul Khadir',
-        'telepon'    => '085163576166',
-        'jenis'      => 'Rumah Sakit Umum',
-        'kelas'      => 'A',
-        'kepemilikan'=> 'Pemerintah Provinsi',
-        'foto'       => null, // isi URL gambar jika sudah ada, contoh: asset('img/rs-zainal-abidin.jpg')
-    ];
-
-    // Tab Layanan
-    $layanan = [
-        'Pelayanan KIA/KB',
-        'Infeksi Paru',
-        'Pelayanan Gawat Darurat Umum 24 jam & 7 hari seminggu',
-        'Penyakit dalam',
-        'Kesehatan anak',
-        'Bedah',
-        'Obstetri dan ginekologi',
-        'Anestesi',
-        'Radiologi',
-        'Patologi Klinik',
-        'Patologi Anatomi',
-        'Rehabilitasi Medik',
-        'Kesehatan Jiwa',
-        'Mata',
-        'Telinga Hidung Tenggorokan',
-        'Kulit dan Kelamin',
-        'Gigi dan Mulut',
-        'Saraf',
-        'Jantung dan Pembuluh Darah',
-        'Gizi Klinik',
-        'Farmasi',
-        'Laboratorium',
-        'Bank Darah',
-        'Hemodialisa',
-        'Rawat Inap',
-        'Rawat Jalan',
-        'Intensive Care Unit (ICU)',
-        'Ambulans',
-    ];
-
-    // Tab Fasilitas: [nama, jumlah]
-    $fasilitas = [
-        ['Tempat Tidur Rawat Inap', 320],
-        ['Tempat Tidur ICU', 20],
-        ['Ruang Operasi', 8],
-        ['Ruang IGD', 1],
-        ['Ruang Isolasi', 12],
-        ['Ruang Bersalin', 4],
-        ['Ruang Hemodialisa', 1],
-        ['Laboratorium', 1],
-        ['Ruang Radiologi', 2],
-        ['Apotek', 1],
-        ['Ambulans', 6],
-        ['Ruang Rehabilitasi Medik', 1],
-    ];
-
-    // Tab Tenaga Medis: [jenis, jumlah]
-    $tenagaMedis = [
-        ['Dokter Spesialis', 64],
-        ['Dokter Umum', 28],
-        ['Dokter Gigi', 6],
-        ['Perawat', 310],
-        ['Bidan', 42],
-        ['Apoteker', 14],
-        ['Analis Kesehatan', 22],
-        ['Radiografer', 10],
-        ['Tenaga Gizi', 12],
-        ['Terapis', 8],
-        ['Tenaga Kesehatan Lainnya', 30],
-    ];
-
-    // Susun menjadi struktur yang dipakai JS
-    $tabs = [
-        'fasilitas' => [
-            'kolom' => ['Fasilitas', 'Jumlah'],
-            'baris' => array_map(fn($r) => [$r[0], $r[1]], $fasilitas),
-        ],
-        'layanan' => [
-            'kolom' => ['Pelayanan'],
-            'baris' => array_map(fn($r) => [$r], $layanan),
-        ],
-        'tenaga' => [
-            'kolom' => ['Jenis Tenaga Medis', 'Jumlah'],
-            'baris' => array_map(fn($r) => [$r[0], $r[1]], $tenagaMedis),
-        ],
-    ];
-@endphp
 
 <style>
     .rs-card { border-radius: 1.5rem; overflow: hidden; }
@@ -156,8 +65,8 @@
             <div class="card rs-card border-0 shadow-sm h-100">
                 <div class="card-header bg-white border-0 p-3">
                     <div class="d-flex flex-wrap gap-2 pt-3" id="tabButtons">
-                        <button type="button" class="btn btn-outline-primary btn-sm btn-tab" data-tab="fasilitas">Fasilitas</button>
-                        <button type="button" class="btn btn-primary btn-sm btn-tab active" data-tab="layanan">Layanan</button>
+                        <button type="button" class="btn btn-primary btn-sm btn-tab active" data-tab="fasilitas">Fasilitas</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm btn-tab" data-tab="layanan">Layanan</button>
                         <button type="button" class="btn btn-outline-primary btn-sm btn-tab" data-tab="tenaga">Tenaga Medis</button>
                     </div>
                 </div>
@@ -186,7 +95,7 @@
         const tabs = @json($tabs);
         const PER_PAGE = 10;
 
-        let tabAktif = 'layanan';
+        let tabAktif = 'fasilitas';
         const state = {};
         Object.keys(tabs).forEach(k => state[k] = { page: 1, sortCol: 0, sortDir: 'asc' }); // sortCol 0 = No.
 

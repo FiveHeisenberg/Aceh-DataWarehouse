@@ -99,8 +99,107 @@ class KesehatanController extends Controller
 
     public function dataRs(int $rs)
     {
-        return view('Kesehatan.data-rs', [
-            'rsId' => $rs,
-        ]);
+        $dataRs = DB::connection('mysql')
+            ->table('dwh.dim_kesehatan_rs')
+            ->where('rs_key', $rs)
+            ->first([
+                'rs_key',
+                'nama_rs',
+                'alamat',
+                'telepon',
+                'nama_jenis_rs',
+                'nama_kelas',
+                'nama_pemilik',
+            ]);
+        
+        abort_if(!$dataRs, 404);
+
+        $fasilitas = DB::connection('mysql')
+            ->table('dwh.dim_kesehatan_fasilitas as f')
+            ->join(
+                'dwh.fact_kesehatan_fasilitas_rs as l',
+                'f.fasilitas_key',
+                '=',
+                'l.fasilitas_key'
+            )
+            ->where('l.rs_key', $rs)
+            ->orderBy('f.nama_fasilitas')
+            ->get([
+                'f.nama_fasilitas',
+                'l.jumlah',
+            ])
+            ->map(fn ($item) => [
+                $item->nama_fasilitas ?: '-',
+                (int) ($item->jumlah ?? 0),
+            ])
+            ->all();
+
+        $layanan = DB::connection('mysql')
+            ->table('dwh.dim_kesehatan_layanan as f')
+            ->join(
+                'dwh.fact_kesehatan_layanan_rs as l',
+                'f.layanan_key',
+                '=',
+                'l.layanan_key'
+            )
+            ->where('l.rs_key', $rs)
+            ->orderBy('f.nama_layanan')
+            ->get([
+                'f.nama_layanan',
+            ])
+            ->map(fn ($item) => [
+                $item->nama_layanan ?: '-',
+            ])
+            ->all();
+
+        $tenagaMedis = DB::connection('mysql')
+            ->table('dwh.fact_kesehatan_tenaga_medis as ftm')
+            ->join(
+                'dwh.dim_kesehatan_tenaga_medis as tm',
+                'ftm.tenaga_key',
+                '=',
+                'tm.tenaga_key',
+            )
+            ->where('ftm.rs_key', $rs)
+            ->orderBy('tm.nama_jenis_tenaga')
+            ->get([
+                'tm.nama_jenis_tenaga',
+                'tm.nama_kelompok',
+                'ftm.jumlah_tenaga',
+            ])
+            ->map(fn ($item) => [
+                $item->nama_jenis_tenaga ?: '-',
+                $item->nama_kelompok ?: '-',
+                (int) ($item->jumlah_tenaga ?? 0),
+            ])
+            ->all();
+
+        $rs = [
+            'id'           => $dataRs->rs_key,
+            'nama'         => $dataRs->nama_rs ?: '-',
+            'alamat'       => $dataRs->alamat ?: '-',
+            'telepon'      => $dataRs->telepon ?: '-',
+            'jenis'        => $dataRs->nama_jenis_rs ?: '-',
+            'kelas'        => $dataRs->nama_kelas ?: '-',
+            'kepemilikan'  => $dataRs->nama_pemilik ?: '-',
+            'foto'         => null,
+        ];
+
+    $tabs = [
+        'fasilitas' => [
+            'kolom' => ['Fasilitas', 'Jumlah'],
+            'baris' => $fasilitas,
+        ],
+        'layanan' => [
+            'kolom' => ['Pelayanan'],
+            'baris' => $layanan,
+        ],
+        'tenaga' => [
+            'kolom' => ['Nama Tenaga Medis', 'Jenis Tenaga Medis', 'Jumlah'],
+            'baris' => $tenagaMedis,
+        ],
+    ];
+
+        return view('kesehatan.data-rs', compact('rs', 'tabs'));
     }
 }

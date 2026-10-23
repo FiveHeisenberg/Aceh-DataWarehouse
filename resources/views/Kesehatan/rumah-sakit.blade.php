@@ -172,7 +172,7 @@
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div>
                             <div class="fw-semibold small">Rekap RS Per Pemilik (Propinsi:ACEH)</div>
-                            <div class="text-muted" style="font-size:.7rem">Klik batang untuk filter daftar RS (bisa pilih beberapa kepemilikan).</div>
+                            <div class="text-muted" style="font-size:.7rem">Klik batang untuk filter daftar <RS></RS>.</div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <span class="badge rounded-pill text-primary bg-primary-subtle">{{ $totalRs }} RS</span>
@@ -191,7 +191,7 @@
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div>
                             <div class="fw-semibold small">Rekap RS Per Jenis (Propinsi:ACEH)</div>
-                            <div class="text-muted" style="font-size:.7rem">Klik kategori untuk filter daftar RS (bisa pilih beberapa jenis).</div>
+                            <div class="text-muted" style="font-size:.7rem">Klik kategori untuk filter daftar RS.</div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <span class="badge rounded-pill text-primary bg-primary-subtle">{{ $totalRs }} RS</span>
