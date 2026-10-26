@@ -76,6 +76,46 @@
         font-size: .75rem;
     }
 
+    /* ===== Card Per Komoditi (bisa di-scroll) ===== */
+    .kpk-card { border: 1px solid #e5e7eb; border-radius: 1.1rem; background: #fff; padding: 1.25rem 1.4rem 1rem; display: flex; flex-direction: column; box-shadow: 0 1px 6px rgba(15, 23, 42, .05); }
+    .kpk-title { font-weight: 800; font-size: 1.15rem; color: #0f172a; margin: 0; }
+    .kpk-sub { font-size: .8rem; color: #94a3b8; }
+    .kpk-select { border: 1px solid #cbd5e1; border-radius: .7rem; font-weight: 700; font-size: .85rem; color: #1e293b; padding: .45rem 2rem .45rem .9rem; min-width: 150px; box-shadow: 0 1px 3px rgba(15, 23, 42, .08); }
+    .kpk-divider { border-top: 1px solid #e5e7eb; margin: .9rem 0 .75rem; }
+
+    .kpk-toggles { display: flex; align-items: center; justify-content: flex-end; gap: .5rem; margin-bottom: .6rem; }
+    .kpk-toggles .lbl { font-size: .7rem; font-weight: 700; letter-spacing: .04em; color: #94a3b8; text-transform: uppercase; margin-right: .25rem; }
+    .kpk-pill { display: inline-flex; align-items: center; gap: .3rem; border: 0; border-radius: 999px; padding: .35rem .85rem; font-size: .8rem; font-weight: 700; color: #fff; transition: opacity .2s, filter .2s; }
+    .kpk-pill svg { width: 14px; height: 14px; stroke: #fff; fill: none; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .kpk-pill.tanam { background: #9f1f63; }
+    .kpk-pill.panen { background: #ea78a8; }
+    .kpk-pill.off { opacity: .4; filter: grayscale(.4); }
+    .kpk-pill.off svg { visibility: hidden; }
+
+    .kpk-grid { display: grid; grid-template-columns: 130px 1fr; column-gap: .75rem; }
+    .kpk-head { align-items: end; font-size: .7rem; font-weight: 700; color: #94a3b8; padding-bottom: .4rem; border-bottom: 1px dashed #e5e7eb; }
+    .kpk-ticks { position: relative; height: 16px; margin-right: 22px; }
+    .kpk-ticks span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+    .kpk-ticks span:first-child { transform: none; }
+    .kpk-ticks span:last-child { transform: translateX(-100%); }
+
+    .kpk-body { max-height: 360px; overflow-y: auto; padding: .6rem 6px .4rem 0; margin-right: -4px; scrollbar-width: thin; scrollbar-color: #c3c8d0 transparent; }
+    .kpk-body::-webkit-scrollbar { width: 8px; }
+    .kpk-body::-webkit-scrollbar-track { background: transparent; }
+    .kpk-body::-webkit-scrollbar-thumb { background: #c3c8d0; border-radius: 8px; }
+
+    .kpk-row { margin-bottom: .55rem; align-items: center; }
+    .kpk-name { text-align: right; font-size: .95rem; font-weight: 500; color: #475569; line-height: 1.15; padding-right: .3rem; }
+    .kpk-bars { background-image: linear-gradient(to right, #eef0f4 1px, transparent 1px); background-size: 25% 100%; background-repeat: repeat-x; }
+    .kpk-bar { height: 22px; margin: 2px 0; transition: width .45s ease; min-width: 2px; }
+    .kpk-bar.tanam { background: #9f1f63; }
+    .kpk-bar.panen { background: #e978a7; }
+    .kpk-bar.hidden { display: none; }
+
+    .kpk-foot { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #e5e7eb; margin-top: .4rem; padding-top: .65rem; font-size: .72rem; color: #64748b; }
+    .kpk-foot .ok::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #10b981; margin-right: .4rem; }
+    .kpk-foot .skala { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #94a3b8; }
+
 </style>
 
 <div class="container-fluid py-3">
@@ -136,29 +176,83 @@
     <div class="sec-title">Luas Tanam dan Panen</div>
     <div class="row g-3">
         <div class="col-lg-6">
-            <div class="dw-card p-3 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="fw-bold mb-0">Per Komoditi</h5>
-                    <select id="selKomoditas" class="form-select form-select-sm w-auto">
+            {{-- Card Per Komoditi (daftar bar yang bisa di-scroll) --}}
+            <div class="kpk-card h-100" id="kpkCard">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                        <h5 class="kpk-title">Per Komoditi</h5>
+                        <div class="kpk-sub">Distribusi luas tanam &amp; panen per wilayah kabupaten</div>
+                    </div>
+                    <select id="selKomoditas" class="form-select kpk-select w-auto">
                         @foreach ($komoditasList as $k)
-                            <option value="{{ $k }}" {{ $k === 'Jagung' ? 'selected' : '' }}>{{ $k }}</option>
+                            <option value="{{ $k }}" {{ $k === 'Padi' ? 'selected' : '' }}>{{ $k }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div id="chartKomoditas"></div>
+
+                <div class="kpk-divider"></div>
+
+                <div class="kpk-toggles">
+                    <span class="lbl">Tampilkan:</span>
+                    <button type="button" class="kpk-pill tanam" data-seri="tanam" aria-pressed="true">
+                        <svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>Luas Tanam
+                    </button>
+                    <button type="button" class="kpk-pill panen" data-seri="panen" aria-pressed="true">
+                        <svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>Luas Panen
+                    </button>
+                </div>
+
+                <div class="kpk-grid kpk-head">
+                    <div>Kabupaten / Kota</div>
+                    <div class="kpk-ticks" id="kpkTicks"></div>
+                </div>
+
+                <div class="kpk-body" id="kpkBody"></div>
+
+                <div class="kpk-foot">
+                    <span class="ok">Data Terverifikasi Dinas Pertanian Aceh</span>
+                    <span class="skala" id="kpkSkala"></span>
+                </div>
             </div>
         </div>
         <div class="col-lg-6">
-            <div class="dw-card p-3 h-100">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="fw-bold mb-0">Per Kabupaten/Kota</h5>
-                    <select id="selKabupaten" class="form-select form-select-sm w-auto">
+            {{-- Card Per Kabupaten/Kota (daftar bar yang bisa di-scroll) --}}
+            <div class="kpk-card h-100" id="kpkCard2">
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <div>
+                        <h5 class="kpk-title">Per Kabupaten/Kota</h5>
+                        <div class="kpk-sub">Distribusi luas tanam &amp; panen per komoditas</div>
+                    </div>
+                    <select id="selKabupaten" class="form-select kpk-select w-auto">
                         @foreach ($kabupatenList as $k)
                             <option value="{{ $k }}" {{ $k === 'Kota Banda Aceh' ? 'selected' : '' }}>{{ $k }}</option>
                         @endforeach
                     </select>
                 </div>
-                <div id="chartKabupaten"></div>
+
+                <div class="kpk-divider"></div>
+
+                <div class="kpk-toggles">
+                    <span class="lbl">Tampilkan:</span>
+                    <button type="button" class="kpk-pill tanam" data-seri="tanam" aria-pressed="true">
+                        <svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>Luas Tanam
+                    </button>
+                    <button type="button" class="kpk-pill panen" data-seri="panen" aria-pressed="true">
+                        <svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>Luas Panen
+                    </button>
+                </div>
+
+                <div class="kpk-grid kpk-head">
+                    <div>Komoditas</div>
+                    <div class="kpk-ticks" id="kpkTicks2"></div>
+                </div>
+
+                <div class="kpk-body" id="kpkBody2"></div>
+
+                <div class="kpk-foot">
+                    <span class="ok">Data Terverifikasi Dinas Pertanian Aceh</span>
+                    <span class="skala" id="kpkSkala2"></span>
+                </div>
             </div>
         </div>
     </div>
@@ -273,47 +367,86 @@
             }
         }).render();
 
-        // ---------- Bar luas tanam & panen ----------
-        function barOptions(categories, tanam, panen) {
-            return {
-                chart: { type: 'bar', height: 380, toolbar: { show: false } },
-                series: [
-                    { name: 'Luas Tanam', data: tanam },
-                    { name: 'Luas Panen', data: panen }
-                ],
-                xaxis: { categories: categories, labels: { formatter: v => fmt(Math.round(v)) } },
-                plotOptions: { bar: { horizontal: true, barHeight: '70%', borderRadius: 2 } },
-                colors: ['#9f1853', '#e08ab0'],
-                dataLabels: { enabled: false },
-                legend: { position: 'top', horizontalAlign: 'right', fontSize: '11px' },
-                tooltip: { y: { formatter: v => fmt(v) + ' ' + satuanLuas } }
-            };
+        // ---------- Daftar bar luas tanam & panen (bisa di-scroll) ----------
+        // Dipakai oleh card "Per Komoditi" dan "Per Kabupaten/Kota".
+        const satuanTampil = String(satuanLuas).charAt(0).toUpperCase() + String(satuanLuas).slice(1);
+        const fmtR = n => Math.round(n).toLocaleString('id-ID');
+
+        // Skala "bulat": 4 interval dengan langkah 1 / 2 / 2,5 / 5 x 10^n
+        function skalaMaks(nilaiMaks) {
+            const mentah  = (nilaiMaks || 1) / 4;
+            const pangkat = Math.pow(10, Math.floor(Math.log10(mentah)));
+            const langkah = [1, 2, 2.5, 5, 10].map(m => m * pangkat).find(s => s >= mentah);
+            return langkah * 4;
         }
 
-        // Per komoditas -> bar per kabupaten
-        function dataPerKomoditas(kom) {
-            const rows = kabList.map(k => ({ nama: k, t: matrix[kom][k][0], p: matrix[kom][k][1] }))
-                                .sort((a, b) => b.t - a.t);
-            return barOptions(rows.map(r => r.nama), rows.map(r => r.t), rows.map(r => r.p));
+        function buatDaftarBar(cfg) {
+            const root  = document.getElementById(cfg.root);
+            const sel   = document.getElementById(cfg.select);
+            const body  = document.getElementById(cfg.body);
+            const ticks = document.getElementById(cfg.ticks);
+            const skala = document.getElementById(cfg.skala);
+            const aktif = { tanam: true, panen: true };
+
+            function render() {
+                // cfg.rows(nilaiDropdown) -> [{ nama, tanam, panen }]
+                const rows = cfg.rows(sel.value).sort((a, b) => b.tanam - a.tanam);
+
+                // skala mengikuti seri yang sedang ditampilkan
+                const nilai = rows.flatMap(r => [aktif.tanam ? r.tanam : 0, aktif.panen ? r.panen : 0]);
+                const maks  = skalaMaks(Math.max(0, ...nilai));
+
+                ticks.innerHTML = [0, 1, 2, 3, 4].map(i => {
+                    const teks = fmtR(maks / 4 * i) + (i === 4 ? ' ' + satuanTampil : '');
+                    return `<span style="left:${i * 25}%">${teks}</span>`;
+                }).join('');
+                skala.textContent = 'Skala: 0 - ' + fmtR(maks) + ' ' + satuanTampil;
+
+                body.innerHTML = rows.map(r => `
+                    <div class="kpk-grid kpk-row">
+                        <div class="kpk-name">${r.nama}</div>
+                        <div class="kpk-bars">
+                            <div class="kpk-bar tanam ${aktif.tanam ? '' : 'hidden'}" style="width:${r.tanam / maks * 100}%"
+                                 title="Luas Tanam: ${fmtR(r.tanam)} ${satuanTampil}"></div>
+                            <div class="kpk-bar panen ${aktif.panen ? '' : 'hidden'}" style="width:${r.panen / maks * 100}%"
+                                 title="Luas Panen: ${fmtR(r.panen)} ${satuanTampil}"></div>
+                        </div>
+                    </div>`).join('');
+                body.scrollTop = 0;
+            }
+
+            // tombol "Tampilkan" (minimal satu seri tetap aktif)
+            root.querySelectorAll('.kpk-pill').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const seri = this.dataset.seri;
+                    const lain = seri === 'tanam' ? 'panen' : 'tanam';
+                    if (aktif[seri] && !aktif[lain]) return;
+                    aktif[seri] = !aktif[seri];
+                    this.classList.toggle('off', !aktif[seri]);
+                    this.setAttribute('aria-pressed', aktif[seri]);
+                    render();
+                });
+            });
+
+            sel.addEventListener('change', render);
+            render();
         }
 
-        // Per kabupaten -> bar per komoditas
-        function dataPerKabupaten(kab) {
-            const rows = komList.map(k => ({ nama: k, t: matrix[k][kab][0], p: matrix[k][kab][1] }))
-                                .sort((a, b) => b.t - a.t);
-            return barOptions(rows.map(r => r.nama), rows.map(r => r.t), rows.map(r => r.p));
-        }
+        // Per Komoditi -> satu baris per kabupaten/kota
+        buatDaftarBar({
+            root: 'kpkCard', select: 'selKomoditas', ticks: 'kpkTicks', body: 'kpkBody', skala: 'kpkSkala',
+            rows: kom => !matrix[kom] ? [] : kabList
+                .filter(k => matrix[kom][k])
+                .map(k => ({ nama: k, tanam: matrix[kom][k][0], panen: matrix[kom][k][1] }))
+        });
 
-        const selKom = document.getElementById('selKomoditas');
-        const selKab = document.getElementById('selKabupaten');
-
-        const chartKom = new ApexCharts(document.querySelector('#chartKomoditas'), dataPerKomoditas(selKom.value));
-        const chartKab = new ApexCharts(document.querySelector('#chartKabupaten'), dataPerKabupaten(selKab.value));
-        chartKom.render();
-        chartKab.render();
-
-        selKom.addEventListener('change', () => chartKom.updateOptions(dataPerKomoditas(selKom.value)));
-        selKab.addEventListener('change', () => chartKab.updateOptions(dataPerKabupaten(selKab.value)));
+        // Per Kabupaten/Kota -> satu baris per komoditas
+        buatDaftarBar({
+            root: 'kpkCard2', select: 'selKabupaten', ticks: 'kpkTicks2', body: 'kpkBody2', skala: 'kpkSkala2',
+            rows: kab => komList
+                .filter(k => matrix[k] && matrix[k][kab])
+                .map(k => ({ nama: k, tanam: matrix[k][kab][0], panen: matrix[k][kab][1] }))
+        });
     });
 </script>
 @endsection
