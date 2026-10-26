@@ -20,22 +20,27 @@
         backdrop-filter: blur(2px);
     }
 
+    /* Area scroll chart Perbandingan Harga */
     .chart-banding-scroll {
-        max-height: 360px;
+        max-height: 330px;
         overflow-y: auto;
         overflow-x: hidden;
         padding-right: .4rem;
         scrollbar-width: thin;
-        scrollbar-color: #cbd5e1 transparent;
+        scrollbar-color: #c3c8d0 transparent;
     }
 
     .chart-banding-scroll::-webkit-scrollbar {
-        width: 6px;
+        width: 8px;
+    }
+
+    .chart-banding-scroll::-webkit-scrollbar-track {
+        background: transparent;
     }
 
     .chart-banding-scroll::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 4px;
+        background: #c3c8d0;
+        border-radius: 8px;
     }
 </style>
 
@@ -62,7 +67,7 @@
     {{-- Tren harga & perbandingan harga --}}
     <div class="row g-3">
         <div class="col-lg-6">
-            <div class="dw-card p-3 h-auto">
+            <div class="dw-card p-3 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h4 class="fw-bold mb-0">Tren Harga</h4>
                     <select id="selKabHarga" class="form-select form-select-sm w-auto">
@@ -81,7 +86,7 @@
             </div>
         </div>
         <div class="col-lg-6">
-            <div class="dw-card p-3 h-auto">
+            <div class="dw-card p-3 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h4 class="fw-bold mb-0">Perbandingan Harga</h4>
                     <select id="selKomBanding" class="form-select form-select-sm w-auto">
@@ -90,7 +95,8 @@
                         @endforeach
                     </select>
                 </div>
-                <div id="chart-banding-scroll">
+                {{-- Daftar bar per kab/kota, bisa di-scroll ke bawah --}}
+                <div class="chart-banding-scroll" id="scrollBanding">
                     <div id="chartBanding"></div>
                 </div>
             </div>
@@ -202,7 +208,7 @@
             };
         }
         const chartTren = new ApexCharts($('chartTren'), Object.assign({
-            chart: { type: 'line', height: 300, toolbar: { show: false } },
+            chart: { type: 'line', height: 230, toolbar: { show: false } },
             stroke: { curve: 'straight', width: 2.5 },
             markers: { size: 4 },
             colors: ['#4f94d6'],
@@ -212,7 +218,7 @@
         chartTren.render();
         ['selKomTren', 'selKabHarga'].forEach(id => $(id).addEventListener('change', () => chartTren.updateOptions(optTren())));
 
-        // ---------- 2. Perbandingan harga ----------
+        // ---------- 2. Perbandingan harga (bisa di-scroll) ----------
         function optBanding() {
             const komoditas = $('selKomBanding').value;
             const data = perbandingan[komoditas] || {};
@@ -220,21 +226,38 @@
             const rows = Object.entries(data).sort((a, b) => b[1] - a[1]);
 
             return {
-                chart: { type: 'bar', height: Math.max(260, rows.length * 26 + 40), toolbar: { show: false } },
+                // tinggi chart mengikuti jumlah baris (33px/baris) agar bisa di-scroll di dalam kartu
+                chart: { type: 'bar', height: Math.max(260, rows.length * 33 + 40), toolbar: { show: false } },
                 series: [{ name: 'Harga', data: rows.map(r => r[1]) }],
                 noData: { text: noDataHarga, style: { fontSize: '12px', color: '#64748b' } },
                 xaxis: { categories: rows.map(r => r[0].replace('Kabupaten ', 'Kab. ')), labels: { formatter: v => fmt0(Math.round(v)) } },
-                yaxis: { labels: { style: { fontSize: '10px' }, maxWidth: 140 } },
-                plotOptions: { bar: { horizontal: true, barHeight: '70%', borderRadius: 2 } },
-                colors: ['#9f1853'],
-                dataLabels: { enabled: true, formatter: v => fmt0(v), textAnchor: 'start', offsetX: 6, style: { fontSize: '10px', colors: ['#0f172a'] }, background: { enabled: false } },
+                yaxis: { labels: { style: { fontSize: '11px', colors: '#475569' }, maxWidth: 150 } },
+                plotOptions: {
+                    bar: {
+                        horizontal: true,
+                        barHeight: '70%',
+                        borderRadius: 4,
+                        dataLabels: { position: 'center' }   // nilai di tengah batang
+                    }
+                },
+                colors: ['#b0386b'],
+                dataLabels: {
+                    enabled: true,
+                    formatter: v => fmt0(v),
+                    textAnchor: 'middle',
+                    style: { fontSize: '11px', fontWeight: 600, colors: ['#0f172a'] },
+                    background: { enabled: false }
+                },
                 tooltip: { y: { formatter: v => rp(v) + '/' + satuan } },
                 grid: { strokeDashArray: 3 }
             };
         }
         const chartBanding = new ApexCharts($('chartBanding'), optBanding());
         chartBanding.render();
-        $('selKomBanding').addEventListener('change', () => chartBanding.updateOptions(optBanding()));
+        $('selKomBanding').addEventListener('change', () => {
+            chartBanding.updateOptions(optBanding());
+            $('scrollBanding').scrollTop = 0;   // kembali ke atas saat komoditas diganti
+        });
 
         // ---------- 3. Tren ketersediaan stok ----------
         function optStok() {
