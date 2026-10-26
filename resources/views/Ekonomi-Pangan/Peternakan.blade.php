@@ -1,54 +1,11 @@
 @extends('layouts.app')
 
+@push('styles')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+@endpush
+
 @section('content')
 @php
-    // ====== DATA STATIS ======
-    $tahunList  = [2026, 2025, 2024];
-    $tahunAktif = 2026;
-
-    $satuanPopulasi = 'ekor';
-    $satuanProduksi = 'ton';
-
-    // Dropdown pada peta
-    $jenisTernakList = ['Sapi', 'Ayam', 'Itik', 'Kambing', 'Kerbau', 'Domba'];
-
-    // Komposisi populasi ternak (satu irisan = satu jenis ternak)
-    $populasi = [
-        ['label' => 'Ayam',    'jumlah' => 16200450, 'warna' => '#f59e0b'],
-        ['label' => 'Itik',    'jumlah' => 1480320,  'warna' => '#14b8a6'],
-        ['label' => 'Sapi',    'jumlah' => 780125,   'warna' => '#8b5cf6'],
-        ['label' => 'Kambing', 'jumlah' => 340870,   'warna' => '#3b82f6'],
-        ['label' => 'Kerbau',  'jumlah' => 98236,    'warna' => '#ef4444'],
-        ['label' => 'Domba',   'jumlah' => 30000,    'warna' => '#06b6d4'],
-    ];
-    $totalPopulasi = array_sum(array_column($populasi, 'jumlah')); // 18.930.001
-
-    // Produksi per produk (se-Aceh): satu batang = satu jenis ternak
-    $produksiPerProduk = [
-        'Daging' => [
-            ['Sapi', 20707.58], ['Ayam', 14520.83], ['Kambing', 3476.48],
-            ['Kerbau', 2816.02], ['Itik', 647.65],  ['Domba', 360.99],
-        ],
-        'Telur' => [
-            ['Ayam', 9850.40], ['Itik', 2310.75],
-        ],
-        'Susu' => [
-            ['Sapi', 1240.60], ['Kambing', 310.25],
-        ],
-    ];
-
-    // Produksi per kabupaten/kota: satu batang = kombinasi produk + jenis ternak
-    // urutan nilai: Telur Ayam, Daging Sapi, Daging Ayam, Daging Kambing, Telur Itik, Daging Kerbau, Daging Itik, Daging Domba
-    $labelKombinasi = ['Telur Ayam', 'Daging Sapi', 'Daging Ayam', 'Daging Kambing', 'Telur Itik', 'Daging Kerbau', 'Daging Itik', 'Daging Domba'];
-    $nilaiKabupaten = [
-        'Kota Banda Aceh' => [279.37, 149.23, 126.69, 42.22, 40.24, 21.77, 5.66, 3.10],
-        'Aceh Besar'      => [812.45, 1420.30, 960.12, 310.55, 188.20, 245.60, 48.90, 36.75],
-        'Aceh Utara'      => [1105.80, 1685.40, 1240.25, 420.10, 302.45, 380.15, 95.30, 52.60],
-        'Pidie'           => [734.20, 1310.75, 890.40, 365.85, 210.10, 295.40, 61.25, 40.20],
-        'Bireuen'         => [690.55, 1155.90, 805.35, 298.70, 175.60, 260.80, 52.45, 31.15],
-    ];
-    $kabupatenList = array_keys($nilaiKabupaten);
-
     $fmt = fn($n) => number_format($n, 0, ',', '.');
 @endphp
 
@@ -63,6 +20,55 @@
     .legend-item .nilai { color: #475569; font-variant-numeric: tabular-nums; }
     .chip { display: inline-flex; align-items: center; font-size: .72rem; margin-right: .9rem; }
     .chip i { width: 10px; height: 10px; border-radius: 2px; margin-right: .35rem; display: inline-block; }
+
+    .ternak-map-legend {
+        background: rgba(255, 255, 255, .95);
+        border: 1px solid #e5e7eb;
+        border-radius: .5rem;
+        padding: .5rem .65rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
+        font-size: .7rem;
+    }
+
+    .ternak-map-legend-title {
+        font-weight: 700;
+        font-size: .68rem;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        color: #64748b;
+        margin-bottom: .3rem;
+    }
+
+    .ternak-map-legend-item {
+        display: flex;
+        align-items: center;
+        gap: .4rem;
+        color: #334155;
+        line-height: 1.6;
+    }
+
+    .ternak-map-swatch {
+        display: inline-block;
+        width: .65rem;
+        height: .65rem;
+        border-radius: 2px;
+    }
+
+    .ternak-map-tip {
+        font-size: .75rem;
+    }
+
+    .page-loading {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, .78);
+        backdrop-filter: blur(2px);
+    }
+
 </style>
 
 <div class="container-fluid py-3">
@@ -78,7 +84,7 @@
         </nav>
         <select id="filterTahun" class="form-select form-select-sm w-auto">
             @foreach ($tahunList as $t)
-                <option value="{{ $t }}" {{ $t == $tahunAktif ? 'selected' : '' }}>{{ $t }}</option>
+                <option value="{{ $t }}" @selected((int) $t === (int) $tahunAktif)>{{ $t }}</option>
             @endforeach
         </select>
     </div>
@@ -92,13 +98,14 @@
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h5 class="fw-bold mb-0">Peta Populasi Ternak</h5>
                     <select id="filterJenisTernak" class="form-select form-select-sm w-auto">
+                        <option value="">Semua Ternak</option>
                         @foreach ($jenisTernakList as $j)
                             <option value="{{ $j }}">{{ $j }}</option>
                         @endforeach
                     </select>
                 </div>
                 {{-- Bagian peta dikosongkan (siapkan untuk Leaflet choropleth) --}}
-                <div id="map"></div>
+                <div id="map" data-geojson="{{ asset('js/Penduduk/aceh-kabupaten.geojson') }}"></div>
             </div>
         </div>
         <div class="col-lg-5">
@@ -157,6 +164,15 @@
     </div>
 </div>
 
+<div id="pageLoading" class="page-loading d-none" role="status" aria-live="polite">
+    <div class="text-center">
+        <div class="spinner-border text-success" role="status" aria-hidden="true"></div>
+        <div id="loadingText" class="mt-2 small fw-semibold text-dark">
+            Memuat data...
+        </div>
+    </div>
+</div>
+
 {{-- ApexCharts (hapus jika layouts.app sudah memuatnya) --}}
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js"></script>
 <script>
@@ -167,6 +183,34 @@
         const labelKombinasi  = @json($labelKombinasi);
         const nilaiKabupaten  = @json($nilaiKabupaten);
         const satuanProduksi  = @json($satuanProduksi);
+        const filterTahun = document.getElementById('filterTahun');
+        const pageLoading = document.getElementById('pageLoading');
+        const loadingText = document.getElementById('loadingText');
+
+        filterTahun.addEventListener('change', function () {
+            const tahun = this.value;
+
+            filterTahun.disabled = true;
+            filterTahun.setAttribute('aria-busy', 'true');
+            loadingText.textContent = `Memuat data tahun ${tahun}...`;
+            pageLoading.classList.remove('d-none');
+            document.body.style.cursor = 'wait';
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('tahun', tahun);
+
+            setTimeout(() => {
+                window.location.href = url.toString();
+            }, 50);
+        });
+        
+        window.addEventListener('pageshow', function () {
+            pageLoading.classList.add('d-none');
+            loadingText.textContent = 'Memuat data...';
+            filterTahun.disabled = false;
+            filterTahun.removeAttribute('aria-busy');
+            document.body.style.cursor = '';
+        });
 
         const fmt0 = n => n.toLocaleString('id-ID');
         const fmt2 = n => n.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -239,3 +283,12 @@
     });
 </script>
 @endsection
+
+@push('scripts')
+    <script type="application/json" id="data-populasi-ternak">
+        @json($petaPopulasi)
+    </script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="{{ asset('js/Ekonomi-Pangan/peternakan-map.js') }}"></script>
+@endpush

@@ -1,104 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-@php
-    // =====================================================================
-    // DATA STATIS
-    // Catatan: angka yang bertanda [DATA ASLI] berasal dari contoh yang kamu
-    // berikan. Selebihnya adalah data contoh agar semua dropdown berfungsi.
-    // =====================================================================
-    $tahunList  = [2026, 2025, 2024];
-    $tahunAktif = 2026;
-
-    $komoditasHarga = ['Cabai Merah', 'Cabai Rawit', 'Bawang Merah', 'Bawang Putih', 'Beras', 'Gula Pasir', 'Minyak Goreng', 'Daging Ayam', 'Daging Sapi', 'Telur Ayam'];
-    $komoditasStok  = ['Jagung', 'Cabai Merah', 'Cabai Rawit', 'Bawang Merah', 'Beras'];
-
-    // ---------- 1. TREN HARGA (rata-rata per bulan, Rp/kg) ----------
-    $bulanHarga = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober'];
-    $kabHargaList = ['Kota Langsa', 'Kota Banda Aceh', 'Kota Lhokseumawe', 'Kabupaten Aceh Utara', 'Kabupaten Aceh Besar'];
-
-    $hargaDasar = [   // harga dasar contoh (Rp/kg)
-        'Cabai Merah' => 56000, 'Cabai Rawit' => 77000, 'Bawang Merah' => 38000, 'Bawang Putih' => 36000,
-        'Beras' => 14500, 'Gula Pasir' => 17500, 'Minyak Goreng' => 18000, 'Daging Ayam' => 38000,
-        'Daging Sapi' => 140000, 'Telur Ayam' => 29000,
-    ];
-    $faktorBulan = [1.00, 0.95, 1.04, 1.02, 1.01, 1.03, 0.97, 0.93, 0.98, 1.06];
-    $faktorKab   = ['Kota Langsa' => 1.00, 'Kota Banda Aceh' => 1.04, 'Kota Lhokseumawe' => 0.99, 'Kabupaten Aceh Utara' => 0.97, 'Kabupaten Aceh Besar' => 1.01];
-
-    $trenHarga = [];
-    foreach ($komoditasHarga as $kom) {
-        foreach ($kabHargaList as $kab) {
-            $trenHarga[$kom][$kab] = array_map(
-                fn($f) => (int) (round($hargaDasar[$kom] * $f * $faktorKab[$kab] / 25) * 25),
-                $faktorBulan
-            );
-        }
-    }
-    // [DATA ASLI] Kota Langsa - Cabai Merah
-    $trenHarga['Cabai Merah']['Kota Langsa'] = [59100, 50050, 59880, 57425, 57850, 59520, 52925, 45220, 52025, 64300];
-
-    // ---------- 2. PERBANDINGAN HARGA (per kab/kota, 12 Oktober 2026) ----------
-    $tanggalHarga = '12 Oktober 2026';
-    $hargaRawit = [   // Rp/kg, Cabai Rawit
-        'Kabupaten Simeulue'          => 87600,   // [DATA ASLI]
-        'Kota Subulussalam'           => 82100,   // [DATA ASLI]
-        'Kota Sabang'                 => 81300,   // [DATA ASLI]
-        'Kabupaten Aceh Singkil'      => 80800,   // [DATA ASLI]
-        'Kabupaten Gayo Lues'         => 80300,   // [DATA ASLI]
-        'Kabupaten Aceh Tenggara'     => 79400,   // [DATA ASLI]
-        'Kabupaten Aceh Selatan'      => 78500,
-        'Kabupaten Aceh Barat Daya'   => 77800,
-        'Kabupaten Nagan Raya'        => 77200,
-        'Kabupaten Aceh Jaya'         => 76600,
-        'Kabupaten Aceh Barat'        => 76000,
-        'Kabupaten Bener Meriah'      => 75400,
-        'Kabupaten Aceh Tamiang'      => 74900,
-        'Kota Langsa'                 => 74300,
-        'Kabupaten Aceh Timur'        => 73800,
-        'Kabupaten Pidie Jaya'        => 73300,
-        'Kabupaten Bireuen'           => 72800,
-        'Kabupaten Pidie'             => 72300,
-        'Kota Lhokseumawe'            => 71800,
-        'Kabupaten Aceh Utara'        => 71300,
-        'Kabupaten Aceh Besar'        => 70800,
-        'Kota Banda Aceh'             => 70400,
-        'Kabupaten Aceh Tengah'       => 70000,   // [DATA ASLI] terendah
-    ];
-
-    $perbandingan = [];
-    foreach ($komoditasHarga as $kom) {
-        foreach ($hargaRawit as $wil => $harga) {
-            $perbandingan[$kom][$wil] = $kom === 'Cabai Rawit'
-                ? $harga
-                : (int) (round($hargaDasar[$kom] * ($harga / 77000) / 50) * 50);
-        }
-    }
-
-    // ---------- 3 & 4. KETERSEDIAAN STOK (ton) ----------
-    $bulanStok = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September'];
-    $stokBerasAcehUtara = [8762.57, 8705.58, 10017.56, 11562.68, 12086.17, 11301.55, 11114.87, 12279.28, 13804.31]; // [DATA ASLI]
-
-    // Stok September 2026 komoditas Beras per wilayah [DATA ASLI]
-    $stokSeptBeras = [
-        'Kabupaten Aceh Utara' => 13804.31,
-        'Kabupaten Pidie'      => 9953.41,
-        'Kabupaten Aceh Timur' => 9895.96,
-        'Kabupaten Bireuen'    => 9089.00,
-        'Kabupaten Aceh Besar' => 7519.76,
-    ];
-    $faktorStok = ['Jagung' => 0.42, 'Cabai Merah' => 0.06, 'Cabai Rawit' => 0.035, 'Bawang Merah' => 0.05, 'Beras' => 1.0];
-
-    $stok = [];
-    foreach ($komoditasStok as $kom) {
-        foreach ($stokSeptBeras as $wil => $sept) {
-            $rasio = $sept / end($stokBerasAcehUtara);
-            $seri = array_map(fn($v) => round($v * $rasio * $faktorStok[$kom], 2), $stokBerasAcehUtara);
-            $seri[count($seri) - 1] = round($sept * $faktorStok[$kom], 2); // September konsisten dengan distribusi
-            $stok[$kom][$wil] = $seri;
-        }
-    }
-    $wilayahStokList = array_keys($stokSeptBeras);
-@endphp
 
 <style>
     .dw-card { border: 1px solid #e5e7eb; border-radius: .75rem; background: #fff; }
@@ -107,6 +9,34 @@
     .dist-row .head { display: flex; justify-content: space-between; font-size: .8rem; font-weight: 600; margin-bottom: .2rem; }
     .dist-row .progress { height: 9px; background: #e5eef6; }
     .dist-row .progress-bar { background: #0f9d8a; }
+    .page-loading {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, .78);
+        backdrop-filter: blur(2px);
+    }
+
+    .chart-banding-scroll {
+        max-height: 360px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding-right: .4rem;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+
+    .chart-banding-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .chart-banding-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
 </style>
 
 <div class="container-fluid py-3">
@@ -122,7 +52,7 @@
         </nav>
         <select id="filterTahun" class="form-select form-select-sm w-auto">
             @foreach ($tahunList as $t)
-                <option value="{{ $t }}" {{ $t == $tahunAktif ? 'selected' : '' }}>{{ $t }}</option>
+                <option value="{{ $t }}" @selected((int) $t === (int) $tahunAktif)>{{ $t }}</option>
             @endforeach
         </select>
     </div>
@@ -132,7 +62,7 @@
     {{-- Tren harga & perbandingan harga --}}
     <div class="row g-3">
         <div class="col-lg-6">
-            <div class="dw-card p-3 h-100">
+            <div class="dw-card p-3 h-auto">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h4 class="fw-bold mb-0">Tren Harga</h4>
                     <select id="selKabHarga" class="form-select form-select-sm w-auto">
@@ -141,7 +71,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="text-muted small">Harga rata-rata per bulan (Rp/kg), dihitung dari data mingguan</div>
+                <div class="text-muted small">Harga rata-rata per bulan sesuai satuan komoditas</div>
                 <div id="chartTren"></div>
                 <select id="selKomTren" class="form-select mt-2">
                     @foreach ($komoditasHarga as $k)
@@ -151,7 +81,7 @@
             </div>
         </div>
         <div class="col-lg-6">
-            <div class="dw-card p-3 h-100">
+            <div class="dw-card p-3 h-auto">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h4 class="fw-bold mb-0">Perbandingan Harga</h4>
                     <select id="selKomBanding" class="form-select form-select-sm w-auto">
@@ -160,8 +90,9 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="text-muted small">Harga per kab/kota pada tanggal data terakhir ({{ $tanggalHarga }}), Rp/kg</div>
-                <div id="chartBanding"></div>
+                <div id="chart-banding-scroll">
+                    <div id="chartBanding"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -201,6 +132,15 @@
     </div>
 </div>
 
+<div id="pageLoading" class="page-loading d-none" role="status" aria-live="polite">
+    <div class="text-center">
+        <div class="spinner-border text-success" role="status" aria-hidden="true"></div>
+        <div id="loadingText" class="mt-2 small fw-semibold text-dark">
+            Memuat data...
+        </div>
+    </div>
+</div>
+
 {{-- ApexCharts (hapus jika layouts.app sudah memuatnya) --}}
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js"></script>
 <script>
@@ -216,15 +156,49 @@
         const fmt2 = n => Number(n).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         const rp   = n => 'Rp ' + fmt0(n);
         const $    = id => document.getElementById(id);
+        const satuanHarga = @json($satuanHarga);
+        const filterTahun = $('filterTahun');
+        const pageLoading = $('pageLoading');
+        const loadingText = $('loadingText');
+        const noDataHarga = `Data harga belum tersedia untuk tahun ${tahun}`;
+
+        filterTahun.addEventListener('change', function () {
+            const selectedYear = this.value;
+
+            filterTahun.disabled = true;
+            filterTahun.setAttribute('aria-busy', 'true');
+            loadingText.textContent = `Memuat data tahun ${selectedYear}...`;
+            pageLoading.classList.remove('d-none');
+            document.body.style.cursor = 'wait';
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('tahun', selectedYear);
+
+            setTimeout(() => {
+                window.location.href = url.toString();
+            }, 50);
+        });
+
+        window.addEventListener('pageshow', function () {
+            pageLoading.classList.add('d-none');
+            loadingText.textContent = 'Memuat data...';
+            filterTahun.disabled = false;
+            filterTahun.removeAttribute('aria-busy');
+            document.body.style.cursor = '';
+        });
 
         // ---------- 1. Tren harga ----------
         function optTren() {
-            const data = trenHarga[$('selKomTren').value][$('selKabHarga').value];
+            const komoditas = $('selKomTren').value;
+            const data = (trenHarga[komoditas]?.[$('selKabHarga').value]) || [];
+            const satuan = satuanHarga[komoditas] || 'kg';
+
             return {
                 series: [{ name: 'Harga rata-rata', data: data }],
+                noData: { text: noDataHarga, style: { fontSize: '12px', color: '#64748b' } },
                 xaxis: { categories: bulanHarga.map(b => b.substring(0, 3)), title: { text: 'Bulan ' + tahun, style: { fontSize: '11px' } } },
-                yaxis: { title: { text: 'Harga (Rp/kg)', style: { fontSize: '11px' } }, labels: { formatter: v => fmt0(Math.round(v)) } },
-                tooltip: { y: { formatter: v => rp(v) + '/kg' } }
+                yaxis: { title: { text: 'Harga (Rp/' + satuan + ')', style: { fontSize: '11px' } }, labels: { formatter: v => fmt0(Math.round(v)) } },
+                tooltip: { y: { formatter: v => rp(v) + '/' + satuan } }
             };
         }
         const chartTren = new ApexCharts($('chartTren'), Object.assign({
@@ -240,16 +214,21 @@
 
         // ---------- 2. Perbandingan harga ----------
         function optBanding() {
-            const rows = Object.entries(perbandingan[$('selKomBanding').value]).sort((a, b) => b[1] - a[1]);
+            const komoditas = $('selKomBanding').value;
+            const data = perbandingan[komoditas] || {};
+            const satuan = satuanHarga[komoditas] || 'kg';
+            const rows = Object.entries(data).sort((a, b) => b[1] - a[1]);
+
             return {
-                chart: { type: 'bar', height: rows.length * 26 + 40, toolbar: { show: false } },
+                chart: { type: 'bar', height: Math.max(260, rows.length * 26 + 40), toolbar: { show: false } },
                 series: [{ name: 'Harga', data: rows.map(r => r[1]) }],
+                noData: { text: noDataHarga, style: { fontSize: '12px', color: '#64748b' } },
                 xaxis: { categories: rows.map(r => r[0].replace('Kabupaten ', 'Kab. ')), labels: { formatter: v => fmt0(Math.round(v)) } },
                 yaxis: { labels: { style: { fontSize: '10px' }, maxWidth: 140 } },
                 plotOptions: { bar: { horizontal: true, barHeight: '70%', borderRadius: 2 } },
                 colors: ['#9f1853'],
                 dataLabels: { enabled: true, formatter: v => fmt0(v), textAnchor: 'start', offsetX: 6, style: { fontSize: '10px', colors: ['#0f172a'] }, background: { enabled: false } },
-                tooltip: { y: { formatter: v => rp(v) + '/kg' } },
+                tooltip: { y: { formatter: v => rp(v) + '/' + satuan } },
                 grid: { strokeDashArray: 3 }
             };
         }
@@ -259,9 +238,10 @@
 
         // ---------- 3. Tren ketersediaan stok ----------
         function optStok() {
-            const data = stok[$('selKomStok').value][$('selKabStok').value];
+            const data = (stok[$('selKomStok').value]?.[$('selKabStok').value]) || [];
             return {
                 series: [{ name: 'Stok (ton)', data: data }],
+                noData: { text: `Data stok belum tersedia untuk tahun ${tahun}`, style: { fontSize: '12px', color: '#64748b' } },
                 xaxis: { categories: bulanStok.map(b => b.substring(0, 3)) },
                 yaxis: { labels: { formatter: v => fmt0(Math.round(v)) }, title: { text: 'Stok (ton)', style: { fontSize: '11px' } } },
                 tooltip: { y: { formatter: v => fmt2(v) + ' ton' } }
@@ -278,15 +258,24 @@
         }, optStok()));
         chartStok.render();
 
-        // ---------- 4. Distribusi wilayah (September, top 5) ----------
+        // ---------- 4. Distribusi wilayah (bulan terakhir, top 5) ----------
         function renderDistribusi() {
             const kom = $('selKomStok').value;
-            const rows = Object.entries(stok[kom])
-                .map(([wil, seri]) => [wil, seri[seri.length - 1]])
+            const rows = Object.entries(stok[kom] || {})
+                .map(([wil, seri]) => [wil, seri[seri.length - 1] || 0])
+                .filter(([, value]) => value > 0)
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 5);
-            const max = rows[0][1];
-            $('subDistribusi').textContent = 'Perbandingan jumlah ketersediaan stok ' + kom + ' (' + bulanStok[bulanStok.length - 1] + ' ' + tahun + ')';
+
+            if (!rows.length) {
+                $('subDistribusi').textContent = 'Data ketersediaan stok belum tersedia';
+                $('distribusiWrap').innerHTML = '<div class="text-muted small">Tidak ada data untuk ditampilkan.</div>';
+                return;
+            }
+
+            const max = rows[0][1] || 1;
+            const bulanTerakhir = bulanStok[bulanStok.length - 1] || '-';
+            $('subDistribusi').textContent = 'Perbandingan jumlah ketersediaan stok ' + kom + ' (' + bulanTerakhir + ' ' + tahun + ')';
             $('distribusiWrap').innerHTML = rows.map(r => `
                 <div class="dist-row">
                     <div class="head"><span>${r[0]}</span><span>${fmt2(r[1])} ton</span></div>
