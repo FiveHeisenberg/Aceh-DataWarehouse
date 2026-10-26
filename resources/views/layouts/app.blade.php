@@ -247,6 +247,26 @@
                         <a href="{{ route('kesehatan.tenaga-medis') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('kesehatan.tenaga-medis') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Tenaga Medis</a>
                     </div>
                 </div>
+
+                <!-- Ekonomi Pangan -->
+                <div class="mb-1 sidebar-menu-item">
+                    <a href="#submenuEkonomiPangan" data-bs-toggle="collapse" role="button"
+                       aria-expanded="{{ request()->routeIs('ekonomi-pangan.*') ? 'true' : 'false' }}"
+                       aria-controls="submenuEkonomiPangan"
+                       class="d-flex align-items-center justify-content-between text-decoration-none p-2 rounded" style="color: #333;">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-basket2-fill me-2" style="font-size: 18px;"></i>
+                            <span style="font-weight: 600; font-size: 14px;">Ekonomi Pangan</span>
+                        </div>
+                        <i class="bi bi-chevron-right chevron-icon" style="font-size: 14px;"></i>
+                    </a>
+                    <div class="collapse ms-4 mt-1 {{ request()->routeIs('ekonomi-pangan.*') ? 'show' : '' }}" id="submenuEkonomiPangan" data-bs-parent="#sidebarMenu">
+                        <a href="{{ route('ekonomi-pangan.pertanian') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('ekonomi-pangan.pertanian') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Pertanian</a>
+                        <a href="{{ route('ekonomi-pangan.peternakan') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('ekonomi-pangan.peternakan') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Peternakan</a>
+                        <a href="{{ route('ekonomi-pangan.pangan') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('ekonomi-pangan.pangan') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Pangan</a>
+                        <a href="{{ route('ekonomi-pangan.perikanan') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('ekonomi-pangan.perikanan') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Perikanan</a>
+                    </div>
+                </div>
             </div>
 
             <!-- ==================== MAIN CONTENT ==================== -->
