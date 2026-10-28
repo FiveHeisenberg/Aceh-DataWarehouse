@@ -27,9 +27,15 @@ class KesehatanController extends Controller
 
         $totalRs = (int) $db->table('dwh.dim_kesehatan_rs')->count();
 
-        $kelas = $db->table('dwh.dim_kesehatan_rs')
-            ->select('id_kelas_rs', 'nama_kelas', DB::raw('COUNT(*) as jumlah'))
-            ->groupBy('id_kelas_rs', 'nama_kelas')
+        $kelas = $db->table('dwh.dim_kesehatan_rs as rs')
+            ->leftJoin(
+                'dwh.dim_kesehatan_wilayah as w',
+                'rs.wilayah_key',
+                '=',
+                'w.wilayah_kesehatan_key'
+            )
+            ->select('rs.id_kelas_rs', 'rs.nama_kelas', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('rs.id_kelas_rs', 'rs.nama_kelas')
             ->get()
             ->sortBy(fn ($r) => $this->urutanKelas($r->id_kelas_rs))
             ->map(fn ($r) => [
@@ -43,10 +49,16 @@ class KesehatanController extends Controller
         $pemilik    = $this->rekap($db, 'nama_pemilik');
         $jenis      = $this->rekap($db, 'nama_jenis_rs');
 
-        $daftarRs = $db->table('dwh.dim_kesehatan_rs')
-            ->orderBy('nama_rs')
+        $daftarRs = $db->table('dwh.dim_kesehatan_rs as rs')
+            ->leftJoin(
+                'dwh.dim_kesehatan_wilayah as w',
+                'rs.wilayah_key',
+                '=',
+                'w.wilayah_kesehatan_key'
+            )
+            ->orderBy('rs.nama_rs')
             ->get([
-                'rs_key', 'id_rs', 'nama_rs', 'alamat', 'telepon', 'latitude', 'longitude', 'nama_kelas', 'nama_jenis_rs', 'nama_pemilik', 'nama_kabupaten_kota', 'nama_provinsi',
+                'rs.rs_key', 'rs.id_rs', 'rs.nama_rs', 'rs.alamat', 'rs.telepon', 'rs.latitude', 'rs.longitude', 'rs.nama_kelas', 'rs.nama_jenis_rs', 'rs.nama_pemilik', 'w.nama_kabupaten_kota', 'w.nama_provinsi',
             ])
             ->map(fn ($r) => [
                 'id'        => (int) $r->rs_key,
@@ -68,11 +80,11 @@ class KesehatanController extends Controller
 
     private function rekap($db, string $kolom): array
     {
-        return $db->table('dwh.dim_kesehatan_rs')
-            ->select($kolom, DB::raw('COUNT(*) as jumlah'))
-            ->groupBy($kolom)
+        return $db->table('dwh.dim_kesehatan_rs as rs')
+            ->select("rs.$kolom", DB::raw('COUNT(*) as jumlah'))
+            ->groupBy("rs.$kolom")
             ->orderByDesc('jumlah')
-            ->orderBy($kolom)
+            ->orderBy("rs.$kolom")
             ->get()
             ->map(fn ($r) => [
                 'label' => $r->{$kolom} ?: '-',
@@ -246,12 +258,13 @@ class KesehatanController extends Controller
                 '=',
                 'rs.rs_key'
             )
+            ->leftJoin('dwh.dim_kesehatan_wilayah as w', 'rs.wilayah_key', '=', 'w.wilayah_kesehatan_key')
             ->select(
-                'rs.nama_kabupaten_kota as nama',
+                'w.nama_kabupaten_kota as nama',
                 DB::raw('SUM(fk.jumlah_kasus) as jumlah')
             )
-            ->whereNotNull('rs.nama_kabupaten_kota')
-            ->groupBy('rs.nama_kabupaten_kota')
+            ->whereNotNull('w.nama_kabupaten_kota')
+            ->groupBy('w.nama_kabupaten_kota')
             ->orderByDesc('jumlah')
             ->limit(10)
             ->get()
@@ -276,11 +289,12 @@ class KesehatanController extends Controller
 
         $kabupatenTerbanyak = (clone $base)
             ->leftJoin('dwh.dim_kesehatan_rs as rs', 'fk.rs_key', '=', 'rs.rs_key')
+            ->leftJoin('dwh.dim_kesehatan_wilayah as w', 'rs.wilayah_key', '=', 'w.wilayah_kesehatan_key')
             ->select(
-                'rs.nama_kabupaten_kota as nama',
+                'w.nama_kabupaten_kota as nama',
                 DB::raw('SUM(fk.jumlah_kasus) as jumlah')
             )
-            ->groupBy('rs.nama_kabupaten_kota')
+            ->groupBy('w.nama_kabupaten_kota')
             ->orderByDesc('jumlah')
             ->first();
         
@@ -366,19 +380,25 @@ class KesehatanController extends Controller
                 '=',
                 'rs.rs_key'
             )
+            ->leftJoin(
+                'dwh.dim_kesehatan_wilayah as w',
+                'rs.wilayah_key',
+                '=',
+                'w.wilayah_kesehatan_key'
+            )
             ->join(
                 'dwh.dim_kesehatan_penyakit as dp',
                 'fk.penyakit_key',
                 '=',
                 'dp.penyakit_key'
             )
-            ->whereNotNull('rs.nama_kabupaten_kota')
+            ->whereNotNull('w.nama_kabupaten_kota')
             ->select(
-                'rs.nama_kabupaten_kota as kabupaten', 'dp.nama_penyakit',
+                'w.nama_kabupaten_kota as kabupaten', 'dp.nama_penyakit',
                 DB::raw('SUM(fk.jumlah_kasus) as jumlah_penyakit')
             )
             ->groupBy(
-                'rs.nama_kabupaten_kota',
+                'w.nama_kabupaten_kota',
                 'dp.nama_penyakit'
             )
             ->get()
@@ -557,12 +577,18 @@ class KesehatanController extends Controller
                 '=',
                 'rs.rs_key'
             )
+            ->leftJoin(
+                'dwh.dim_kesehatan_wilayah as w',
+                'rs.wilayah_key',
+                '=',
+                'w.wilayah_kesehatan_key'
+            )
             ->select(
-                'rs.nama_kabupaten_kota as nama',
+                'w.nama_kabupaten_kota as nama',
                 DB::raw('SUM(ftm.jumlah_tenaga) as jumlah')
             )
-            ->whereNotNull('rs.nama_kabupaten_kota')
-            ->groupBy('rs.nama_kabupaten_kota')
+            ->whereNotNull('w.nama_kabupaten_kota')
+            ->groupBy('w.nama_kabupaten_kota')
             ->orderByDesc('jumlah')
             ->get()
             ->map(fn ($item) => [
@@ -582,15 +608,21 @@ class KesehatanController extends Controller
                 '=',
                 'rs.rs_key'
             )
+            ->leftJoin(
+                'dwh.dim_kesehatan_wilayah as w',
+                'rs.wilayah_key',
+                '=',
+                'w.wilayah_kesehatan_key'
+            )
             ->join(
                 'dwh.dim_kesehatan_tenaga_medis as tm',
                 'ftm.tenaga_key',
                 '=',
                 'tm.tenaga_key'
             )
-            ->whereNotNull('rs.nama_kabupaten_kota')
+            ->whereNotNull('w.nama_kabupaten_kota')
             ->select(
-                'rs.nama_kabupaten_kota as kabupaten',
+                'w.nama_kabupaten_kota as kabupaten',
                 DB::raw("
                     SUM(
                         CASE
@@ -619,7 +651,7 @@ class KesehatanController extends Controller
                     ) as lainnya
                 ")
             )
-            ->groupBy('rs.nama_kabupaten_kota')
+            ->groupBy('w.nama_kabupaten_kota')
             ->orderByDesc(
                 DB::raw('SUM(ftm.jumlah_tenaga)')
             )
