@@ -677,4 +677,9 @@ class KesehatanController extends Controller
             'profesiKabupaten'
         ));
     }
+
+    public function ketersediaanFasilitas() 
+    {
+        return view('Kesehatan.ketersediaan-fasilitas');
+    }
 }
