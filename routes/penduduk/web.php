@@ -18,4 +18,8 @@ Route::prefix('Penduduk')->name('penduduk.')->group(function () {
         return view('penduduk.kartu_keluarga');
     })->name('kartu_keluarga');
 
+    Route::get('/kepadatan-penduduk', function () {
+        return view('penduduk.kepadatan_penduduk');
+    })->name('kepadatan_penduduk');
+
 });

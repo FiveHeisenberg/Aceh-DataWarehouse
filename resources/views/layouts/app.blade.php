@@ -206,7 +206,8 @@
                     </a>
                     <div class="collapse ms-4 mt-1 {{ request()->routeIs('penduduk.*') ? 'show' : '' }}" id="submenuPenduduk" data-bs-parent="#sidebarMenu">
                         <a href="{{ route('penduduk.jumlah_penduduk') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('penduduk.jumlah_penduduk') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Jumlah Penduduk</a>
-                        <a href="{{ route('penduduk.kartu_keluarga') }}" class="d-block text-decoration-none py-2 px-2 {{ request()->routeIs('penduduk.kartu_keluarga') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Kartu Keluarga</a>
+                        <a href="{{ route('penduduk.kartu_keluarga') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('penduduk.kartu_keluarga') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Kartu Keluarga</a>
+                        <a href="{{ route('penduduk.kepadatan_penduduk') }}" class="d-block text-decoration-none py-1 px-2 {{ request()->routeIs('penduduk.kepadatan_penduduk') ? 'active' : '' }}" style="font-size: 13px; color: #555;">Kepadatan Penduduk</a>
                     </div>
                 </div>
 
