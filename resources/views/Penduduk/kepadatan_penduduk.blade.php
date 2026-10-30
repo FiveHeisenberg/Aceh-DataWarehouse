@@ -43,6 +43,11 @@
         ['nama' => 'Kota Langsa', 'penduduk' => 210000, 'luas' => 40.5, 'kepadatan' => 5189],
         ['nama' => 'Kab. Aceh Besar', 'penduduk' => 200000, 'luas' => 70.0, 'kepadatan' => 2857],
         ['nama' => 'Kab. Pidie', 'penduduk' => 175000, 'luas' => 79.1, 'kepadatan' => 2213],
+        ['nama' => 'Kota Banda Aceh', 'penduduk' => 439859, 'luas' => 70.4, 'kepadatan' => 6248],
+        ['nama' => 'Kota Lhokseumawe', 'penduduk' => 215000, 'luas' => 37.5, 'kepadatan' => 5732],
+        ['nama' => 'Kota Langsa', 'penduduk' => 210000, 'luas' => 40.5, 'kepadatan' => 5189],
+        ['nama' => 'Kab. Aceh Besar', 'penduduk' => 200000, 'luas' => 70.0, 'kepadatan' => 2857],
+        ['nama' => 'Kab. Pidie', 'penduduk' => 175000, 'luas' => 79.1, 'kepadatan' => 2213],
     ];
 
     $fmt0 = fn($n) => number_format($n, 0, ',', '.');
@@ -92,6 +97,30 @@
     .stat-tren .lbl { font-size: .82rem; color: #334155; }
     .stat-tren .val { font-size: 1.9rem; font-weight: 800; color: #2f4fd8; line-height: 1.2; }
     .stat-tren .sub { font-size: .72rem; color: #94a3b8; }
+
+    .chart-perbandingan-card {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    #chartBanding {
+        width: 100%;
+    }
+
+    .chart-perbandingan-col {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .chart-perbandingan-scroll {
+        width: 100%;
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        contain: inline-size;
+        padding-bottom: .5rem;
+    }
 </style>
 
 <div class="container-fluid py-3">
@@ -187,8 +216,14 @@
 
     {{-- Perbandingan --}}
     <div class="sec-title">Perbandingan Jumlah Penduduk dan Luas Wilayah</div>
-    <div class="chart-wrap">
-        <div id="chartBanding"></div>
+    <div class="row g-3">
+        <div class="col-12 chart-perbandingan-col">
+            <div class="chart-wrap chart-perbandingan-card">
+                <div class="chart-perbandingan-scroll">
+                    <div id="chartBanding"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     {{-- Tren --}}
@@ -245,8 +280,14 @@
         renderRank('tertinggi');
 
         // ---------- Perbandingan penduduk, luas wilayah, kepadatan ----------
-        new ApexCharts(document.querySelector('#chartBanding'), {
-            chart: { type: 'line', height: 380, toolbar: { show: false } },
+        const lebarMinimalBanding = 850;
+        const lebarPerWilayah = 160;
+        const lebarChartBanding = Math.max(lebarMinimalBanding, banding.length * lebarPerWilayah);
+        const elChartBanding = document.querySelector('#chartBanding');
+        elChartBanding.style.width = lebarChartBanding + 'px';
+
+        new ApexCharts(elChartBanding, {
+            chart: { type: 'line', height: 380, width: lebarChartBanding, toolbar: { show: false }, zoom: { enabled: false } },
             series: [
                 { name: 'Jumlah Penduduk', type: 'column', data: banding.map(b => b.penduduk) },
                 { name: 'Luas Wilayah',    type: 'column', data: banding.map(b => b.luas) },
@@ -283,7 +324,7 @@
 
         // ---------- Tren kepadatan provinsi ----------
         new ApexCharts(document.querySelector('#chartTren'), {
-            chart: { type: 'line', height: 320, toolbar: { show: false } },
+            chart: { type: 'line', height: 320, toolbar: { show: false }, zoom: { enabled: false } },
             series: [
                 { name: 'Aceh (rata-rata)', data: trenAceh },
                 { name: 'Kabupaten/Kota (rata-rata)', data: trenKab }
