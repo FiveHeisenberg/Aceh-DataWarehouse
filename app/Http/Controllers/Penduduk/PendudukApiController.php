@@ -534,6 +534,136 @@ class PendudukApiController extends Controller
         }
     }
 
+    // KEPADATAN PENDUDUK
+    private function ringkasanKepadatan(int $tahun, $luasPerKab): array
+    {
+        $penduduk = DB::table('fact_dukcapil_penduduk as fp')
+            ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+            ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+            ->select('dw.id_kabupaten_kota', DB::raw('SUM(fp.jumlah_penduduk) as jumlah_penduduk'))
+            ->where('wt.tahun', $tahun)
+            ->groupBy('dw.id_kabupaten_kota');
+
+        $rows = DB::table('dim_dukcapil_kabupaten_kota as k')
+            ->joinSub($luasPerKab, 'l', 'l.kabupaten_kota_key', '=', 'k.kabupaten_kota_key')
+            ->leftJoinSub($penduduk, 'p', 'p.id_kabupaten_kota', '=', 'k.id_kabupaten_kota')
+            ->select(
+                'k.id_kabupaten_kota as kode',
+                'k.nama_kabupaten_kota as nama',
+                DB::raw('COALESCE(p.jumlah_penduduk, 0) as jumlah_penduduk'),
+                'l.luas_wilayah'
+            )
+            ->get()
+            ->map(function ($r) {
+                $jiwa = (int) $r->jumlah_penduduk;
+                $luas = (float) $r->luas_wilayah;
+
+                return [
+                    'kode' => $r->kode,
+                    'nama' => $r->nama,
+                    'jumlah_penduduk' => $jiwa,
+                    'luas_wilayah' => round($luas, 2),
+                    'kepadatan' => $luas > 0 ? round($jiwa / $luas, 2) : 0,
+                ];
+            })
+            ->sortByDesc('kepadatan')
+            ->values();
+
+        $totalPenduduk = $rows->sum('jumlah_penduduk');
+        $totalLuas     = $rows->sum('luas_wilayah');
+
+        return [
+            'rows' => $rows,
+            'total_penduduk' => $totalPenduduk,
+            'total_luas' => $totalLuas,
+            'kepadatan' => $totalLuas > 0 ? round($totalPenduduk / $totalLuas, 2) : 0,
+            'rata_kabupaten' => $rows->count() > 0 ? round($rows->avg('kepadatan'), 2) : 0,
+        ];
+    }
+
+    public function getKepadatanPenduduk(Request $request): JsonResponse
+    {
+        try {
+            $tahunList = DB::table('fact_dukcapil_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->distinct()
+                ->orderByDesc('wt.tahun')
+                ->pluck('wt.tahun')
+                ->map(fn ($t) => (int) $t)
+                ->values();
+
+            $tahun = (int) ($request->input('tahun') ?: $tahunList->first());
+
+            $tahunLuas = (int) DB::table('fact_dukcapil_luas_wilayah as fl')
+                ->join('dim_waktu as wt', 'fl.waktu_key', '=', 'wt.waktu_key')
+                ->max('wt.tahun');
+
+            $luasPerKab = DB::table('fact_dukcapil_luas_wilayah as fl')
+                ->join('dim_waktu as wt', 'fl.waktu_key', '=', 'wt.waktu_key')
+                ->select('fl.kabupaten_kota_key', DB::raw('MAX(fl.luas_wilayah) as luas_wilayah'))
+                ->where('wt.tahun', $tahunLuas)
+                ->groupBy('fl.kabupaten_kota_key');
+
+            $aktif = $this->ringkasanKepadatan($tahun, $luasPerKab);
+
+            $tahunSebelumnya = $tahunList->first(fn ($t) => $t < $tahun);
+            $sebelumnya = $tahunSebelumnya
+                ? $this->ringkasanKepadatan($tahunSebelumnya, $luasPerKab)
+                : null;
+
+            $perubahan = ($sebelumnya && $sebelumnya['kepadatan'] > 0)
+                ? round((($aktif['kepadatan'] - $sebelumnya['kepadatan']) / $sebelumnya['kepadatan']) * 100, 2)
+                : null;
+
+            $tren = $tahunList->sort()->values()->map(function ($th) use ($luasPerKab) {
+                $r = $this->ringkasanKepadatan($th, $luasPerKab);
+
+                return [
+                    'tahun' => $th,
+                    'kepadatan_provinsi' => $r['kepadatan'],
+                    'rata_kabupaten' => $r['rata_kabupaten'],
+                ];
+            })->values();
+
+            $rows = $aktif['rows'];
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data kepadatan penduduk berhasil diambil',
+                'data' => [
+                    'tahun' => $tahun,
+                    'tahun_luas' => $tahunLuas,
+                    'tahun_tersedia' => $tahunList->sort()->values(),
+                    'ringkasan' => [
+                        'kepadatan' => $aktif['kepadatan'],
+                        'total_penduduk' => $aktif['total_penduduk'],
+                        'total_luas_wilayah' => round($aktif['total_luas'], 2),
+                        'tahun_pembanding' => $tahunSebelumnya,
+                        'perubahan_persen' => $perubahan,
+                        'tertinggi' => $rows->first(),
+                        'terendah' => $rows->last(),
+                    ],
+                    'peringkat' => $rows->map(fn ($r) => [
+                        'nama' => $r['nama'],
+                        'kepadatan' => $r['kepadatan'],
+                    ])->values(),
+                    'banding' => $rows->map(fn ($r) => [
+                        'nama' => $r['nama'],
+                        'penduduk' => $r['jumlah_penduduk'],
+                        'luas' => $r['luas_wilayah'],
+                        'kepadatan' => $r['kepadatan'],
+                    ])->values(),
+                    'tren' => $tren,
+                ],
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data kepadatan penduduk: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
     // KARTU KELUARGA
     public function getKartuKeluargaTotal(Request $request): JsonResponse
     {

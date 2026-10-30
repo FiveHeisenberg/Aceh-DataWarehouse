@@ -88,6 +88,13 @@ Route::prefix('penduduk')->group(function () {
         ->name('penduduk.api.status-perkawinan');
 
     /**
+     * GET /api/penduduk/kepadatan-penduduk
+     * Kepadatan penduduk per kabupaten/kota (jiwa/km²) (?tahun=)
+     */
+    Route::get('/kepadatan-penduduk', [PendudukApiController::class, 'getKepadatanPenduduk'])
+        ->name('penduduk.api.kepadatan-penduduk');
+
+    /**
      * GET /api/penduduk/komposisi-agama
      * Komposisi penduduk berdasarkan agama (?tahun=)
      */
