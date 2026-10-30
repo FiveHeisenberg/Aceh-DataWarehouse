@@ -678,8 +678,222 @@ class KesehatanController extends Controller
         ));
     }
 
-    public function ketersediaanFasilitas() 
+    public function ketersediaanFasilitas(Request $request) 
     {
-        return view('Kesehatan.ketersediaan-fasilitas');
+        $db = DB::connection('mysql');
+
+        // ---------- Tahun yang tersedia (dari data kesehatan) ----------
+        $tahunList = $db->table('dwh.fact_kesehatan_ketersediaan_fasilitas as fk')
+            ->join('dwh.dim_waktu as dw', 'fk.waktu_key', '=', 'dw.waktu_key')
+            ->select('dw.tahun')
+            ->distinct()
+            ->orderByDesc('dw.tahun')
+            ->pluck('dw.tahun')
+            ->map(fn ($tahun) => (int) $tahun)
+            ->values()
+            ->all();
+
+        $tahunAktif = (int) ($request->input('tahun') ?: ($tahunList[0] ?? date('Y')));
+
+        if (! in_array($tahunAktif, $tahunList, true)) {
+            $tahunAktif = $tahunList[0] ?? date('Y');
+        }
+
+        // ---------- Rasio target (penduduk per 1 fasilitas) ----------
+        $target = $db->table('dwh.dim_kesehatan_ketersediaan_fasilitas')
+            ->pluck('rasio_penduduk', 'jenis_fasilitas');
+
+        $rasioRs = 0;
+        $rasioPk = 0;
+
+        foreach ($target as $jenis => $rasio) {
+            $j = strtolower((string) $jenis);
+
+            if (str_contains($j, 'puskesmas')) {
+                $rasioPk = (int) $rasio;
+            } elseif (str_contains($j, 'rumah sakit') || str_contains($j, 'rs')) {
+                $rasioRs = (int) $rasio;
+            }
+        }
+
+        // ---------- Data wilayah pada tahun aktif ----------
+        $rows = $db->table('dwh.fact_kesehatan_ketersediaan_fasilitas as fk')
+            ->join('dwh.dim_waktu as dw', 'fk.waktu_key', '=', 'dw.waktu_key')
+            ->join(
+                'dwh.dim_kesehatan_wilayah as w',
+                'fk.wilayah_kesehatan_key',
+                '=',
+                'w.wilayah_kesehatan_key'
+            )
+            ->where('dw.tahun', $tahunAktif)
+            ->select(
+                'w.nama_kabupaten_kota as nama',
+                'fk.jumlah_penduduk',
+                'fk.jumlah_rs_aktual',
+                'fk.jumlah_puskesmas_aktual'
+            )
+            ->get();
+
+        $wilayah = $rows->map(function ($row) use ($rasioRs, $rasioPk) {
+            $penduduk = (int) ($row->jumlah_penduduk ?? 0);
+            $rsAktual = (int) ($row->jumlah_rs_aktual ?? 0);
+            $pkAktual = (int) ($row->jumlah_puskesmas_aktual ?? 0);
+
+            $rsTarget = $rasioRs > 0 ? (int) ceil($penduduk / $rasioRs) : 0;
+            $pkTarget = $rasioPk > 0 ? (int) ceil($penduduk / $rasioPk) : 0;
+
+            // Indeks 0-100: rata-rata capaian RS & Puskesmas terhadap target
+            $rsPct = $rsTarget > 0 ? min(1, $rsAktual / $rsTarget) : 1;
+            $pkPct = $pkTarget > 0 ? min(1, $pkAktual / $pkTarget) : 1;
+            $skor  = round((($rsPct + $pkPct) / 2) * 100, 1);
+
+            return [
+                'nama'      => $row->nama ?: '-',
+                'penduduk'  => $penduduk,
+                'skor'      => $skor,
+                'rsTarget'  => $rsTarget,
+                'rsAktual'  => $rsAktual,
+                'pkTarget'  => $pkTarget,
+                'pkAktual'  => $pkAktual,
+                'rsKurang'  => max(0, $rsTarget - $rsAktual),
+                'pkKurang'  => max(0, $pkTarget - $pkAktual),
+            ];
+        })->all();
+
+        // ---------- Kategori indeks ----------
+        $kategori = [
+            ['min' => 80, 'label' => 'Sangat Baik',   'teks' => '#15803d', 'chip' => '#16a870', 'chipTeks' => '#ffffff'],
+            ['min' => 60, 'label' => 'Baik',          'teks' => '#65a30d', 'chip' => '#9ad65f', 'chipTeks' => '#1b3a12'],
+            ['min' => 40, 'label' => 'Cukup',         'teks' => '#eab308', 'chip' => '#f8d65a', 'chipTeks' => '#5b3d00'],
+            ['min' => 20, 'label' => 'Kurang',        'teks' => '#ea580c', 'chip' => '#f99a6e', 'chipTeks' => '#ffffff'],
+            ['min' => 0,  'label' => 'Sangat Kurang', 'teks' => '#b91c1c', 'chip' => '#f25f5c', 'chipTeks' => '#ffffff'],
+        ];
+
+        $cariKategori = function ($skor) use ($kategori) {
+            foreach ($kategori as $k) {
+                if ($skor >= $k['min']) {
+                    return $k;
+                }
+            }
+
+            return end($kategori);
+        };
+
+        // ---------- Prioritas pembangunan ----------
+        $data = array_map(function ($w) use ($cariKategori) {
+            $rsGap = $w['rsTarget'] > 0
+                ? (max(0, $w['rsTarget'] - $w['rsAktual'])
+                    / $w['rsTarget']) * 100
+                : 0;
+
+            $pkGap = $w['pkTarget'] > 0
+                ? (max(0, $w['pkTarget'] - $w['pkAktual'])
+                    / $w['pkTarget']) * 100
+                : 0;
+
+            // Rata-rata persentase kesenjangan
+            $indeksPrioritas = ($rsGap + $pkGap) / 2;
+
+            $w['indeksPrioritas'] = round($indeksPrioritas, 2);
+
+            $w['prioritas'] = $indeksPrioritas >= 30
+                ? 'Tinggi'
+                : ($indeksPrioritas >= 10 ? 'Sedang' : 'Rendah');
+
+            $w['kategori'] = $cariKategori($w['skor']);
+
+            return $w;
+        }, $wilayah);
+
+        // ---------- Peringkat ----------
+        $urutSkor = $data;
+        usort($urutSkor, fn ($a, $b) => $b['skor'] <=> $a['skor']);
+
+        $peringkat = [];
+
+        foreach ($urutSkor as $i => $d) {
+            $k = $d['kategori'];
+
+            $peringkat[] = [
+                'rank'      => $i + 1,
+                'nama'      => $d['nama'],
+                'skor'      => $d['skor'],
+                'skorTeks'  => number_format($d['skor'], 1, ',', '.'),
+                'rs'        => $d['rsAktual'],
+                'pk'        => $d['pkAktual'],
+                'kategori'  => $k['label'],
+                'warnaTeks' => $k['teks'],
+                'chip'      => $k['chip'],
+                'chipTeks'  => $k['chipTeks'],
+            ];
+        }
+
+        $tertinggi = $urutSkor[0] ?? ['skor' => 0, 'nama' => '-'];
+        $terendah  = count($urutSkor) > 0 ? $urutSkor[count($urutSkor) - 1] : ['skor' => 0, 'nama' => '-'];
+
+        $skorRata     = count($data) > 0
+            ? round(array_sum(array_column($data, 'skor')) / count($data), 1)
+            : 0.0;
+        $kategoriRata = $cariKategori($skorRata);
+
+        $petaSkor = array_map(function ($d) {
+            $k = $d['kategori'];
+
+            return [
+                'kabupaten' => $d['nama'],
+                'skor'      => $d['skor'],
+                'skorTeks'  => number_format($d['skor'], 1, ',', '.'),
+                'kategori'  => $k['label'],
+                'warna'     => $k['teks'],
+                'rsAktual'  => $d['rsAktual'],
+                'rsTarget'  => $d['rsTarget'],
+                'pkAktual'  => $d['pkAktual'],
+                'pkTarget'  => $d['pkTarget'],
+            ];
+        }, $data);
+
+        // ---------- Grafik: 9 wilayah dengan penduduk terbanyak ----------
+        $urutPenduduk = $data;
+        usort($urutPenduduk, fn ($a, $b) => $b['penduduk'] <=> $a['penduduk']);
+        $pilihanGrafik = array_slice($urutPenduduk, 0, 9);
+
+        $grafik = [
+            'kategori' => array_column($pilihanGrafik, 'nama'),
+            'rsTarget' => array_column($pilihanGrafik, 'rsTarget'),
+            'rsAktual' => array_column($pilihanGrafik, 'rsAktual'),
+            'pkTarget' => array_column($pilihanGrafik, 'pkTarget'),
+            'pkAktual' => array_column($pilihanGrafik, 'pkAktual'),
+        ];
+
+        $nilaiRs = array_merge($grafik['rsTarget'], $grafik['rsAktual']);
+        $nilaiPk = array_merge($grafik['pkTarget'], $grafik['pkAktual']);
+
+        $maxRs = count($nilaiRs) > 0 ? (int) ceil(max($nilaiRs) * 1.15) : 1;
+        $maxPk = count($nilaiPk) > 0 ? (int) ceil(max($nilaiPk) * 1.15) : 1;
+
+        // ---------- Kesenjangan ----------
+        $urutPrioritas = ['Tinggi' => 0, 'Sedang' => 1, 'Rendah' => 2];
+        $kesenjangan   = $data;
+
+        usort($kesenjangan, function ($a, $b) use ($urutPrioritas) {
+            return [$urutPrioritas[$a['prioritas']], -($a['rsKurang'] + $a['pkKurang']), $a['nama']]
+               <=> [$urutPrioritas[$b['prioritas']], -($b['rsKurang'] + $b['pkKurang']), $b['nama']];
+        });
+
+        return view('Kesehatan.ketersediaan-fasilitas', compact(
+            'tahunList',
+            'tahunAktif',
+            'skorRata',
+            'kategoriRata',
+            'petaSkor',
+            'kategori',
+            'peringkat',
+            'tertinggi',
+            'terendah',
+            'grafik',
+            'kesenjangan',
+            'maxRs',
+            'maxPk'
+        ));
     }
 }

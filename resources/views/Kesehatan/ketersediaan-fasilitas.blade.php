@@ -2,110 +2,24 @@
 
 @section('content')
 @php
-    // =====================================================================
-    // DATA STATIS
-    // =====================================================================
-    $tahunList  = [2026, 2025, 2024];
-    $tahunAktif = 2026;
-
-    // Rata-rata skor provinsi (sesuai mockup)
-    $skorRata = 68.4;
-
-    // Kategori indeks (sesuai legenda peta): satu-satunya tempat aturan ambang skor
-    $kategori = [
-        ['min' => 80, 'label' => 'Sangat Baik',   'teks' => '#0f9d58', 'chip' => '#16a870', 'chipTeks' => '#ffffff'],
-        ['min' => 60, 'label' => 'Baik',          'teks' => '#43a047', 'chip' => '#9ad65f', 'chipTeks' => '#1b3a12'],
-        ['min' => 40, 'label' => 'Cukup',         'teks' => '#f59e0b', 'chip' => '#f8d65a', 'chipTeks' => '#5b3d00'],
-        ['min' => 20, 'label' => 'Kurang',        'teks' => '#f97316', 'chip' => '#f99a6e', 'chipTeks' => '#ffffff'],
-        ['min' => 0,  'label' => 'Sangat Kurang', 'teks' => '#ef4444', 'chip' => '#f25f5c', 'chipTeks' => '#ffffff'],
-    ];
-    $cariKategori = function ($skor) use ($kategori) {
-        foreach ($kategori as $k) {
-            if ($skor >= $k['min']) return $k;
-        }
-        return end($kategori);
-    };
-
-    // nama, skor, targetRS, aktualRS, targetPuskesmas, aktualPuskesmas, prioritas
-    $wilayah = [
-        ['Banda Aceh',      92.3, 15, 14, 50, 48, 'Tinggi'],
-        ['Lhokseumawe',     81.7,  6,  5, 25, 22, 'Sedang'],
-        ['Aceh Besar',      76.5, 12, 10, 40, 36, 'Tinggi'],
-        ['Langsa',          71.2,  5,  3, 20, 17, 'Sedang'],
-        ['Pidie',           66.8,  8,  6, 30, 26, 'Tinggi'],
-        ['Bireuen',         62.4,  7,  5, 28, 24, 'Sedang'],
-        ['Aceh Utara',      58.9,  9,  7, 35, 31, 'Sedang'],
-        ['Aceh Timur',      56.3,  7,  5, 28, 24, 'Sedang'],
-        ['Aceh Tengah',     54.8,  6,  4, 22, 18, 'Sedang'],
-        ['Aceh Barat',      53.1,  6,  4, 21, 17, 'Sedang'],
-        ['Pidie Jaya',      51.7,  5,  3, 18, 14, 'Sedang'],
-        ['Aceh Selatan',    50.2,  5,  3, 20, 16, 'Sedang'],
-        ['Aceh Tamiang',    48.9,  5,  3, 19, 15, 'Sedang'],
-        ['Nagan Raya',      47.6,  4,  3, 16, 13, 'Sedang'],
-        ['Sabang',          46.9,  3,  2,  8,  6, 'Rendah'],
-        ['Subulussalam',    45.6,  4,  2, 15, 12, 'Rendah'],
-        ['Bener Meriah',    43.8,  3,  2, 14, 11, 'Rendah'],
-        ['Aceh Jaya',       41.2,  3,  2, 12,  9, 'Rendah'],
-        ['Aceh Barat Daya', 39.5,  3,  2, 13, 10, 'Rendah'],
-        ['Aceh Tenggara',   37.9,  3,  2, 14, 11, 'Rendah'],
-        ['Gayo Lues',       35.4,  2,  1, 11,  8, 'Rendah'],
-        ['Aceh Singkil',    33.6,  2,  1, 12,  9, 'Rendah'],
-        ['Simeulue',        31.7,  2,  1, 10,  7, 'Rendah'],
-    ];
-
-    $data = array_map(fn($w) => [
-        'nama' => $w[0], 'skor' => $w[1],
-        'rsTarget' => $w[2], 'rsAktual' => $w[3],
-        'pkTarget' => $w[4], 'pkAktual' => $w[5],
-        'prioritas' => $w[6],
-        'rsKurang' => max(0, $w[2] - $w[3]),
-        'pkKurang' => max(0, $w[4] - $w[5]),
-    ], $wilayah);
-
-    // Peringkat (berdasarkan skor, tertinggi dulu)
-    usort($data, fn($a, $b) => $b['skor'] <=> $a['skor']);
-    $peringkat = [];
-    foreach ($data as $i => $d) {
-        $k = $cariKategori($d['skor']);
-        $peringkat[] = [
-            'rank' => $i + 1, 'nama' => $d['nama'], 'skor' => $d['skor'],
-            'skorTeks' => number_format($d['skor'], 1, ',', '.'),
-            'rs' => $d['rsAktual'], 'pk' => $d['pkAktual'],
-            'kategori' => $k['label'], 'warnaTeks' => $k['teks'],
-            'chip' => $k['chip'], 'chipTeks' => $k['chipTeks'],
-        ];
-    }
-
-    $tertinggi = $data[0];
-    $terendah  = $data[count($data) - 1];
-    $kategoriRata = $cariKategori($skorRata);
-
-    // Wilayah yang ditampilkan pada grafik target vs aktual
-    $wilayahGrafik = ['Banda Aceh', 'Aceh Besar', 'Pidie', 'Bireuen', 'Aceh Utara', 'Lhokseumawe', 'Langsa', 'Subulussalam', 'Simeulue'];
-    $byNama = collect($data)->keyBy('nama');
-    $grafik = [
-        'kategori' => $wilayahGrafik,
-        'rsTarget' => array_map(fn($n) => $byNama[$n]['rsTarget'], $wilayahGrafik),
-        'rsAktual' => array_map(fn($n) => $byNama[$n]['rsAktual'], $wilayahGrafik),
-        'pkTarget' => array_map(fn($n) => $byNama[$n]['pkTarget'], $wilayahGrafik),
-        'pkAktual' => array_map(fn($n) => $byNama[$n]['pkAktual'], $wilayahGrafik),
-    ];
-
-    // Tabel kesenjangan: urut prioritas (Tinggi > Sedang > Rendah), lalu total kekurangan terbesar
-    $urutPrioritas = ['Tinggi' => 0, 'Sedang' => 1, 'Rendah' => 2];
-    $kesenjangan = $data;
-    usort($kesenjangan, function ($a, $b) use ($urutPrioritas) {
-        return [$urutPrioritas[$a['prioritas']], -($a['rsKurang'] + $a['pkKurang']), $a['nama']]
-           <=> [$urutPrioritas[$b['prioritas']], -($b['rsKurang'] + $b['pkKurang']), $b['nama']];
-    });
-
     $fmt1 = fn($n) => number_format($n, 1, ',', '.');
 @endphp
+
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+@endpush
 
 <style>
     .dw-card { border: 1px solid #d9dee7; border-radius: .75rem; background: #fff; }
     .sec-title { font-weight: 700; font-size: 1.3rem; margin: 1.75rem 0 .75rem; }
     #map { height: 300px; background: #f8fafc; border-radius: .6rem; }
+
+    .peta-wrap { position: relative; height: 360px; }
+    .peta-wrap #map { height: 100%; }
+    .peta-legenda { position: absolute; left: 10px; bottom: 10px; z-index: 500; background: rgba(255,255,255,.95); border: 1px solid #d9dee7; border-radius: .5rem; padding: .5rem .6rem; font-size: .72rem; line-height: 1.5; box-shadow: 0 1px 4px rgba(15,23,42,.15); }
+    .peta-legenda .judul-legenda { font-weight: 700; color: #1e3a5f; margin-bottom: .2rem; }
+    .legenda-item { display: flex; align-items: center; gap: .4rem; }
+    .legenda-warna { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
 
     .skor-box { text-align: center; padding: .9rem .5rem; }
     .skor-box .lbl { font-size: .75rem; font-weight: 600; color: #1e293b; }
@@ -153,21 +67,40 @@
                 <li class="breadcrumb-item active" aria-current="page">Ketersediaan Layanan</li>
             </ol>
         </nav>
-        <select id="filterTahun" class="form-select form-select-sm w-auto">
-            @foreach ($tahunList as $t)
-                <option value="{{ $t }}" {{ $t == $tahunAktif ? 'selected' : '' }}>{{ $t }}</option>
-            @endforeach
-        </select>
+        <form method="GET" action="{{ route('kesehatan.ketersediaan-fasilitas') }}">
+            <label for="filterTahun" class="visually-hidden">Pilih Tahun</label>
+            <select id="filterTahun" name="tahun" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                @forelse ($tahunList as $tahun)
+                    <option value="{{ $tahun }}" @selected((int) $tahun === (int) $tahunAktif)>{{ $tahun }}</option>
+                @empty
+                    <option value="">Tidak ada data</option>
+                @endforelse
+            </select>
+        </form>
     </div>
 
-    <h3 class="fw-bold mb-3">Peta Sebaran Indeks Ketersediaan Fasilitas</h3>
+    <h3 class="fw-bold">Peta Sebaran Indeks Ketersediaan Fasilitas</h3>
+    <p class="mb-3">Indeks skor ketersediaan fasilitas kesehatan (RS dan Puskesmas) per kabupaten/kota di Provinsi Aceh</p>
 
     {{-- Peta + skor --}}
     <div class="row g-3">
         <div class="col-lg-8">
             <div class="dw-card p-2 h-100">
-                {{-- Bagian peta dikosongkan (siapkan untuk Leaflet choropleth) --}}
-                <div id="map"></div>
+                <div class="peta-wrap">
+                    <meta name="geojson-url" content="{{ asset('js/Penduduk/aceh-kabupaten.geojson') }}">
+                    <script type="application/json" id="data-peta-skor">@json($petaSkor)</script>
+                    <div id="map"></div>
+
+                    <div class="peta-legenda">
+                        <div class="judul-legenda">Indeks Skor</div>
+                        @foreach (array_reverse($kategori) as $k)
+                            <div class="legenda-item">
+                                <span class="legenda-warna" style="background: {{ $k['teks'] }}"></span>
+                                <span>{{ $k['label'] }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
             </div>
         </div>
         <div class="col-lg-4">
@@ -198,6 +131,7 @@
 
     {{-- Perbandingan target dan realisasi --}}
     <div class="sec-title">Perbandingan Target dan Realisasi Fasilitas Kesehatan</div>
+    <p>Membandingkan jumlah RS dan Puskesmas yang dibutuhkan dengan jumlah aktual di kabupaten/kota</p>
     <div class="row g-3">
         <div class="col-lg-6">
             <div class="chart-card h-100">
@@ -215,6 +149,7 @@
 
     {{-- Peringkat --}}
     <div class="sec-title">Peringkat Kabupaten/Kota Berdasarkan Ketersediaan Fasilitas</div>
+    <p>Diurutkan berdasarkan indeks skor ketersediaan fasilitas kesehatan</p>
     <div class="tbl-wrap">
         <div class="table-responsive">
             <table class="table tbl-rank mb-0">
@@ -239,6 +174,7 @@
 
     {{-- Analisis kesenjangan --}}
     <div class="sec-title">Analisis Kesenjangan dan Prioritas Pembangunan Fasilitas</div>
+    <p>Mengidentifikasi wilayah yang paling membutuhkan penambahan fasilitas berdasarkan target dan kondisi aktual</p>
     <div class="tbl-wrap mb-4">
         <div class="px-3 pt-3 pb-2 fw-bold" style="color:#1e3a5f; font-size:.9rem;">Kesenjangan Fasilitas per Kabupaten/Kota</div>
         <div class="kes-scroll">
@@ -273,6 +209,8 @@
         </div>
     </div>
 </div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 {{-- ApexCharts (hapus jika layouts.app sudah memuatnya) --}}
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.54.1/dist/apexcharts.min.js"></script>
@@ -322,8 +260,8 @@
                 grid: { strokeDashArray: 3 }
             }).render();
         }
-        grouped('#chartRs', grafik.rsTarget, grafik.rsAktual, 20);
-        grouped('#chartPuskesmas', grafik.pkTarget, grafik.pkAktual, 60);
+        grouped('#chartRs', grafik.rsTarget, grafik.rsAktual, {{ $maxRs }});
+        grouped('#chartPuskesmas', grafik.pkTarget, grafik.pkAktual, {{ $maxPk }});
 
         // ---------- Tabel peringkat (urut skor + pagination) ----------
         const PER_PAGE = 10;
@@ -376,6 +314,87 @@
         });
 
         renderRank();
+    });
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', async function () {
+        if (typeof L === 'undefined') return;
+
+        const mapElement  = document.getElementById('map');
+        const dataElement = document.getElementById('data-peta-skor');
+        const geojsonUrl  = document.querySelector('meta[name="geojson-url"]')?.content;
+
+        if (!mapElement || !dataElement || !geojsonUrl) return;
+
+        const dataPeta = JSON.parse(dataElement.textContent || '[]');
+
+        const normalisasiNama = (nama) => String(nama || '')
+            .replace(/^(Kabupaten|Kota)\s+/i, '')
+            .trim()
+            .toLowerCase();
+
+        const dataByKabupaten = new Map(
+            dataPeta.map((item) => [normalisasiNama(item.kabupaten), item])
+        );
+
+        const formatSkor = (n) => Number(n || 0)
+            .toLocaleString('id-ID', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+        const map = L.map(mapElement, { scrollWheelZoom: false });
+
+        L.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            {
+                attribution: 'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+                maxZoom: 19
+            }
+        ).addTo(map);
+
+        const geojson = await fetch(geojsonUrl).then((response) => {
+            if (!response.ok) throw new Error('GeoJSON gagal dimuat');
+            return response.json();
+        });
+
+        const geoLayer = L.geoJSON(geojson, {
+            style: function (feature) {
+                const data = dataByKabupaten.get(normalisasiNama(feature.properties?.nama));
+
+                return {
+                    color: '#ffffff',
+                    weight: 1.5,
+                    fillColor: data?.warna || '#cbd5e1',
+                    fillOpacity: 0.8
+                };
+            },
+            onEachFeature: function (feature, layer) {
+                const nama = feature.properties?.nama || '-';
+                const data = dataByKabupaten.get(normalisasiNama(nama));
+
+                layer.bindTooltip(
+                    data
+                        ? `<strong>${nama}</strong><br>
+                           Skor: ${formatSkor(data.skor)}<br>
+                           Kategori: ${data.kategori || '-'}<br>
+                           RS: ${data.rsAktual ?? 0} / target ${data.rsTarget ?? 0}<br>
+                           Puskesmas: ${data.pkAktual ?? 0} / target ${data.pkTarget ?? 0}`
+                        : `<strong>${nama}</strong><br>Data tidak tersedia`,
+                    { sticky: true }
+                );
+
+                layer.on({
+                    mouseover: function (event) {
+                        event.target.setStyle({ weight: 3, color: '#0f172a', fillOpacity: 0.95 });
+                        event.target.bringToFront();
+                    },
+                    mouseout: function (event) {
+                        geoLayer.resetStyle(event.target);
+                    }
+                });
+            }
+        }).addTo(map);
+
+        map.fitBounds(geoLayer.getBounds(), { padding: [15, 15] });
+        map.setZoom(map.getZoom() + 1);
     });
 </script>
 @endsection
