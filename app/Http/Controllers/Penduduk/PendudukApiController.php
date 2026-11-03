@@ -351,6 +351,155 @@ class PendudukApiController extends Controller
         }
     }
 
+    public function getKartuKeluargaAnggota(Request $request): JsonResponse
+    {
+        try {
+            $tahun = $request->input('tahun');
+
+            if (! $tahun) {
+                $tahun = DB::table('fact_dukcapil_penduduk as fp')
+                    ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                    ->max('wt.tahun');
+            }
+
+            $perKK = DB::table('fact_dukcapil_penduduk as fp')
+                ->join('dim_waktu as wt', 'fp.waktu_key', '=', 'wt.waktu_key')
+                ->join('dim_wilayah_penduduk as dw', 'fp.wilayah_key', '=', 'dw.wilayah_key')
+                ->selectRaw('fp.kartu_keluarga_key, dw.id_kabupaten_kota as kode, dw.nama_kabupaten_kota as nama, COUNT(DISTINCT fp.penduduk_key) as anggota')
+                ->whereNotNull('fp.kartu_keluarga_key')
+                ->where('wt.tahun', $tahun)
+                ->groupBy('fp.kartu_keluarga_key', 'dw.id_kabupaten_kota', 'dw.nama_kabupaten_kota');
+
+            $ringkasan = DB::query()
+                ->fromSub($perKK, 'k')
+                ->selectRaw('COUNT(*) as total_kk, COALESCE(SUM(k.anggota), 0) as total_penduduk')
+                ->first();
+
+            $totalKK = (int) ($ringkasan->total_kk ?? 0);
+            $totalPenduduk = (int) ($ringkasan->total_penduduk ?? 0);
+
+            $distribusiRaw = DB::query()
+                ->fromSub($perKK, 'k')
+                ->selectRaw("
+                    CASE
+                        WHEN k.anggota <= 2 THEN '1-2'
+                        WHEN k.anggota <= 4 THEN '3-4'
+                        WHEN k.anggota <= 6 THEN '5-6'
+                        ELSE '7+'
+                    END as kelompok,
+                    COUNT(*) as jumlah_kk
+                ")
+                ->groupBy('kelompok')
+                ->get()
+                ->keyBy('kelompok');
+
+            $bucketLabels = [
+                '1-2' => '1-2 Orang',
+                '3-4' => '3-4 Orang',
+                '5-6' => '5-6 Orang',
+                '7+' => '7+ Orang',
+            ];
+
+            $distribusi = collect($bucketLabels)->map(function ($label, $key) use ($distribusiRaw, $totalKK) {
+                $jumlah = (int) (optional($distribusiRaw->get($key))->jumlah_kk ?? 0);
+
+                return [
+                    'key' => $key,
+                    'label' => $label,
+                    'jumlah_kk' => $jumlah,
+                    'persentase' => $totalKK > 0 ? round($jumlah / $totalKK * 100, 1) : 0,
+                ];
+            })->values();
+
+            $wilayah = DB::query()
+                ->fromSub($perKK, 'k')
+                ->selectRaw('
+                    k.kode,
+                    k.nama,
+                    COUNT(*) as total_kk,
+                    SUM(k.anggota) as total_penduduk,
+                    ROUND(SUM(k.anggota) / COUNT(*), 2) as rata_rata,
+                    SUM(CASE WHEN k.anggota BETWEEN 1 AND 2 THEN 1 ELSE 0 END) as kecil,
+                    SUM(CASE WHEN k.anggota BETWEEN 3 AND 4 THEN 1 ELSE 0 END) as sedang,
+                    SUM(CASE WHEN k.anggota BETWEEN 5 AND 6 THEN 1 ELSE 0 END) as besar,
+                    SUM(CASE WHEN k.anggota >= 7 THEN 1 ELSE 0 END) as sangat_besar
+                ')
+                ->groupBy('k.kode', 'k.nama')
+                ->orderByDesc('rata_rata')
+                ->get();
+
+            $kategoriLabels = [
+                'kecil' => 'Kecil (1-2)',
+                'sedang' => 'Sedang (3-4)',
+                'besar' => 'Besar (5-6)',
+                'sangat_besar' => 'Sangat Besar (7+)',
+            ];
+
+            $wilayahData = $wilayah->map(function ($row) use ($kategoriLabels) {
+                $total = (int) $row->total_kk;
+                $jumlahKategori = [
+                    'kecil' => (int) $row->kecil,
+                    'sedang' => (int) $row->sedang,
+                    'besar' => (int) $row->besar,
+                    'sangat_besar' => (int) $row->sangat_besar,
+                ];
+
+                $proporsi = [];
+                foreach ($jumlahKategori as $key => $jumlah) {
+                    $proporsi[$key] = $total > 0 ? round($jumlah / $total * 100, 1) : 0;
+                }
+
+                $dominan = $jumlahKategori;
+                arsort($dominan);
+                $dominanKey = array_key_first($dominan) ?: 'kecil';
+
+                return [
+                    'kode' => (string) $row->kode,
+                    'nama' => $row->nama,
+                    'total_kk' => $total,
+                    'total_penduduk' => (int) $row->total_penduduk,
+                    'rata_rata' => (float) $row->rata_rata,
+                    'kategori_dominan' => $dominanKey,
+                    'kategori_dominan_label' => $kategoriLabels[$dominanKey],
+                    'jumlah_kategori' => $jumlahKategori,
+                    'proporsi' => $proporsi,
+                ];
+            })->values();
+
+            $tertinggi = $wilayahData->first();
+            $terendah = $wilayahData->last();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data anggota keluarga berhasil diambil',
+                'data' => [
+                    'tahun' => (int) $tahun,
+                    'ringkasan' => [
+                        'total_kk' => $totalKK,
+                        'total_penduduk' => $totalPenduduk,
+                        'rata_rata_anggota' => $totalKK > 0 ? round($totalPenduduk / $totalKK, 2) : 0,
+                        'tertinggi' => $tertinggi ? [
+                            'nama' => $tertinggi['nama'],
+                            'rata_rata' => $tertinggi['rata_rata'],
+                        ] : null,
+                        'terendah' => $terendah ? [
+                            'nama' => $terendah['nama'],
+                            'rata_rata' => $terendah['rata_rata'],
+                        ] : null,
+                    ],
+                    'distribusi' => $distribusi,
+                    'wilayah' => $wilayahData,
+                ],
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data anggota keluarga: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function getStrukturUmur(Request $request): JsonResponse
     {
         try {

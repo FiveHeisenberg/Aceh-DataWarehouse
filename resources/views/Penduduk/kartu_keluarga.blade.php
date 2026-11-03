@@ -1,6 +1,20 @@
 @extends('layouts.app')
 
+@push('styles')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+@endpush
+
 @section('content')
+
+<style>
+    .map-legend-anggota { display: flex; flex-wrap: wrap; gap: .35rem 1rem; padding: .6rem .5rem 0; font-size: .72rem; color: #334155; }
+    .map-legend-anggota .legend-title { width: 100%; font-weight: 700; font-size: .68rem; text-transform: uppercase; letter-spacing: .03em; color: #64748b; }
+    .map-legend-anggota .legend-item { display: flex; align-items: center; gap: .35rem; }
+    .map-legend-anggota .legend-swatch { display: inline-block; width: .7rem; height: .7rem; border-radius: 2px; border: 1px solid rgba(0, 0, 0, .12); }
+    #peta-anggota:focus,
+    #peta-anggota .leaflet-container:focus,
+    #peta-anggota .leaflet-container:focus-visible { outline: none; }
+</style>
 
 <!-- Breadcrumb + Filter -->
 <div class="d-flex align-items-center justify-content-between mb-2">
@@ -96,6 +110,74 @@
     </div>
 </div>
 
+<!-- ==================== ANALISIS ANGGOTA KELUARGA ==================== -->
+<div class="d-flex align-items-center justify-content-between mt-2 mb-1">
+    <h2 class="mb-0" style="font-weight: 800; color: #1a1a2e; font-size: 20px;">Analisis Anggota Keluarga</h2>
+</div>
+<p class="mb-4" style="font-size: 13px; color: #8892a4;">Jumlah anggota per Kartu Keluarga (KK) dan persebarannya antar kabupaten/kota.</p>
+
+<div class="row g-4 mb-4 align-items-stretch">
+
+    <!-- Peta Persebaran Anggota KK -->
+    <div class="col-xl-7">
+        <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-start justify-content-between mb-1" style="gap: 12px;">
+                    <div>
+                        <h2 class="mb-0" style="font-weight: 800; color: #1a1a2e; font-size: 20px;">Peta Persebaran Anggota KK</h2>
+                        <p class="mb-0" style="font-size: 13px; color: #8892a4;">Warna ungu tua menandakan rata-rata anggota KK tertinggi.</p>
+                    </div>
+                    <select id="map-mode" class="form-select" style="width: 220px; border: 1px solid #d0d8e0; border-radius: 6px; font-size: 13px;">
+                        <option value="rata">Rata-rata Anggota per KK</option>
+                        <option value="kategori">Kategori Ukuran Keluarga</option>
+                    </select>
+                </div>
+                <div id="peta-anggota" data-geojson="{{ asset('js/Penduduk/aceh-kabupaten.geojson') }}" style="height: 420px; border-radius: 10px; background: #f8fafc; margin-top: 12px;"></div>
+                <div id="peta-anggota-legend" class="map-legend-anggota"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI + Distribusi -->
+    <div class="col-xl-5">
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
+                    <div class="card-body p-4">
+                        <span class="text-uppercase" style="font-size: 12px; font-weight: 700; color: #5a6577; letter-spacing: 1px;">Rata-rata Anggota / KK</span>
+                        <div class="mt-2 d-flex align-items-baseline" style="gap: 6px;">
+                            <strong id="stat-rata-anggota" style="font-size: 38px; font-weight: 800; color: #1a1a2e; letter-spacing: -1px;">—</strong>
+                            <span style="font-size: 13px; color: #8892a4;">anggota</span>
+                        </div>
+                        <div id="stat-rata-anggota-sub" style="font-size: 12px; color: #8892a4;">—</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
+                    <div class="card-body p-4">
+                        <span class="text-uppercase" style="font-size: 12px; font-weight: 700; color: #5a6577; letter-spacing: 1px;">Sebaran Wilayah</span>
+                        <div class="mt-3" style="font-size: 12px; color: #5a6577;">Tertinggi</div>
+                        <div id="stat-anggota-tertinggi" style="font-weight: 700; color: #1a1a2e; font-size: 14px;">—</div>
+                        <div class="mt-3" style="font-size: 12px; color: #5a6577;">Terendah</div>
+                        <div id="stat-anggota-terendah" style="font-weight: 700; color: #1a1a2e; font-size: 14px;">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="border: 1px solid #e0e4f0; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background-color: #ffffff;">
+            <div class="card-body p-4">
+                <h2 class="mb-1" style="font-weight: 800; color: #1a1a2e; font-size: 20px;">Distribusi Jumlah Anggota per KK</h2>
+                <p class="mb-4" style="font-size: 13px; color: #8892a4;">Jumlah KK berdasarkan kelompok anggota keluarga.</p>
+                <div style="height: 250px;">
+                    <canvas id="distribusiAnggotaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Footer -->
 <footer class="mt-4 pb-4">
     <div class="d-flex align-items-center justify-content-between" style="border-top: 1px solid #e0e4f0; padding-top: 20px;">
@@ -110,6 +192,7 @@
 
 <!-- CHART JS -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- Custom JS Kartu Keluarga -->
 <script src="{{ asset('js/Penduduk/kartu_keluarga.js') }}"></script>

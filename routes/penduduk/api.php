@@ -74,6 +74,13 @@ Route::prefix('penduduk')->group(function () {
         ->name('penduduk.api.kartu-keluarga.detail');
 
     /**
+     * GET /api/penduduk/kartu-keluarga/anggota
+     * Analisis jumlah anggota per KK dan persebaran antar kabupaten/kota (?tahun=)
+     */
+    Route::get('/kartu-keluarga/anggota', [PendudukApiController::class, 'getKartuKeluargaAnggota'])
+        ->name('penduduk.api.kartu-keluarga.anggota');
+
+    /**
      * GET /api/penduduk/pyramid-umur
      * Data piramida penduduk: Kelompok umur (5-tahunan) x jenis kelamin (?tahun=)
      */

@@ -21,7 +21,9 @@
         trend: [],
         detail: [],
         search: '',
-        kkTotal: null
+        kkTotal: null,
+        anggota: null,
+        mapMode: 'rata'
     };
 
     // ==================== DOC ELEMENTS ====================
@@ -49,6 +51,14 @@
         elements.totalCount = document.getElementById('kk-total-count');
         elements.cakupanData = document.getElementById('cakupan-data');
         elements.tabelSubtitle = document.getElementById('tabel-subtitle');
+        elements.statRataAnggota = document.getElementById('stat-rata-anggota');
+        elements.statRataAnggotaSub = document.getElementById('stat-rata-anggota-sub');
+        elements.statAnggotaTertinggi = document.getElementById('stat-anggota-tertinggi');
+        elements.statAnggotaTerendah = document.getElementById('stat-anggota-terendah');
+        elements.distribusiAnggotaChart = document.getElementById('distribusiAnggotaChart');
+        elements.petaAnggota = document.getElementById('peta-anggota');
+        elements.petaAnggotaLegend = document.getElementById('peta-anggota-legend');
+        elements.mapModeSelect = document.getElementById('map-mode');
     }
 
     // ==================== UTILITY ====================
@@ -56,6 +66,14 @@
     function formatNumber(num) {
         if (!num && num !== 0) return '—';
         return num.toLocaleString('id-ID');
+    }
+
+    function formatDecimal(num, digits = 2) {
+        if (num === null || num === undefined || Number.isNaN(Number(num))) return '—';
+        return Number(num).toLocaleString('id-ID', {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits
+        });
     }
 
     function showTableLoading(message = 'Memuat data...') {
@@ -147,6 +165,23 @@
             return false;
         } catch (error) {
             console.log('Error fetch total KK: ', error);
+            return false;
+        }
+    }
+
+    // ANALISIS ANGGOTA KELUARGA
+    async function fetchAnggota(tahun) {
+        try {
+            const url = `${CONFIG.API_BASE_URL}/kartu-keluarga/anggota?tahun=${tahun}`;
+            const response = await fetch(url);
+            const result = await response.json();
+            if (result.success) {
+                state.anggota = result.data;
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error fetch anggota keluarga:', error);
             return false;
         }
     }
@@ -415,6 +450,319 @@
         if (elements.statYearBadge) elements.statYearBadge.textContent = `${state.kkTotal.tahun}`;
     }
 
+    // ==================== ANALISIS ANGGOTA KELUARGA ====================
+
+    const PURPLE_SCALE = ['#ede9fe', '#c4b5fd', '#a78bfa', '#7c3aed', '#4c1d95'];
+    const KATEGORI_COLORS = {
+        kecil: '#60a5fa',
+        sedang: '#fbbf24',
+        besar: '#f87171',
+        sangat_besar: '#a855f7'
+    };
+    const KATEGORI_LABELS = {
+        kecil: 'Kecil (1-2)',
+        sedang: 'Sedang (3-4)',
+        besar: 'Besar (5-6)',
+        sangat_besar: 'Sangat Besar (7+)'
+    };
+    const KATEGORI_NAMA = {
+        kecil: 'Kecil',
+        sedang: 'Sedang',
+        besar: 'Besar',
+        sangat_besar: 'Sangat Besar'
+    };
+
+    let petaAnggotaMap = null;
+    let petaAnggotaLayer = null;
+    const petaAnggotaLayers = new Map();
+    let petaAnggotaData = new Map();
+    let petaAnggotaInitPromise = null;
+
+    function normalizeNama(nama) {
+        return String(nama || '')
+            .replace(/^(Kabupaten|Kota)\s+/i, '')
+            .trim()
+            .toLowerCase();
+    }
+
+    function rataRange() {
+        const values = [...petaAnggotaData.values()]
+            .map(row => Number(row.rata_rata))
+            .filter(value => Number.isFinite(value));
+
+        if (values.length === 0) return { min: 0, max: 0 };
+        return { min: Math.min(...values), max: Math.max(...values) };
+    }
+
+    function warnaRata(nilai) {
+        const value = Number(nilai);
+        if (!Number.isFinite(value)) return '#e5e7eb';
+
+        const { min, max } = rataRange();
+        if (max <= min) return PURPLE_SCALE[PURPLE_SCALE.length - 1];
+
+        const ratio = (value - min) / (max - min);
+        const index = Math.min(
+            PURPLE_SCALE.length - 1,
+            Math.floor(ratio * PURPLE_SCALE.length)
+        );
+        return PURPLE_SCALE[index];
+    }
+
+    function warnaWilayah(row) {
+        if (!row) return '#e5e7eb';
+        if (state.mapMode === 'kategori') {
+            return KATEGORI_COLORS[row.kategori_dominan] || '#e5e7eb';
+        }
+        return warnaRata(row.rata_rata);
+    }
+
+    function stylePetaAnggota(feature) {
+        const key = normalizeNama(feature.properties?.nama);
+        const row = petaAnggotaData.get(key);
+
+        return {
+            color: '#ffffff',
+            weight: 1.5,
+            fillColor: warnaWilayah(row),
+            fillOpacity: row ? 0.9 : 0.3
+        };
+    }
+
+    function tooltipPetaAnggota(props) {
+        const key = normalizeNama(props?.nama);
+        const row = petaAnggotaData.get(key);
+
+        if (!row) {
+            return `<strong>${props?.nama || '-'}</strong><br>Tidak ada data anggota keluarga`;
+        }
+
+        if (state.mapMode === 'kategori') {
+            const p = row.proporsi || {};
+            const j = row.jumlah_kategori || {};
+            const dominan = KATEGORI_NAMA[row.kategori_dominan] || row.kategori_dominan_label;
+
+            return `<strong>${row.nama}</strong><br>
+                Dominan: ${dominan}<br>
+                Kecil (1-2): ${formatNumber(j.kecil)} KK (${formatDecimal(p.kecil, 1)}%)<br>
+                Sedang (3-4): ${formatNumber(j.sedang)} KK (${formatDecimal(p.sedang, 1)}%)<br>
+                Besar (5-6): ${formatNumber(j.besar)} KK (${formatDecimal(p.besar, 1)}%)<br>
+                Sangat Besar (7+): ${formatNumber(j.sangat_besar)} KK (${formatDecimal(p.sangat_besar, 1)}%)`;
+        }
+
+        return `<strong>${row.nama}</strong><br>
+            Rata-rata: ${formatDecimal(row.rata_rata, 2)} anggota/KK<br>
+            ${formatNumber(row.total_penduduk)} jiwa / ${formatNumber(row.total_kk)} KK`;
+    }
+
+    function renderLegendAnggota() {
+        const el = elements.petaAnggotaLegend;
+        if (!el) return;
+
+        if (state.mapMode === 'kategori') {
+            const items = Object.keys(KATEGORI_LABELS).map(key => `
+                <div class="legend-item">
+                    <span class="legend-swatch" style="background:${KATEGORI_COLORS[key]}"></span>
+                    ${KATEGORI_LABELS[key]}
+                </div>`).join('');
+
+            el.innerHTML = `<div class="legend-title">Kategori Ukuran Keluarga (dominan)</div>${items}`;
+            return;
+        }
+
+        const { min, max } = rataRange();
+        const step = (max - min) / PURPLE_SCALE.length;
+
+        const items = PURPLE_SCALE.map((color, index) => {
+            const low = min + step * index;
+            const high = min + step * (index + 1);
+            const label = index === PURPLE_SCALE.length - 1
+                ? `≥ ${formatDecimal(low, 2)}`
+                : `${formatDecimal(low, 2)} – ${formatDecimal(high, 2)}`;
+
+            return `<div class="legend-item">
+                <span class="legend-swatch" style="background:${color}"></span>${label}
+            </div>`;
+        }).join('');
+
+        el.innerHTML = `<div class="legend-title">Rata-rata Anggota per KK</div>${items}`;
+    }
+
+    function applyPetaAnggotaStyle() {
+        if (!petaAnggotaLayer) return;
+
+        petaAnggotaLayer.setStyle(stylePetaAnggota);
+        petaAnggotaLayers.forEach(layer => {
+            layer.setTooltipContent(tooltipPetaAnggota(layer.feature?.properties));
+        });
+        renderLegendAnggota();
+    }
+
+    async function initPetaAnggota() {
+        if (petaAnggotaInitPromise) return petaAnggotaInitPromise;
+        if (typeof L === 'undefined' || !elements.petaAnggota) return null;
+
+        petaAnggotaInitPromise = (async () => {
+            petaAnggotaMap = L.map(elements.petaAnggota, { scrollWheelZoom: false })
+                .setView([4.7, 96.8], 8);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 18
+            }).addTo(petaAnggotaMap);
+
+            try {
+                const geojsonUrl = elements.petaAnggota.dataset.geojson
+                    || '/js/Penduduk/aceh-kabupaten.geojson';
+                const geojson = await fetch(geojsonUrl)
+                    .then(response => response.json());
+
+                petaAnggotaLayer = L.geoJSON(geojson, {
+                    style: stylePetaAnggota,
+                    onEachFeature: (feature, layer) => {
+                        petaAnggotaLayers.set(
+                            normalizeNama(feature.properties?.nama),
+                            layer
+                        );
+
+                        layer.bindTooltip(
+                            () => tooltipPetaAnggota(feature.properties),
+                            { sticky: true }
+                        );
+
+                        layer.on({
+                            mouseover: event => {
+                                event.target.setStyle({
+                                    weight: 3,
+                                    color: '#0f172a',
+                                    fillOpacity: 0.95
+                                });
+                                event.target.bringToFront();
+                            },
+                            mouseout: event => {
+                                if (petaAnggotaLayer) {
+                                    petaAnggotaLayer.resetStyle(event.target);
+                                }
+                            }
+                        });
+                    }
+                }).addTo(petaAnggotaMap);
+
+                petaAnggotaMap.fitBounds(petaAnggotaLayer.getBounds(), { padding: [12, 12] });
+                applyPetaAnggotaStyle();
+            } catch (error) {
+                console.error('Gagal memuat peta anggota keluarga:', error);
+                if (elements.petaAnggota) {
+                    elements.petaAnggota.innerHTML = '<div class="text-danger small p-2">Peta gagal dimuat.</div>';
+                }
+            }
+
+            return true;
+        })();
+
+        return petaAnggotaInitPromise;
+    }
+
+    function renderPetaAnggota() {
+        const wilayah = state.anggota?.wilayah || [];
+        petaAnggotaData = new Map(
+            wilayah.map(row => [normalizeNama(row.nama), row])
+        );
+
+        if (!petaAnggotaMap) {
+            initPetaAnggota();
+            return;
+        }
+
+        applyPetaAnggotaStyle();
+    }
+
+    function renderDistribusiAnggotaChart() {
+        const canvas = elements.distribusiAnggotaChart;
+        if (!canvas || typeof Chart === 'undefined') return;
+
+        const distribusi = state.anggota?.distribusi || [];
+        if (window.distribusiAnggotaChartInstance) {
+            window.distribusiAnggotaChartInstance.destroy();
+        }
+
+        const ctx = canvas.getContext('2d');
+        window.distribusiAnggotaChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: distribusi.map(item => item.label),
+                datasets: [{
+                    label: 'Jumlah KK',
+                    data: distribusi.map(item => item.jumlah_kk),
+                    backgroundColor: ['#a78bfa', '#8b5cf6', '#7c3aed', '#4c1d95'],
+                    borderRadius: 6,
+                    maxBarThickness: 64
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#1a1a2e',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 12,
+                        displayColors: false,
+                        callbacks: {
+                            label: context => {
+                                const item = distribusi[context.dataIndex] || {};
+                                return `${formatNumber(context.parsed.y)} KK (${formatDecimal(item.persentase, 1)}%)`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0,
+                            color: '#8892a4',
+                            callback: value => formatNumber(value)
+                        },
+                        grid: { color: '#e0e4f0', drawBorder: false }
+                    },
+                    x: {
+                        ticks: { color: '#5a6577', font: { size: 11 } },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderAnggota() {
+        if (!state.anggota) return;
+        const ringkasan = state.anggota.ringkasan || {};
+
+        if (elements.statRataAnggota) {
+            elements.statRataAnggota.textContent = formatDecimal(ringkasan.rata_rata_anggota, 2);
+        }
+        if (elements.statRataAnggotaSub) {
+            elements.statRataAnggotaSub.textContent =
+                `${formatNumber(ringkasan.total_penduduk)} penduduk / ${formatNumber(ringkasan.total_kk)} KK`;
+        }
+        if (elements.statAnggotaTertinggi) {
+            elements.statAnggotaTertinggi.textContent = ringkasan.tertinggi
+                ? `${ringkasan.tertinggi.nama} (${formatDecimal(ringkasan.tertinggi.rata_rata, 2)})`
+                : '—';
+        }
+        if (elements.statAnggotaTerendah) {
+            elements.statAnggotaTerendah.textContent = ringkasan.terendah
+                ? `${ringkasan.terendah.nama} (${formatDecimal(ringkasan.terendah.rata_rata, 2)})`
+                : '—';
+        }
+
+        renderDistribusiAnggotaChart();
+        renderPetaAnggota();
+    }
+
     // ==================== MAIN ====================
 
     async function loadInitialData() {
@@ -451,6 +799,9 @@
         renderDistribusi();
         renderTable();
 
+        const anggotaOk = await fetchAnggota(tahun);
+        if (anggotaOk) renderAnggota();
+
         const totalOk = await fetchTotalKartuKeluarga(tahun);
         if(totalOk) renderTotalKK();
         return true;
@@ -468,6 +819,11 @@
         renderTable();
     }
 
+    function handleMapModeChange(event) {
+        state.mapMode = event.target.value;
+        applyPetaAnggotaStyle();
+    }
+
     // ==================== EVENTS ====================
 
     function attachEventListeners() {
@@ -476,6 +832,9 @@
         }
         if (elements.searchInput) {
             elements.searchInput.addEventListener('input', handleSearchInput);
+        }
+        if (elements.mapModeSelect) {
+            elements.mapModeSelect.addEventListener('change', handleMapModeChange);
         }
     }
 
