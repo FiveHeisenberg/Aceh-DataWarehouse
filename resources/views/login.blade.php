@@ -210,7 +210,7 @@
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-baseline">
                                 <label for="password" class="form-label">Password</label>
-                                <a href="#" class="small text-decoration-none">Lupa password?</a>
+                                <a href="{{ route('password.request') }}" class="small text-decoration-none">Lupa password?</a>
                             </div>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-lock"></i></span>

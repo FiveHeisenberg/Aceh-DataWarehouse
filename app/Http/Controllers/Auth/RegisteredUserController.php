@@ -58,7 +58,7 @@ class RegisteredUserController extends Controller
                 'password.confirmed' => 'Konfirmasi password tidak cocok.',
                 'password.letters' => 'Password harus memuat minimal satu huruf.',
                 'password.mixed' => 'Password harus memuat huruf besar dan huruf kecil.',
-                'passowrd.numbers' => 'Password harus memuat angka.',
+                'password.numbers' => 'Password harus memuat angka.',
             ],
             [
                 'username' => 'username',
