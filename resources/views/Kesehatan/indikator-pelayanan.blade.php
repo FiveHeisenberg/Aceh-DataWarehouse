@@ -64,41 +64,50 @@
                     <h2 class="ip-panel-title" id="ip-metric-label">Tingkat Kesembuhan</h2>
                     <p class="ip-panel-sub" id="ip-metric-sub">Berdasarkan Kabupaten / Kota</p>
                 </div>
-                <div class="dropdown">
-                    <button class="ip-dropdown-btn dropdown-toggle"
-                            type="button"
-                            id="ip-metric-dropdown"
-                            data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                        <span id="ip-dropdown-label">Tingkat Kesembuhan</span>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="dropdown">
+                        <button class="ip-dropdown-btn dropdown-toggle"
+                                type="button"
+                                id="ip-metric-dropdown"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false">
+                            <span id="ip-dropdown-label">Tingkat Kesembuhan</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end ip-dropdown-menu"
+                            aria-labelledby="ip-metric-dropdown">
+                            <li>
+                                <button class="dropdown-item ip-dropdown-item active"
+                                        data-metric="kesembuhan"
+                                        data-label="Tingkat Kesembuhan"
+                                        data-sub="Berdasarkan Kabupaten / Kota">
+                                    Tingkat Kesembuhan
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item ip-dropdown-item"
+                                        data-metric="cfr"
+                                        data-label="Case Fatality Rate (CFR)"
+                                        data-sub="Proporsi kasus meninggal dari kasus selesai">
+                                    Case Fatality Rate (CFR)
+                                </button>
+                            </li>
+                            <li>
+                                <button class="dropdown-item ip-dropdown-item"
+                                        data-metric="rujukan"
+                                        data-label="Tingkat Rujukan"
+                                        data-sub="Proporsi kasus dirujuk dari kasus selesai">
+                                    Tingkat Rujukan
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <button type="button" class="ip-sort-btn" id="ip-sort-btn"
+                            aria-pressed="false"
+                            aria-label="Urutkan tertinggi ke terendah"
+                            title="Urutkan tertinggi ke terendah">
+                        <i class="bi bi-arrow-down-up" id="ip-sort-icon" aria-hidden="true"></i>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end ip-dropdown-menu"
-                        aria-labelledby="ip-metric-dropdown">
-                        <li>
-                            <button class="dropdown-item ip-dropdown-item active"
-                                    data-metric="kesembuhan"
-                                    data-label="Tingkat Kesembuhan"
-                                    data-sub="Berdasarkan Kabupaten / Kota">
-                                Tingkat Kesembuhan
-                            </button>
-                        </li>
-                        <li>
-                            <button class="dropdown-item ip-dropdown-item"
-                                    data-metric="cfr"
-                                    data-label="Case Fatality Rate (CFR)"
-                                    data-sub="Proporsi kasus meninggal dari kasus selesai">
-                                Case Fatality Rate (CFR)
-                            </button>
-                        </li>
-                        <li>
-                            <button class="dropdown-item ip-dropdown-item"
-                                    data-metric="rujukan"
-                                    data-label="Tingkat Rujukan"
-                                    data-sub="Proporsi kasus dirujuk dari kasus selesai">
-                                Tingkat Rujukan
-                            </button>
-                        </li>
-                    </ul>
                 </div>
             </div>
 
@@ -280,6 +289,33 @@
     font-weight: 600;
 }
 
+.ip-sort-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    padding: .35rem .65rem;
+    font-size: .82rem;
+    font-weight: 500;
+    color: #374151;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+}
+.ip-sort-btn:hover,
+.ip-sort-btn:focus {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    outline: none;
+}
+.ip-sort-btn[aria-pressed="true"] {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+    color: #1d4ed8;
+}
+
 .ip-bar-list {
     display: flex;
     flex-direction: column;
@@ -351,6 +387,9 @@
         rujukan: 'Tingkat rujukan',
     };
 
+    let activeMetric = 'kesembuhan';
+    let sortDir = null;
+
     function fmt(v) {
         return parseFloat(v).toLocaleString('id-ID', {
             minimumFractionDigits: 1,
@@ -392,6 +431,46 @@
         });
     }
 
+    function sortRows() {
+        if (!sortDir) return;
+
+        const list = document.getElementById('ip-bar-list');
+        if (!list) return;
+
+        const rows = Array.from(list.querySelectorAll('.ip-bar-row'));
+
+        rows.sort((a, b) => {
+            const va = parseFloat(a.dataset[activeMetric]) || 0;
+            const vb = parseFloat(b.dataset[activeMetric]) || 0;
+            return sortDir === 'desc' ? vb - va : va - vb;
+        });
+
+        rows.forEach(row => list.appendChild(row));
+    }
+
+    function updateSortButton() {
+        const btn = document.getElementById('ip-sort-btn');
+        const icon = document.getElementById('ip-sort-icon');
+        if (!btn || !icon) return;
+
+        if (sortDir === 'desc') {
+            icon.className = 'bi bi-sort-down';
+            btn.title = 'Urutkan terendah ke tertinggi';
+            btn.setAttribute('aria-label', 'Urutkan terendah ke tertinggi');
+            btn.setAttribute('aria-pressed', 'true');
+        } else if (sortDir === 'asc') {
+            icon.className = 'bi bi-sort-up';
+            btn.title = 'Urutkan tertinggi ke terendah';
+            btn.setAttribute('aria-label', 'Urutkan tertinggi ke terendah');
+            btn.setAttribute('aria-pressed', 'true');
+        } else {
+            icon.className = 'bi bi-arrow-down-up';
+            btn.title = 'Urutkan tertinggi ke terendah';
+            btn.setAttribute('aria-label', 'Urutkan tertinggi ke terendah');
+            btn.setAttribute('aria-pressed', 'false');
+        }
+    }
+
     document.querySelectorAll('.ip-dropdown-item').forEach(item => {
         item.addEventListener('click', function () {
             const metric = this.dataset.metric;
@@ -405,11 +484,20 @@
             document.getElementById('ip-metric-sub').textContent     = sub;
             document.getElementById('ip-dropdown-label').textContent = label;
 
+            activeMetric = metric;
             renderMetric(metric);
+            sortRows();
         });
     });
 
+    document.getElementById('ip-sort-btn')?.addEventListener('click', function () {
+        sortDir = sortDir === 'desc' ? 'asc' : 'desc';
+        sortRows();
+        updateSortButton();
+    });
+
     renderMetric('kesembuhan');
+    updateSortButton();
 })();
 </script>
 @endpush
