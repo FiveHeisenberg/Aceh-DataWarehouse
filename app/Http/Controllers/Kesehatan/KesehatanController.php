@@ -896,4 +896,105 @@ class KesehatanController extends Controller
             'maxPk'
         ));
     }
+
+    public function indikatorPelayanan(Request $request)
+    {
+        $db = DB::connection('mysql');
+
+        $tahunList = $db->table('dwh.fact_kesehatan_kasus_penyakit as fk')
+            ->join('dwh.dim_waktu as dw', 'fk.waktu_key', '=', 'dw.waktu_key')
+            ->select('dw.tahun')
+            ->distinct()
+            ->orderByDesc('dw.tahun')
+            ->pluck('dw.tahun')
+            ->map(fn ($tahun) => (int) $tahun)
+            ->values()
+            ->all();
+
+        $tahunAktif = (int) ($request->input('tahun') ?: ($tahunList[0] ?? date('Y')));
+
+        if (! in_array($tahunAktif, $tahunList, true)) {
+            $tahunAktif = $tahunList[0] ?? date('Y');
+        }
+
+        $rows = $db->table('dwh.fact_kesehatan_kasus_penyakit as fk')
+            ->join('dwh.dim_waktu as dw', 'fk.waktu_key', '=', 'dw.waktu_key')
+            ->join('dwh.dim_kesehatan_rs as rs', 'fk.rs_key', '=', 'rs.rs_key')
+            ->leftJoin(
+                'dwh.dim_kesehatan_wilayah as w',
+                'rs.wilayah_key',
+                '=',
+                'w.wilayah_kesehatan_key'
+            )
+            ->where('dw.tahun', $tahunAktif)
+            ->whereNotNull('w.nama_kabupaten_kota')
+            ->select('w.nama_kabupaten_kota as nama')
+            ->selectRaw("SUM(CASE WHEN fk.status_akhir = 'Sembuh' THEN fk.jumlah_kasus ELSE 0 END) as sembuh")
+            ->selectRaw("SUM(CASE WHEN fk.status_akhir = 'Dirujuk' THEN fk.jumlah_kasus ELSE 0 END) as dirujuk")
+            ->selectRaw("SUM(CASE WHEN fk.status_akhir = 'Meninggal' THEN fk.jumlah_kasus ELSE 0 END) as meninggal")
+            ->selectRaw("SUM(CASE WHEN fk.status_akhir = 'Dalam Perawatan' THEN fk.jumlah_kasus ELSE 0 END) as perawatan")
+            ->selectRaw('SUM(fk.jumlah_kasus) as total')
+            ->groupBy('w.nama_kabupaten_kota')
+            ->get();
+
+        $persen = fn (int $pembilang, int $penyebut): float
+            => $penyebut > 0 ? round(($pembilang / $penyebut) * 100, 1) : 0.0;
+
+        $levelKesembuhan = fn (float $v) => $v >= 80 ? 'green' : ($v >= 60 ? 'amber' : 'red');
+        $levelCfr        = fn (float $v) => $v <= 2 ? 'green' : ($v <= 5 ? 'amber' : 'red');
+        $levelRujukan    = fn (float $v) => $v <= 10 ? 'green' : ($v <= 20 ? 'amber' : 'red');
+
+        $wilayah = $rows->map(function ($r) use ($persen, $levelKesembuhan, $levelCfr, $levelRujukan) {
+            $sembuh     = (int) $r->sembuh;
+            $dirujuk    = (int) $r->dirujuk;
+            $meninggal  = (int) $r->meninggal;
+            $perawatan  = (int) $r->perawatan;
+            $total      = (int) $r->total;
+
+            // penyebut: status_akhir != 'Dalam Perawatan'
+            $selesai = $total - $perawatan;
+
+            $kesembuhan = $persen($sembuh, $selesai);
+            $cfr        = $persen($meninggal, $selesai);
+            $rujukan    = $persen($dirujuk, $selesai);
+
+            return [
+                'nama'             => $r->nama ?: '-',
+                'sembuh'           => $sembuh,
+                'dirujuk'          => $dirujuk,
+                'meninggal'        => $meninggal,
+                'perawatan'        => $perawatan,
+                'total'            => $total,
+                'selesai'          => $selesai,
+                'kesembuhan'       => $kesembuhan,
+                'cfr'              => $cfr,
+                'rujukan_pct'      => $rujukan,
+                'level_kesembuhan' => $levelKesembuhan($kesembuhan),
+                'level_cfr'        => $levelCfr($cfr),
+                'level_rujukan'    => $levelRujukan($rujukan),
+            ];
+        })->sortByDesc('total')->values()->all();
+
+        // Agregat seluruh kab/kota (provinsi)
+        $totalSembuh    = array_sum(array_column($wilayah, 'sembuh'));
+        $totalDirujuk   = array_sum(array_column($wilayah, 'dirujuk'));
+        $totalMeninggal = array_sum(array_column($wilayah, 'meninggal'));
+        $totalPerawatan = array_sum(array_column($wilayah, 'perawatan'));
+        $totalKasus     = array_sum(array_column($wilayah, 'total'));
+        $totalSelesai   = $totalKasus - $totalPerawatan;
+
+        $kpi = [
+            ['label' => 'Tingkat Kesembuhan', 'nilai' => $persen($totalSembuh, $totalSelesai)],
+            ['label' => 'Case Fatality Rate', 'nilai' => $persen($totalMeninggal, $totalSelesai)],
+            ['label' => 'Tingkat Rujukan',    'nilai' => $persen($totalDirujuk, $totalSelesai)],
+        ];
+
+        return view('Kesehatan.indikator-pelayanan', compact(
+            'tahunList',
+            'tahunAktif',
+            'kpi',
+            'wilayah'
+        ));
+    }
+
 }

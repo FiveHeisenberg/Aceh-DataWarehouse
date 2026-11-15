@@ -19,5 +19,8 @@ Route::prefix('Kesehatan')->name('kesehatan.')->group(function () {
 
     Route::get('/rumah-sakit/{rs}/data', [KesehatanController::class, 'dataRs'])
         ->name('data-rs');
+    
+    Route::get('/indikator-pelayanan', [KesehatanController::class, 'indikatorPelayanan'])
+        ->name('indikator-pelayanan');
 
 });
