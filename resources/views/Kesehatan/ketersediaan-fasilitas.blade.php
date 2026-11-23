@@ -51,9 +51,11 @@
     .tbl-kes tbody td.nama { text-align: left; }
     .kurang { color: #dc2626; font-weight: 700; }
     .prio { display: inline-block; min-width: 70px; padding: .15rem .7rem; border-radius: 999px; font-size: .75rem; font-weight: 700; }
+    .prio.Sangat.Tinggi { background: #991b1b; color: #fff; }
     .prio.Tinggi { background: #ef4444; color: #fff; }
     .prio.Sedang { background: #fde68a; color: #92400e; }
     .prio.Rendah { background: #bbf7d0; color: #166534; }
+    .prio.Sangat.Rendah { background: #dcfce7; color: #166534; }
 </style>
 
 <div class="container-fluid py-3">
@@ -131,11 +133,11 @@
 
     {{-- Perbandingan target dan realisasi --}}
     <div class="sec-title">Perbandingan Target dan Realisasi Fasilitas Kesehatan</div>
-    <p>Membandingkan jumlah RS dan Puskesmas yang dibutuhkan dengan jumlah aktual di kabupaten/kota</p>
+    <p>Membandingkan kebutuhan tempat tidur RS dan Puskesmas dengan jumlah aktual di kabupaten/kota</p>
     <div class="row g-3">
         <div class="col-lg-6">
             <div class="chart-card h-100">
-                <div class="judul">Rumah Sakit (RS)</div>
+                <div class="judul">Tempat Tidur RS (TT)</div>
                 <div id="chartRs"></div>
             </div>
         </div>
@@ -158,7 +160,7 @@
                         <th>Peringkat</th>
                         <th class="text-start">Kabupaten/Kota</th>
                         <th class="sortable" id="thSkor">Skor <span id="iconSkor">&#9670;</span></th>
-                        <th>Jumlah RS</th>
+                        <th>Jumlah TT</th>
                         <th>Jumlah Puskesmas</th>
                         <th>Kategori</th>
                     </tr>
@@ -182,7 +184,7 @@
                 <thead>
                     <tr>
                         <th rowspan="2" style="min-width:140px">Kabupaten/Kota</th>
-                        <th colspan="3">Kebutuhan RS</th>
+                        <th colspan="3">Kebutuhan Tempat Tidur RS</th>
                         <th colspan="3">Kebutuhan Puskesmas</th>
                         <th rowspan="2">Prioritas</th>
                     </tr>
@@ -195,9 +197,9 @@
                     @foreach ($kesenjangan as $k)
                         <tr>
                             <td class="nama">{{ $k['nama'] }}</td>
-                            <td>{{ $k['rsTarget'] }}</td>
-                            <td>{{ $k['rsAktual'] }}</td>
-                            <td class="kurang">{{ $k['rsKurang'] }}</td>
+                            <td>{{ $k['ttTarget'] }}</td>
+                            <td>{{ $k['ttAktual'] }}</td>
+                            <td class="kurang">{{ $k['ttKurang'] }}</td>
                             <td>{{ $k['pkTarget'] }}</td>
                             <td>{{ $k['pkAktual'] }}</td>
                             <td class="kurang">{{ $k['pkKurang'] }}</td>
@@ -260,7 +262,7 @@
                 grid: { strokeDashArray: 3 }
             }).render();
         }
-        grouped('#chartRs', grafik.rsTarget, grafik.rsAktual, {{ $maxRs }});
+        grouped('#chartRs', grafik.ttTarget, grafik.ttAktual, {{ $maxTt }});
         grouped('#chartPuskesmas', grafik.pkTarget, grafik.pkAktual, {{ $maxPk }});
 
         // ---------- Tabel peringkat (urut skor + pagination) ----------
@@ -285,7 +287,7 @@
                     <td>${r.rank}</td>
                     <td class="nama">${r.nama}</td>
                     <td><span class="skor-chip" style="background:${r.chip};color:${r.chipTeks}">${r.skorTeks}</span></td>
-                    <td>${r.rs}</td>
+                    <td>${r.tt}</td>
                     <td>${r.pk}</td>
                     <td><span class="kat" style="color:${r.warnaTeks}">${r.kategori}</span></td>
                 </tr>`).join('');
@@ -375,7 +377,7 @@
                         ? `<strong>${nama}</strong><br>
                            Skor: ${formatSkor(data.skor)}<br>
                            Kategori: ${data.kategori || '-'}<br>
-                           RS: ${data.rsAktual ?? 0} / target ${data.rsTarget ?? 0}<br>
+                           TT RS: ${data.ttAktual ?? 0} / target ${data.ttTarget ?? 0}<br>
                            Puskesmas: ${data.pkAktual ?? 0} / target ${data.pkTarget ?? 0}`
                         : `<strong>${nama}</strong><br>Data tidak tersedia`,
                     { sticky: true }

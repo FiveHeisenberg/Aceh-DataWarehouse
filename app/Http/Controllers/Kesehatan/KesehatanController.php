@@ -705,6 +705,9 @@ class KesehatanController extends Controller
 
         $rasioRs = 0;
         $rasioPk = 0;
+        $rasioTt = (int) $db->table('dwh.dim_kesehatan_ketersediaan_fasilitas')
+            ->where('target_fasilitas_key', 1)
+            ->value('rasio_penduduk');
 
         foreach ($target as $jenis => $rasio) {
             $j = strtolower((string) $jenis);
@@ -728,34 +731,33 @@ class KesehatanController extends Controller
             ->where('dw.tahun', $tahunAktif)
             ->select(
                 'w.nama_kabupaten_kota as nama',
-                'fk.jumlah_penduduk',
-                'fk.jumlah_rs_aktual',
-                'fk.jumlah_puskesmas_aktual'
+                 'fk.jumlah_penduduk',
+                 'fk.jumlah_tempat_tidur_rs_aktual',
+                 'fk.jumlah_puskesmas_aktual'
             )
             ->get();
 
-        $wilayah = $rows->map(function ($row) use ($rasioRs, $rasioPk) {
+        $wilayah = $rows->map(function ($row) use ($rasioPk, $rasioTt) {
             $penduduk = (int) ($row->jumlah_penduduk ?? 0);
-            $rsAktual = (int) ($row->jumlah_rs_aktual ?? 0);
+            $ttAktual = (int) ($row->jumlah_tempat_tidur_rs_aktual ?? 0);
             $pkAktual = (int) ($row->jumlah_puskesmas_aktual ?? 0);
 
-            $rsTarget = $rasioRs > 0 ? (int) ceil($penduduk / $rasioRs) : 0;
+            $ttTarget = (int) ceil($penduduk / $rasioTt); # <<=== RUMUS TARGET TEMPAT TIDUR
             $pkTarget = $rasioPk > 0 ? (int) ceil($penduduk / $rasioPk) : 0;
 
-            // Indeks 0-100: rata-rata capaian RS & Puskesmas terhadap target
-            $rsPct = $rsTarget > 0 ? min(1, $rsAktual / $rsTarget) : 1;
+            $ttPct = $ttTarget > 0 ? min(1, $ttAktual / $ttTarget) : 1;
             $pkPct = $pkTarget > 0 ? min(1, $pkAktual / $pkTarget) : 1;
-            $skor  = round((($rsPct + $pkPct) / 2) * 100, 1);
+            $skor  = round((($pkPct * 0.5) + ($ttPct * 0.5)) * 100, 1);
 
             return [
                 'nama'      => $row->nama ?: '-',
                 'penduduk'  => $penduduk,
                 'skor'      => $skor,
-                'rsTarget'  => $rsTarget,
-                'rsAktual'  => $rsAktual,
+                'ttTarget'  => $ttTarget,
+                'ttAktual'  => $ttAktual,
                 'pkTarget'  => $pkTarget,
                 'pkAktual'  => $pkAktual,
-                'rsKurang'  => max(0, $rsTarget - $rsAktual),
+                'ttKurang'  => max(0, $ttTarget - $ttAktual),
                 'pkKurang'  => max(0, $pkTarget - $pkAktual),
             ];
         })->all();
@@ -781,24 +783,17 @@ class KesehatanController extends Controller
 
         // ---------- Prioritas pembangunan ----------
         $data = array_map(function ($w) use ($cariKategori) {
-            $rsGap = $w['rsTarget'] > 0
-                ? (max(0, $w['rsTarget'] - $w['rsAktual'])
-                    / $w['rsTarget']) * 100
-                : 0;
-
-            $pkGap = $w['pkTarget'] > 0
-                ? (max(0, $w['pkTarget'] - $w['pkAktual'])
-                    / $w['pkTarget']) * 100
-                : 0;
-
-            // Rata-rata persentase kesenjangan
-            $indeksPrioritas = ($rsGap + $pkGap) / 2;
+            $indeksPrioritas = 100 - $w['skor'];
 
             $w['indeksPrioritas'] = round($indeksPrioritas, 2);
 
-            $w['prioritas'] = $indeksPrioritas >= 30
-                ? 'Tinggi'
-                : ($indeksPrioritas >= 10 ? 'Sedang' : 'Rendah');
+            $w['prioritas'] = $indeksPrioritas >= 80
+                ? 'Sangat Tinggi'
+                : ($indeksPrioritas >= 60
+                    ? 'Tinggi'
+                    : ($indeksPrioritas >= 40
+                        ? 'Sedang'
+                        : ($indeksPrioritas >= 20 ? 'Rendah' : 'Sangat Rendah')));
 
             $w['kategori'] = $cariKategori($w['skor']);
 
@@ -819,7 +814,7 @@ class KesehatanController extends Controller
                 'nama'      => $d['nama'],
                 'skor'      => $d['skor'],
                 'skorTeks'  => number_format($d['skor'], 1, ',', '.'),
-                'rs'        => $d['rsAktual'],
+                'tt'        => $d['ttAktual'],
                 'pk'        => $d['pkAktual'],
                 'kategori'  => $k['label'],
                 'warnaTeks' => $k['teks'],
@@ -845,8 +840,8 @@ class KesehatanController extends Controller
                 'skorTeks'  => number_format($d['skor'], 1, ',', '.'),
                 'kategori'  => $k['label'],
                 'warna'     => $k['teks'],
-                'rsAktual'  => $d['rsAktual'],
-                'rsTarget'  => $d['rsTarget'],
+                'ttAktual'  => $d['ttAktual'],
+                'ttTarget'  => $d['ttTarget'],
                 'pkAktual'  => $d['pkAktual'],
                 'pkTarget'  => $d['pkTarget'],
             ];
@@ -859,25 +854,25 @@ class KesehatanController extends Controller
 
         $grafik = [
             'kategori' => array_column($pilihanGrafik, 'nama'),
-            'rsTarget' => array_column($pilihanGrafik, 'rsTarget'),
-            'rsAktual' => array_column($pilihanGrafik, 'rsAktual'),
+            'ttTarget' => array_column($pilihanGrafik, 'ttTarget'),
+            'ttAktual' => array_column($pilihanGrafik, 'ttAktual'),
             'pkTarget' => array_column($pilihanGrafik, 'pkTarget'),
             'pkAktual' => array_column($pilihanGrafik, 'pkAktual'),
         ];
 
-        $nilaiRs = array_merge($grafik['rsTarget'], $grafik['rsAktual']);
+        $nilaiTt = array_merge($grafik['ttTarget'], $grafik['ttAktual']);
         $nilaiPk = array_merge($grafik['pkTarget'], $grafik['pkAktual']);
 
-        $maxRs = count($nilaiRs) > 0 ? (int) ceil(max($nilaiRs) * 1.15) : 1;
+        $maxTt = count($nilaiTt) > 0 ? (int) ceil(max($nilaiTt) * 1.15) : 1;
         $maxPk = count($nilaiPk) > 0 ? (int) ceil(max($nilaiPk) * 1.15) : 1;
 
         // ---------- Kesenjangan ----------
-        $urutPrioritas = ['Tinggi' => 0, 'Sedang' => 1, 'Rendah' => 2];
+        $urutPrioritas = ['Sangat Tinggi' => 0, 'Tinggi' => 1, 'Sedang' => 2, 'Rendah' => 3, 'Sangat Rendah' => 4];
         $kesenjangan   = $data;
 
         usort($kesenjangan, function ($a, $b) use ($urutPrioritas) {
-            return [$urutPrioritas[$a['prioritas']], -($a['rsKurang'] + $a['pkKurang']), $a['nama']]
-               <=> [$urutPrioritas[$b['prioritas']], -($b['rsKurang'] + $b['pkKurang']), $b['nama']];
+            return [$urutPrioritas[$a['prioritas']], -($a['ttKurang'] + $a['pkKurang']), $a['nama']]
+               <=> [$urutPrioritas[$b['prioritas']], -($b['ttKurang'] + $b['pkKurang']), $b['nama']];
         });
 
         return view('Kesehatan.ketersediaan-fasilitas', compact(
@@ -892,7 +887,7 @@ class KesehatanController extends Controller
             'terendah',
             'grafik',
             'kesenjangan',
-            'maxRs',
+            'maxTt',
             'maxPk'
         ));
     }
