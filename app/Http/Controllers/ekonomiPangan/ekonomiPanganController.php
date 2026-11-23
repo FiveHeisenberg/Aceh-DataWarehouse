@@ -112,27 +112,34 @@ class EkonomiPanganController extends Controller
             ];
         }
 
-        $produksiPadi = DB::table('fact_pangan_produksi_pertanian as f')
+        $produksiPadiRows = DB::table('fact_pangan_produksi_pertanian as f')
             ->join('dim_waktu as w', 'w.waktu_key', '=', 'f.waktu_key')
             ->join('dim_pangan_komoditas as k', 'k.komoditas_key', '=', 'f.komoditas_key')
             ->join('dim_pangan_wilayah as wi', 'wi.wilayah_key', '=', 'f.wilayah_key')
             ->where('w.tahun', $tahunAktif)
             ->where('k.nama_komoditas', 'Padi')
             ->select('wi.nama_kabupaten_kota as wilayah')
-            ->selectRaw('SUM(f.produksi_ton) as jumlah')
+            ->selectRaw('SUM(f.produksi_ton) as produksi, SUM(f.luas_panen_ha) as luas')
             ->groupBy('wi.nama_kabupaten_kota')
-            ->orderByDesc('jumlah')
-            ->limit(5)
             ->get()
-            ->map(fn ($row) => [
-                'wilayah' => $row->wilayah,
-                'jumlah' => (float) $row->jumlah,
-            ])
-            ->all();
+            ->keyBy('wilayah');
 
-        $maxProduksi = count($produksiPadi)
-            ? max(array_column($produksiPadi, 'jumlah'))
-            : 1;
+        $produksiPadi = collect($kabupatenList)
+            ->map(function ($wilayah) use ($produksiPadiRows) {
+                $row = $produksiPadiRows->get($wilayah);
+                $luas = $row ? (float) $row->luas : 0.0;
+                $produksi = $row ? (float) $row->produksi : 0.0;
+
+                return [
+                    'wilayah' => $wilayah,
+                    'luas' => $luas,
+                    'produksi' => $produksi,
+                    'produktivitas' => $luas > 0 ? $produksi / $luas : 0.0,
+                ];
+            })
+            ->sortByDesc('produksi')
+            ->values()
+            ->all();
 
         $petaniBase = DB::table('fact_pangan_petani as f')
             ->join('dim_waktu as w', 'w.waktu_key', '=', 'f.waktu_key')
@@ -150,7 +157,24 @@ class EkonomiPanganController extends Controller
 
         $petaniTerbanyak = $petaniTerbanyakRow->nama_kabupaten_kota ?? '-';
 
-        $jumlahKelompok = DB::table('dim_pangan_kelompok_tani')->count();
+        $jumlahKelompok = (int) (clone $petaniBase)
+            ->distinct()
+            ->count('f.kelompok_tani_key');
+
+        $petaniPerWilayah = (clone $petaniBase)
+            ->join('dim_pangan_wilayah as wi', 'wi.wilayah_key', '=', 'f.wilayah_key')
+            ->select('wi.nama_kabupaten_kota as wilayah')
+            ->selectRaw('SUM(f.jumlah_petani) as jumlah')
+            ->groupBy('wi.nama_kabupaten_kota')
+            ->pluck('jumlah', 'wilayah');
+
+        $petaPetani = collect($kabupatenList)
+            ->map(fn ($wilayah) => [
+                'wilayah' => $wilayah,
+                'jumlah' => (int) ($petaniPerWilayah[$wilayah] ?? 0),
+            ])
+            ->values()
+            ->all();
 
         return view('Ekonomi-Pangan.Pertanian', compact(
             'tahunList',
@@ -165,10 +189,10 @@ class EkonomiPanganController extends Controller
             'komoditasList',
             'matrix',
             'produksiPadi',
-            'maxProduksi',
             'totalPetani',
             'jumlahKelompok',
-            'petaniTerbanyak'
+            'petaniTerbanyak',
+            'petaPetani'
         ));
     }
 

@@ -21,7 +21,7 @@
     .prod-row .progress-bar { background: #0f9d8a; }
     .stat-box { border: 1px solid #d1d5db; border-radius: .5rem; padding: .5rem .85rem .6rem; margin-bottom: .9rem; }
     .stat-box .lbl { font-size: .72rem; font-weight: 600; color: #111827; }
-    .stat-box .val { font-size: 1.9rem; font-weight: 800; line-height: 1.2; color: #0f172a; }
+    .stat-box .val { font-size: 1.7rem; font-weight: 800; line-height: 1.2; color: #0f172a; }
     .page-loading {
         position: fixed;
         inset: 0;
@@ -33,8 +33,8 @@
         backdrop-filter: blur(2px);
     }
 
-    #map {
-        height: 330px;
+    #petaPetani {
+        height: 520px;
         background: #f8fafc;
         border-radius: .5rem;
     }
@@ -115,6 +115,14 @@
     .kpk-foot { display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed #e5e7eb; margin-top: .4rem; padding-top: .65rem; font-size: .72rem; color: #64748b; }
     .kpk-foot .ok::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #10b981; margin-right: .4rem; }
     .kpk-foot .skala { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: #94a3b8; }
+
+    /* ===== Sarana Produktivitas: tabel produksi padi ===== */
+    .prod-panel { background: #fafafa; border-radius: .5rem; padding: .35rem 1.25rem .6rem; }
+    .tbl-prod { margin-bottom: 0; --bs-table-bg: transparent; }
+    .tbl-prod thead th { font-weight: 700; font-size: .95rem; color: #111827; border-bottom: 1px solid #e5e7eb; padding: .9rem .5rem; }
+    .tbl-prod tbody td { font-size: .95rem; color: #1f2937; border-bottom: 1px solid #ececec; padding: .85rem .5rem; }
+    .tbl-prod tbody tr:last-child td { border-bottom: 0; }
+    .tbl-prod th.num, .tbl-prod td.num { text-align: right; }
 
 </style>
 
@@ -258,40 +266,80 @@
     </div>
 
     {{-- Sarana produktivitas --}}
-    <div class="sec-title">Sarana Produktivitas</div>
+    @php
+        // 5 -> "5", 4,5 -> "4,5", 5,25 -> "5,25"
+        $fmtDes = fn($n) => rtrim(rtrim(number_format($n, 2, ',', '.'), '0'), ',');
+
+        $petaniProvinsi = [
+            ['label' => 'Total Petani',          'nilai' => $fmt($totalPetani)],
+            ['label' => 'Jumlah Kelompok Tani',  'nilai' => $fmt($jumlahKelompok)],
+            ['label' => 'Petani Terbanyak',      'nilai' => $petaniTerbanyak],
+        ];
+    @endphp
+
+    <div class="sec-title">Produksi Padi Per Wilayah</div>
+        <h5 class="fw-bold mb-2"></h5>
+        <div class="prod-panel">
+            <div class="table-responsive">
+                <table class="table tbl-prod">
+                    <thead>
+                        <tr>
+                            <th>Wilayah</th>
+                            <th class="num">Luas Lahan</th>
+                            <th class="num">Produksi</th>
+                            <th class="num">Produktivitas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($produksiPadi as $p)
+                            <tr>
+                                <td>{{ $p['wilayah'] }}</td>
+                                <td class="num">{{ $fmtDes($p['luas']) }} {{ $satuanLuas }}</td>
+                                <td class="num">{{ $fmtDes($p['produksi']) }} {{ $satuanProduksi }}</td>
+                                <td class="num">{{ $fmtDes($p['produktivitas']) }} {{ $satuanProduksi }}/{{ $satuanLuas }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">
+                                    Belum ada data produksi padi untuk tahun {{ $tahunAktif }}.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="sec-title">Petani Provinsi</div>
+    <div class="row g-3 mb-4">
+        @foreach ($petaniProvinsi as $box)
+            <div class="col-md-4">
+                <div class="stat-box h-100 mb-0 bg-white">
+                    <div class="lbl">{{ $box['label'] }}</div>
+                    <div class="val">{{ $box['nilai'] }}</div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+
     <div class="row g-3 mb-4">
         <div class="col-lg-8">
             <div class="dw-card p-3 h-100">
-                <h5 class="fw-bold mb-3">Produksi Padi Per Wilayah</h5>
-                @foreach ($produksiPadi as $p)
-                    <div class="prod-row">
-                        <div class="head">
-                            <span>{{ $p['wilayah'] }}</span>
-                            <span>{{ $fmt($p['jumlah']) }} {{ ucfirst($satuanProduksi) }}</span>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar" role="progressbar"
-                                 style="width: {{ round($p['jumlah'] / $maxProduksi * 100, 1) }}%"></div>
-                        </div>
-                    </div>
-                @endforeach
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="fw-bold mb-0">Persebaran Jumlah Petani per Kabupaten/Kota</h5>
+                    <span class="small text-muted">Tahun {{ $tahunAktif }}</span>
+                </div>
+                <div id="petaPetani" data-geojson="{{ asset('js/Penduduk/aceh-kabupaten.geojson') }}"></div>
             </div>
         </div>
         <div class="col-lg-4">
             <div class="dw-card p-3 h-100">
-                <h5 class="fw-bold mb-3">Jumlah Tenaga Tani Provinsi</h5>
-                <div class="stat-box">
-                    <div class="lbl">Total Petani</div>
-                    <div class="val">{{ $fmt($totalPetani) }}</div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="fw-bold mb-0">Jumlah Petani per Kabupaten/Kota</h5>
+                    <span class="small text-muted">Terbanyak</span>
                 </div>
-                <div class="stat-box">
-                    <div class="lbl">Jumlah Kelompok Tani</div>
-                    <div class="val">{{ $fmt($jumlahKelompok) }}</div>
-                </div>
-                <div class="stat-box mb-0">
-                    <div class="lbl">Petani Terbanyak</div>
-                    <div class="val">{{ $petaniTerbanyak }}</div>
-                </div>
+                <div id="chartPetaniWilayah"></div>
             </div>
         </div>
     </div>
@@ -447,6 +495,32 @@
                 .filter(k => matrix[k] && matrix[k][kab])
                 .map(k => ({ nama: k, tanam: matrix[k][kab][0], panen: matrix[k][kab][1] }))
         });
+
+        const petaniWilayah = @json($petaPetani)
+            .slice()
+            .sort((a, b) => b.jumlah - a.jumlah);
+        const petaniLabel = petaniWilayah.map(d => d.wilayah.replace(/^(Kabupaten|Kota)\s+/, ''));
+
+        new ApexCharts(document.querySelector('#chartPetaniWilayah'), {
+            chart: { type: 'bar', height: 520, toolbar: { show: false }, fontFamily: 'inherit' },
+            series: [{ name: 'Jumlah Petani', data: petaniWilayah.map(d => d.jumlah) }],
+            colors: ['#16a34a'],
+            plotOptions: { bar: { horizontal: true, barHeight: '65%' } },
+            dataLabels: {
+                enabled: true,
+                formatter: v => fmt(v),
+                style: { fontSize: '10px', colors: ['#0f172a'] },
+                offsetX: 18,
+            },
+            xaxis: {
+                categories: petaniLabel,
+                labels: { formatter: v => fmt(Number(v)) },
+            },
+            yaxis: { labels: { style: { fontSize: '11px' } } },
+            grid: { borderColor: '#e5e7eb', strokeDashArray: 3 },
+            tooltip: { y: { formatter: v => fmt(v) + ' petani' } },
+            noData: { text: 'Belum ada data petani untuk tahun ini' },
+        }).render();
     });
 </script>
 @endsection
@@ -456,6 +530,11 @@
         @json($petaLuasLahan)
     </script>
 
+    <script type="application/json" id="data-peta-petani">
+        @json($petaPetani)
+    </script>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="{{ asset('js/Ekonomi-Pangan/pertanian-map.js') }}"></script>
+    <script src="{{ asset('js/Ekonomi-Pangan/petani-map.js') }}"></script>
 @endpush
